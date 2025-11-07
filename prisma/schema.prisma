@@ -28,7 +28,7 @@ model orders {
   buyer_id            String           @db.Uuid
   shop_id             String           @db.Uuid
   total_amount        Decimal          @db.Decimal(10, 2)
-  status              String?          @default("PENDING") @db.VarChar(30)
+  status              order_status     @default(PENDING)
   delivery_address_id String?          @db.Uuid
   created_at          DateTime?        @default(now()) @db.Timestamp(6)
   updated_at          DateTime?        @default(now()) @db.Timestamp(6)
@@ -50,7 +50,7 @@ model payments {
   payment_method    String    @db.VarChar(50)
   provider          String?   @db.VarChar(100)
   amount            Decimal   @db.Decimal(10, 2)
-  status            String?   @default("PENDING") @db.VarChar(30)
+  status            payment_status @default(PENDING)
   transaction_id    String?   @db.VarChar(255)
   payment_reference String?   @db.VarChar(255)
   customer_phone    String?   @db.VarChar(20)
@@ -124,7 +124,7 @@ model users {
   email          String           @unique @db.VarChar(255)
   phone_number   String?          @db.VarChar(20)
   password_hash  String           @db.VarChar(255)
-  role           String           @default("CUSTOMER") @db.VarChar(20)
+  role           user_role        @default(USER)
   profile_image  String?
   is_active      Boolean          @default(true)
   created_at     DateTime?        @default(now()) @db.Timestamp(6)
@@ -149,7 +149,8 @@ model categories {
 model order_messages {
   id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   order_id       String    @db.Uuid
-  recipient_type String    @db.VarChar(20)
+  recipient_type recipient_type
+  channel        message_channel @default(EMAIL)
   message_type   String    @db.VarChar(50)
   subject        String?   @db.VarChar(255)
   body           String
@@ -182,7 +183,7 @@ model shop_products {
   product_id        String              @db.Uuid
   price             Decimal             @db.Decimal(10, 2)
   stock_quantity    Int
-  condition         String?             @default("NEW") @db.VarChar(20)
+  condition         product_condition   @default(NEW)
   specs             Json?
   images            String[]
   is_available      Boolean?            @default(true)
@@ -200,7 +201,8 @@ model shop_products_log {
   id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   shop_product_id String        @db.Uuid
   change_qty      Int
-  change_type     String        @db.VarChar(50)
+  change_type     stock_change_type
+  reason          String?       @db.VarChar(100)
   created_at      DateTime?     @default(now()) @db.Timestamp(6)
   shop_products   shop_products @relation(fields: [shop_product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
@@ -272,4 +274,10 @@ enum user_role {
   SELLER
   ADMIN
   SUPER_ADMIN
+}
+
+enum stock_change_type {
+  INCREASE
+  DECREASE
+  ADJUSTMENT
 }

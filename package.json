@@ -22,7 +22,9 @@
   "homepage": "https://github.com/chifundo365/shop-tech_backend#readme",
   "dependencies": {
     "@prisma/client": "^6.17.1",
-    "express": "^5.1.0"
+    "bcrypt": "^6.0.0",
+    "express": "^5.1.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
