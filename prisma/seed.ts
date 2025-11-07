@@ -1013,7 +1013,7 @@ async function main() {
     console.log("  - John: secure456");
     console.log("  - Grace: strong789");
     console.log("  - Peter: admin321");
-    console.log("  - Mary: user654");
+    console.log("  - Mary: user654");                                                                     
   } catch (error) {
     console.error("❌ Error during seeding:", error);
     throw error;
