@@ -153,11 +153,11 @@ async function main() {
   console.log("📦 Creating shop products...");
   const shopProducts = [];
 
-  shopProducts.push(await prisma.shop_products.create({data:{shop_id:shops[0].id, product_id:products[0].id, price:"865000.00", stock_quantity:8, condition:"NEW", specs:{storage:"256GB", color:"Natural Titanium", warranty:"1 year Apple warranty", network:"5G enabled"}, images:["https://images.unsplash.com/photo-1592910147829-99f40bc3d004?w=500"]}}));
-  shopProducts.push(await prisma.shop_products.create({data:{shop_id:shops[1].id, product_id:products[1].id, price:"760000.00", stock_quantity:5, condition:"NEW", specs:{processor:"Apple M3 8-core", memory:"8GB", storage:"256GB SSD", display:"13.6-inch Liquid Retina"}, images:["https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500"]}}));
-  shopProducts.push(await prisma.shop_products.create({data:{shop_id:shops[2].id, product_id:products[2].id, price:"190000.00", stock_quantity:15, condition:"NEW", specs:{type:"Over-ear headphones", connectivity:"Bluetooth 5.2, NFC", battery:"30 hours playback", features:"Active Noise Cancellation"}, images:["https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500"]}}));
-  shopProducts.push(await prisma.shop_products.create({data:{shop_id:shops[4].id, product_id:products[3].id, price:"465000.00", stock_quantity:3, condition:"NEW", specs:{storage:"825GB SSD", controller:"DualSense included", features:"4K Gaming, Ray Tracing", warranty:"1 year Sony warranty"}, images:["https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=500"]}}));
-  shopProducts.push(await prisma.shop_products.create({data:{shop_id:shops[3].id, product_id:products[4].id, price:"48000.00", stock_quantity:20, condition:"NEW", specs:{connectivity:"Wi-Fi, Bluetooth", assistant:"Alexa built-in", features:"Smart home hub, Music streaming", compatibility:"Works with most smart devices"}, images:["https://images.unsplash.com/photo-1543512214-318c7553f230?w=500"]}}));
+  shopProducts.push(await prisma.shop_products.create({data:{shop_id:shops[0].id, product_id:products[0].id, sku:"TECH-IP15PM-256-TI", price:"865000.00", stock_quantity:8, condition:"NEW", specs:{storage:"256GB", color:"Natural Titanium", warranty:"1 year Apple warranty", network:"5G enabled"}, images:["https://images.unsplash.com/photo-1592910147829-99f40bc3d004?w=500"]}}));
+  shopProducts.push(await prisma.shop_products.create({data:{shop_id:shops[1].id, product_id:products[1].id, sku:"DW-MBA-M3-256-SG", price:"760000.00", stock_quantity:5, condition:"NEW", specs:{processor:"Apple M3 8-core", memory:"8GB", storage:"256GB SSD", display:"13.6-inch Liquid Retina"}, images:["https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500"]}}));
+  shopProducts.push(await prisma.shop_products.create({data:{shop_id:shops[2].id, product_id:products[2].id, sku:"GP-SONY-1000XM5-BLK", price:"190000.00", stock_quantity:15, condition:"NEW", specs:{type:"Over-ear headphones", connectivity:"Bluetooth 5.2, NFC", battery:"30 hours playback", features:"Active Noise Cancellation"}, images:["https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500"]}}));
+  shopProducts.push(await prisma.shop_products.create({data:{shop_id:shops[4].id, product_id:products[3].id, sku:"GZ-PS5-STD-WHT", price:"465000.00", stock_quantity:3, condition:"NEW", specs:{storage:"825GB SSD", controller:"DualSense included", features:"4K Gaming, Ray Tracing", warranty:"1 year Sony warranty"}, images:["https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=500"]}}));
+  shopProducts.push(await prisma.shop_products.create({data:{shop_id:shops[3].id, product_id:products[4].id, sku:"ST-ECHO-DOT5-BLK", price:"48000.00", stock_quantity:20, condition:"NEW", specs:{connectivity:"Wi-Fi, Bluetooth", assistant:"Alexa built-in", features:"Smart home hub, Music streaming", compatibility:"Works with most smart devices"}, images:["https://images.unsplash.com/photo-1543512214-318c7553f230?w=500"]}}));
 
   console.log(`✅ Created ${shopProducts.length} shop products`);
 
@@ -201,43 +201,64 @@ async function main() {
   console.log("📊 Creating shop products logs...");
   const shopProductLogs = [];
 
-  shopProductLogs.push(await prisma.shop_products_log.create({data:{shop_product_id:shopProducts[0].id, change_type:"DECREASE", change_qty:1}})); // SALE -> DECREASE
-  shopProductLogs.push(await prisma.shop_products_log.create({data:{shop_product_id:shopProducts[1].id, change_type:"INCREASE", change_qty:5}})); // RESTOCK -> INCREASE
+  shopProductLogs.push(await prisma.shop_products_log.create({data:{shop_product_id:shopProducts[0].id, change_type:"DECREASE", change_qty:1, reason:"Customer purchase - Order ORD-2024-001"}}));
+  shopProductLogs.push(await prisma.shop_products_log.create({data:{shop_product_id:shopProducts[1].id, change_type:"INCREASE", change_qty:5, reason:"Inventory restock from supplier"}}));
+  shopProductLogs.push(await prisma.shop_products_log.create({data:{shop_product_id:shopProducts[2].id, change_type:"DECREASE", change_qty:2, reason:"Customer purchase - Bulk order"}}));
+  shopProductLogs.push(await prisma.shop_products_log.create({data:{shop_product_id:shopProducts[3].id, change_type:"DECREASE", change_qty:1, reason:"Customer purchase - Order ORD-2024-004"}}));
+  shopProductLogs.push(await prisma.shop_products_log.create({data:{shop_product_id:shopProducts[4].id, change_type:"INCREASE", change_qty:10, reason:"New stock arrival from Amazon"}}));
 
   console.log(`✅ Created ${shopProductLogs.length} shop products logs`);
 
-    console.log("✅ Seeding completed successfully!");
-    console.log("📊 Database Summary:");
-    console.log(
-      `- 👥 Users: ${users.length} (1 Admin, 2 Sellers, 2 Customers)`
-    );
-    console.log(`- 📱 Categories: ${categories.length}`);
-    console.log(`- 🛍️ Products: ${products.length}`);
-    console.log(`- 🏪 Shops: ${shops.length}`);
-    console.log(`- 🏠 User Addresses: ${userAddresses.length}`);
-    console.log(`- 📦 Shop Products: ${shopProducts.length}`);
-    console.log(`- 🛒 Orders: ${orders.length}`);
-    console.log(`- 📋 Order Items: ${orderItems.length}`);
-    console.log(`- 💳 Payments: ${payments.length}`);
-    console.log(`- ⭐ Reviews: ${reviews.length}`);
-    console.log(`- 📧 Order Messages: ${orderMessages.length}`);
-    console.log(`- 📊 Shop Products Log: ${shopProductsLog.length}`);
-    console.log("🎉 Database is ready for comprehensive testing!");
-    console.log("🔐 User passwords represented by different hashes:");
-    console.log("  - Alice: password123");
-    console.log("  - John: secure456");
-    console.log("  - Grace: strong789");
-    console.log("  - Peter: admin321");
-    console.log("  - Mary: user654");
-  } catch (error) {
-    console.error("❌ Error during seeding:", error);
-    throw error;
-  }
+  // 11. Reviews
+  console.log("⭐ Creating reviews...");
+  const reviews = [];
+
+  reviews.push(await prisma.reviews.create({data:{order_id:orders[0].id, reviewer_id:users[0].id, shop_id:shops[0].id, product_id:products[0].id, rating:5, comment:"Excellent phone! Fast delivery and genuine product. Highly recommend TechHub Lilongwe!"}}));
+  reviews.push(await prisma.reviews.create({data:{order_id:orders[2].id, reviewer_id:users[1].id, shop_id:shops[2].id, product_id:products[2].id, rating:4, comment:"Great headphones with amazing noise cancellation. Good service from the team at Gadget Palace."}}));
+  reviews.push(await prisma.reviews.create({data:{order_id:orders[1].id, reviewer_id:users[4].id, shop_id:shops[1].id, product_id:products[1].id, rating:5, comment:"Perfect laptop for my studies! Fast processing and great battery life. Digital World has excellent customer service."}}));
+  reviews.push(await prisma.reviews.create({data:{order_id:orders[3].id, reviewer_id:users[0].id, shop_id:shops[4].id, product_id:products[3].id, rating:5, comment:"Amazing gaming experience! Fast shipping to Lilongwe. GameZone really knows their gaming products."}}));
+  reviews.push(await prisma.reviews.create({data:{order_id:orders[4].id, reviewer_id:users[4].id, shop_id:shops[3].id, product_id:products[4].id, rating:4, comment:"Great smart speaker for my dorm room. Easy setup and Alexa works perfectly. Good price for students!"}}));
+
+  console.log(`✅ Created ${reviews.length} reviews`);
+
+  // 12. Order Messages
+  console.log("📧 Creating order messages...");
+  const orderMessages = [];
+
+  orderMessages.push(await prisma.order_messages.create({data:{order_id:orders[0].id, recipient_type:"CUSTOMER", channel:"EMAIL", message_type:"ORDER_CONFIRMATION", subject:"Order Confirmed - ORD-2024-001", body:"Your order for iPhone 15 Pro Max has been confirmed and is being prepared for shipment.", is_sent:true, sent_at:new Date()}}));
+  orderMessages.push(await prisma.order_messages.create({data:{order_id:orders[1].id, recipient_type:"SHOP", channel:"EMAIL", message_type:"NEW_ORDER", subject:"New Order Received - ORD-2024-002", body:"You have received a new order for MacBook Air M3. Please prepare the item for shipment.", is_sent:true, sent_at:new Date()}}));
+  orderMessages.push(await prisma.order_messages.create({data:{order_id:orders[2].id, recipient_type:"CUSTOMER", channel:"SMS", message_type:"ORDER_PREPARING", subject:"Order Being Prepared - ORD-2024-003", body:"Your order for Sony WH-1000XM5 headphones is currently being prepared by Gadget Palace Mzuzu.", is_sent:true, sent_at:new Date()}}));
+  orderMessages.push(await prisma.order_messages.create({data:{order_id:orders[3].id, recipient_type:"CUSTOMER", channel:"PUSH_NOTIFICATION", message_type:"ORDER_SHIPPED", subject:"Order Shipped - ORD-2024-004", body:"Your PlayStation 5 order is out for delivery and should arrive within 2-3 business days.", is_sent:true, sent_at:new Date()}}));
+  orderMessages.push(await prisma.order_messages.create({data:{order_id:orders[4].id, recipient_type:"CUSTOMER", channel:"EMAIL", message_type:"ORDER_DELIVERED", subject:"Order Delivered - ORD-2024-005", body:"Your Amazon Echo Dot has been successfully delivered. Thank you for choosing SmartTech Zomba!", is_sent:true, sent_at:new Date()}}));
+
+  console.log(`✅ Created ${orderMessages.length} order messages`);
+
+  console.log("✅ Seeding completed successfully!");
+  console.log("📊 Database Summary:");
+  console.log(`- 👥 Users: ${users.length} (1 Admin, 2 Sellers, 2 Users)`);
+  console.log(`- 📱 Categories: ${categories.length}`);
+  console.log(`- 🛍️ Products: ${products.length}`);
+  console.log(`- 🏪 Shops: ${shops.length}`);
+  console.log(`- 🏠 User Addresses: ${userAddresses.length}`);
+  console.log(`- 📦 Shop Products: ${shopProducts.length}`);
+  console.log(`- 🛒 Orders: ${orders.length}`);
+  console.log(`- 📋 Order Items: ${orderItems.length}`);
+  console.log(`- 💳 Payments: ${payments.length}`);
+  console.log(`- ⭐ Reviews: ${reviews.length}`);
+  console.log(`- 📧 Order Messages: ${orderMessages.length}`);
+  console.log(`- 📊 Shop Products Log: ${shopProductLogs.length}`);
+  console.log("🎉 Database is ready for comprehensive testing!");
+  console.log("🔐 User passwords represented by different hashes:");
+  console.log("  - Alice: password123");
+  console.log("  - John: secure456");
+  console.log("  - Grace: strong789");
+  console.log("  - Peter: admin321");
+  console.log("  - Mary: user654");
 }
 
 main()
   .catch(e => {
-    console.error("❌ Error during seeding:", e);
+    console.error("❌ Seeding failed:", e);
     process.exit(1);
   })
   .finally(async () => {
