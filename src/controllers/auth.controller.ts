@@ -39,14 +39,10 @@ export const authController = {
       if (!isPasswordValid) {
         return errorResponse(res, 'invalid email or password', null, 401);
       }
-      
-      // TODO: Generate JWT token here
-      const token = jwt.sign(user, process.env.JWT_SECRET as string, { expiresIn: '1h' }, (err: any, token: string | undefined) => {
-        if (err) {
-          console.error('JWT error:', err);
-          return errorResponse(res, 'Login failed', null, 500);
-        }
-      });
+
+      // Generate JWT token here
+      const token = jwt.sign(user, process.env.JWT_SECRET as string, { expiresIn: '1h' });
+      console.log('Generated JWT Token:', { token });
 
       const { password_hash, ...userWithoutPassword } = user;
 

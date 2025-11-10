@@ -32,12 +32,18 @@ async function main() {
     console.log("Continuing with seeding...");
   }
 
+  // Test user passwords (for development/testing only):
+  // Alice Banda (USER): AlicePass123!
+  // John Phiri (SELLER): JohnSeller456@
+  // Grace Mwale (SELLER): GraceTech789#
+  // Peter Nyirenda (ADMIN): AdminPeter2024$
+  // Mary Tembo (USER): MaryUser567%
   const passwordHashes = [
-    "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewHiHhqcD6nXuBk6",
-    "$2b$12$9Hk8DzP2nVxQ4fG7RjL3VeKm6wT8sN9bC5xY1uE3rA7oI4dF6hS8g",
-    "$2b$12$X3vM8Qw6PtN5jK2sL9fH4eR7uY9bC1xV5gT8nM4pQ6wE2rT7yU1o",
-    "$2b$12$B5nK7Qs4WtM8jP9sF3gH2eR6yU4bX1vC8gN5pL7wE9rT2yI6oQ3m",
-    "$2b$12$F9mK3Qw7RtN6jL2sP8gH5eY4uB1xV9gT6nM2pQ5wE8rT1yI3oC7s"
+    "$2b$10$xurdBLAOuAzNfflHt3RFOOWoibNDnCSBkl/.l.YefpWRGDpFkaJhq",
+    "$2b$10$q5mKpjZZb8YAQIK/I82efuWhWcVwxuXBRamJS.C7I8a/tWpXrz0p.",
+    "$2b$10$P6LCMdtLS.tIyV8jX.txJept2WO1lyF7rHfKdS.xQd7VkB1wZR3Qm",
+    "$2b$10$sQ.6EgPxLUVqd/K9DDEIMeLigpc/XOQudqfxr4Y3Z3aOOCGi1qbD2",
+    "$2b$10$Xd2C2beMF/uFz8YzcwQwEOHFLpd1Fe7QkcFTMGqBdD8BbA5fANlDW"
   ];
 
   // 1. Users
@@ -228,7 +234,7 @@ async function main() {
   orderMessages.push(await prisma.order_messages.create({data:{order_id:orders[0].id, recipient_type:"CUSTOMER", channel:"EMAIL", message_type:"ORDER_CONFIRMATION", subject:"Order Confirmed - ORD-2024-001", body:"Your order for iPhone 15 Pro Max has been confirmed and is being prepared for shipment.", is_sent:true, sent_at:new Date()}}));
   orderMessages.push(await prisma.order_messages.create({data:{order_id:orders[1].id, recipient_type:"SHOP", channel:"EMAIL", message_type:"NEW_ORDER", subject:"New Order Received - ORD-2024-002", body:"You have received a new order for MacBook Air M3. Please prepare the item for shipment.", is_sent:true, sent_at:new Date()}}));
   orderMessages.push(await prisma.order_messages.create({data:{order_id:orders[2].id, recipient_type:"CUSTOMER", channel:"SMS", message_type:"ORDER_PREPARING", subject:"Order Being Prepared - ORD-2024-003", body:"Your order for Sony WH-1000XM5 headphones is currently being prepared by Gadget Palace Mzuzu.", is_sent:true, sent_at:new Date()}}));
-  orderMessages.push(await prisma.order_messages.create({data:{order_id:orders[3].id, recipient_type:"CUSTOMER", channel:"PUSH_NOTIFICATION", message_type:"ORDER_SHIPPED", subject:"Order Shipped - ORD-2024-004", body:"Your PlayStation 5 order is out for delivery and should arrive within 2-3 business days.", is_sent:true, sent_at:new Date()}}));
+  orderMessages.push(await prisma.order_messages.create({data:{order_id:orders[3].id, recipient_type:"CUSTOMER", channel:"PUSH", message_type:"ORDER_SHIPPED", subject:"Order Shipped - ORD-2024-004", body:"Your PlayStation 5 order is out for delivery and should arrive within 2-3 business days.", is_sent:true, sent_at:new Date()}}));
   orderMessages.push(await prisma.order_messages.create({data:{order_id:orders[4].id, recipient_type:"CUSTOMER", channel:"EMAIL", message_type:"ORDER_DELIVERED", subject:"Order Delivered - ORD-2024-005", body:"Your Amazon Echo Dot has been successfully delivered. Thank you for choosing SmartTech Zomba!", is_sent:true, sent_at:new Date()}}));
 
   console.log(`✅ Created ${orderMessages.length} order messages`);

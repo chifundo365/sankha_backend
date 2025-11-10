@@ -16,7 +16,7 @@ model order_items {
   product_name    String         @db.VarChar(255)
   quantity        Int
   unit_price      Decimal        @db.Decimal(10, 2)
-  total_price     Decimal?       @db.Decimal(10, 2)
+  total_price     Decimal?       @default(dbgenerated("((quantity)::numeric * unit_price)")) @db.Decimal(10, 2)
   orders          orders         @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   shop_products   shop_products? @relation(fields: [shop_product_id], references: [id], onUpdate: NoAction)
 }
@@ -28,10 +28,10 @@ model orders {
   buyer_id            String           @db.Uuid
   shop_id             String           @db.Uuid
   total_amount        Decimal          @db.Decimal(10, 2)
+  status              order_status?    @default(PENDING)
   delivery_address_id String?          @db.Uuid
   created_at          DateTime?        @default(now()) @db.Timestamp(6)
   updated_at          DateTime?        @default(now()) @db.Timestamp(6)
-  status              order_status     @default(PENDING)
   order_items         order_items[]
   order_messages      order_messages[]
   users               users            @relation(fields: [buyer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -45,18 +45,18 @@ model orders {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model payments {
-  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  order_id          String         @db.Uuid
-  payment_method    String         @db.VarChar(50)
-  provider          String?        @db.VarChar(100)
-  amount            Decimal        @db.Decimal(10, 2)
-  transaction_id    String?        @db.VarChar(255)
-  payment_reference String?        @db.VarChar(255)
-  customer_phone    String?        @db.VarChar(20)
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id          String          @db.Uuid
+  payment_method    String          @db.VarChar(50)
+  provider          String?         @db.VarChar(100)
+  amount            Decimal         @db.Decimal(10, 2)
+  status            payment_status? @default(PENDING)
+  transaction_id    String?         @db.VarChar(255)
+  payment_reference String?         @db.VarChar(255)
+  customer_phone    String?         @db.VarChar(20)
   raw_response      Json?
-  created_at        DateTime?      @default(now()) @db.Timestamp(6)
-  status            payment_status @default(PENDING)
-  orders            orders         @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  created_at        DateTime?       @default(now()) @db.Timestamp(6)
+  orders            orders          @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([order_id], map: "idx_payments_order_id")
 }
@@ -124,11 +124,11 @@ model users {
   email          String           @unique @db.VarChar(255)
   phone_number   String?          @db.VarChar(20)
   password_hash  String           @db.VarChar(255)
+  role           user_role        @default(USER)
   profile_image  String?
-  is_active      Boolean          @default(true)
+  is_active      Boolean?         @default(true)
   created_at     DateTime?        @default(now()) @db.Timestamp(6)
   updated_at     DateTime?        @default(now()) @db.Timestamp(6)
-  role           user_role        @default(USER)
   orders         orders[]
   reviews        reviews[]
   shops          shops[]
@@ -147,17 +147,17 @@ model categories {
 }
 
 model order_messages {
-  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  order_id       String          @db.Uuid
-  message_type   String          @db.VarChar(50)
-  subject        String?         @db.VarChar(255)
-  body           String
-  is_sent        Boolean?        @default(false)
-  sent_at        DateTime?       @db.Timestamp(6)
-  created_at     DateTime?       @default(now()) @db.Timestamp(6)
-  channel        message_channel @default(EMAIL)
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id       String           @db.Uuid
   recipient_type recipient_type
-  orders         orders          @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  message_type   String           @db.VarChar(50)
+  subject        String?          @db.VarChar(255)
+  body           String
+  channel        message_channel? @default(EMAIL)
+  is_sent        Boolean?         @default(false)
+  sent_at        DateTime?        @db.Timestamp(6)
+  created_at     DateTime?        @default(now()) @db.Timestamp(6)
+  orders         orders           @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -181,30 +181,31 @@ model shop_products {
   id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   shop_id           String              @db.Uuid
   product_id        String              @db.Uuid
+  sku               String?             @db.VarChar(50)
   price             Decimal             @db.Decimal(10, 2)
   stock_quantity    Int
+  condition         product_condition?  @default(NEW)
   specs             Json?
   images            String[]
   is_available      Boolean?            @default(true)
   created_at        DateTime?           @default(now()) @db.Timestamp(6)
   updated_at        DateTime?           @default(now()) @db.Timestamp(6)
-  sku               String?             @db.VarChar(50)
-  condition         product_condition   @default(NEW)
   order_items       order_items[]
   products          products            @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   shops             shops               @relation(fields: [shop_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   shop_products_log shop_products_log[]
 
   @@index([shop_id], map: "idx_shop_products_shop_id")
+  @@index([product_id], map: "idx_shop_products_product_id")
 }
 
 model shop_products_log {
   id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   shop_product_id String            @db.Uuid
   change_qty      Int
-  created_at      DateTime?         @default(now()) @db.Timestamp(6)
-  reason          String?           @db.VarChar(100)
   change_type     stock_change_type
+  reason          String?           @db.VarChar(100)
+  created_at      DateTime?         @default(now()) @db.Timestamp(6)
   shop_products   shop_products     @relation(fields: [shop_product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -229,8 +230,6 @@ enum message_channel {
   EMAIL
   SMS
   PUSH
-  PUSH_NOTIFICATION
-  IN_APP
 }
 
 enum order_status {
