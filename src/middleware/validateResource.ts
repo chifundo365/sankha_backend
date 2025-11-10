@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodObject } from 'zod';
+import { ZodType } from 'zod';
+import { errorResponse } from '../utils/response';
 
-const validateResource = (schema: ZodObject) => {
+const validateResource = (schema: ZodType) => {
     return (req: Request, res: Response, next: NextFunction) => {
         const result = schema.safeParse({
             body: req.body,
@@ -10,10 +11,12 @@ const validateResource = (schema: ZodObject) => {
         });
 
         if (!result.success) {
-            return res.status(400).json({
-                error: "Validation failed",
-                details: result.error.errors
-            });
+            const formatedErrors = result.error.issues.map((issue) => ({
+                path: issue.path.join('.'),
+                message: issue.message
+            }));
+
+            return errorResponse(res, 'Validation Failed', formatedErrors, 400);
         }
 
         next();
