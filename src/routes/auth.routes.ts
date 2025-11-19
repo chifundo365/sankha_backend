@@ -1,12 +1,54 @@
 import { Router } from "express";
 import { authController } from "../controllers/auth.controller";
 import validateResource from "../middleware/validateResource";
-import { loginSchema } from "../schemas/auth.schma";
-
+import { loginSchema, registerSchema } from "../schemas/auth.schema";
+import { protect } from "../middleware/auth.middleware";
+import { authorize } from "../middleware/authorize.middleware";
+import { Request, Response } from "express";
+import { successResponse } from "../utils/response";
 
 const router = Router();
 
-router.post('/register', authController.register);
-router.post('/login', validateResource(loginSchema), authController.login);
+router.post(
+  "/register",
+  validateResource(registerSchema),
+  authController.register
+);
+router.post("/login", validateResource(loginSchema), authController.login);
+
+// Protected route - requires authentication
+router.get("/me", protect, (req: Request, res: Response) => {
+  successResponse(res, "User profile retrieved successfully", req.user, 200);
+});
+
+// Admin-only route - requires ADMIN or SUPER_ADMIN role
+router.get(
+  "/admin",
+  protect,
+  authorize("ADMIN", "SUPER_ADMIN"),
+  (req: Request, res: Response) => {
+    successResponse(
+      res,
+      "Access granted",
+      { message: "Welcome to admin area", user: req.user },
+      200
+    );
+  }
+);
+
+// Seller route - requires SELLER, ADMIN, or SUPER_ADMIN role
+router.get(
+  "/seller",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  (req: Request, res: Response) => {
+    successResponse(
+      res,
+      "Access granted",
+      { message: "Welcome to seller dashboard", user: req.user },
+      200
+    );
+  }
+);
 
 export default router;

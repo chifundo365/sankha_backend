@@ -16,7 +16,9 @@ model order_items {
   product_name    String         @db.VarChar(255)
   quantity        Int
   unit_price      Decimal        @db.Decimal(10, 2)
-  total_price     Decimal?       @default(dbgenerated("((quantity)::numeric * unit_price)")) @db.Decimal(10, 2)
+  // computed column in DB: GENERATED ALWAYS AS (quantity * unit_price) STORED
+  // Cannot use @default with column references in Prisma
+  total_price     Decimal?       @db.Decimal(10, 2)
   orders          orders         @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   shop_products   shop_products? @relation(fields: [shop_product_id], references: [id], onUpdate: NoAction)
 }
@@ -120,7 +122,8 @@ model user_addresses {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model users {
   id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  full_name      String           @db.VarChar(150)
+  first_name     String           @db.VarChar(75)
+  last_name      String           @db.VarChar(75)
   email          String           @unique @db.VarChar(255)
   phone_number   String?          @db.VarChar(20)
   password_hash  String           @db.VarChar(255)
@@ -185,6 +188,7 @@ model shop_products {
   price             Decimal             @db.Decimal(10, 2)
   stock_quantity    Int
   condition         product_condition?  @default(NEW)
+  shop_description  String?
   specs             Json?
   images            String[]
   is_available      Boolean?            @default(true)
