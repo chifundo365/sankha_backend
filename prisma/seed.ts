@@ -628,6 +628,38 @@ async function main() {
 
   console.log(`✅ Created ${orders.length} orders`);
 
+  // 7b. Cart Orders (status: CART)
+  console.log("🛒 Creating cart orders...");
+  const cartOrders = [];
+
+  // Alice's cart at TechHub Lilongwe (has 2 items)
+  cartOrders.push(
+    await prisma.orders.create({
+      data: {
+        order_number: `CART-${users[0].id.substring(0, 8)}`, // Unique cart identifier
+        buyer_id: users[0].id, // Alice
+        shop_id: shops[0].id, // TechHub Lilongwe
+        total_amount: "0.00", // Will be calculated from items
+        status: "CART"
+      }
+    })
+  );
+
+  // Mary's cart at Digital World Blantyre (has 1 item)
+  cartOrders.push(
+    await prisma.orders.create({
+      data: {
+        order_number: `CART-${users[4].id.substring(0, 8)}`, // Unique cart identifier
+        buyer_id: users[4].id, // Mary
+        shop_id: shops[1].id, // Digital World Blantyre
+        total_amount: "0.00",
+        status: "CART"
+      }
+    })
+  );
+
+  console.log(`✅ Created ${cartOrders.length} cart orders`);
+
   // 8. Order Items
   console.log("📋 Creating order items...");
   const orderItems = [];
@@ -689,6 +721,60 @@ async function main() {
   );
 
   console.log(`✅ Created ${orderItems.length} order items`);
+
+  // 8b. Cart Items
+  console.log("🛒 Creating cart items...");
+  const cartItems = [];
+
+  // Alice's cart - 2 items from TechHub Lilongwe
+  cartItems.push(
+    await prisma.order_items.create({
+      data: {
+        order_id: cartOrders[0].id,
+        shop_product_id: shopProducts[0].id, // iPhone 15 Pro Max
+        product_name: "iPhone 15 Pro Max",
+        quantity: 1,
+        unit_price: "865000.00"
+      }
+    })
+  );
+  cartItems.push(
+    await prisma.order_items.create({
+      data: {
+        order_id: cartOrders[0].id,
+        shop_product_id: shopProducts[2].id, // Sony WH-1000XM5 (if from same shop)
+        product_name: "Sony WH-1000XM5",
+        quantity: 2,
+        unit_price: "190000.00"
+      }
+    })
+  );
+
+  // Mary's cart - 1 item from Digital World Blantyre
+  cartItems.push(
+    await prisma.order_items.create({
+      data: {
+        order_id: cartOrders[1].id,
+        shop_product_id: shopProducts[1].id, // MacBook Air M3
+        product_name: "MacBook Air M3",
+        quantity: 1,
+        unit_price: "760000.00"
+      }
+    })
+  );
+
+  // Update cart totals
+  await prisma.orders.update({
+    where: { id: cartOrders[0].id },
+    data: { total_amount: "1245000.00" } // 865000 + (190000 * 2)
+  });
+
+  await prisma.orders.update({
+    where: { id: cartOrders[1].id },
+    data: { total_amount: "760000.00" }
+  });
+
+  console.log(`✅ Created ${cartItems.length} cart items`);
 
   // 9. Payments
   console.log("💳 Creating payments...");
@@ -967,18 +1053,20 @@ async function main() {
   console.log(`- 🏠 User Addresses: ${userAddresses.length}`);
   console.log(`- 📦 Shop Products: ${shopProducts.length}`);
   console.log(`- 🛒 Orders: ${orders.length}`);
-  console.log(`- 📋 Order Items: ${orderItems.length}`);
-  console.log(`- 💳 Payments: ${payments.length}`);
+  console.log(`- � Cart Orders: ${cartOrders.length}`);
+  console.log(`- �📋 Order Items: ${orderItems.length}`);
+  console.log(`- � Cart Items: ${cartItems.length}`);
+  console.log(`- �💳 Payments: ${payments.length}`);
   console.log(`- ⭐ Reviews: ${reviews.length}`);
   console.log(`- 📧 Order Messages: ${orderMessages.length}`);
   console.log(`- 📊 Shop Products Log: ${shopProductLogs.length}`);
   console.log("🎉 Database is ready for comprehensive testing!");
   console.log("🔐 User passwords represented by different hashes:");
-  console.log("  - Alice: password123");
+  console.log("  - Alice: password123 (has cart with 2 items)");
   console.log("  - John: secure456");
   console.log("  - Grace: strong789");
   console.log("  - Peter: admin321");
-  console.log("  - Mary: user654");
+  console.log("  - Mary: user654 (has cart with 1 item)");
 }
 
 main()

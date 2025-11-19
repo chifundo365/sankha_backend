@@ -237,6 +237,7 @@ enum message_channel {
 }
 
 enum order_status {
+  CART
   PENDING
   CONFIRMED
   PREPARING
