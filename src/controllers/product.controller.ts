@@ -88,7 +88,6 @@ export const productController = {
             },
             _count: {
               select: {
-                reviews: true,
                 shop_products: true
               }
             }
@@ -143,26 +142,6 @@ export const productController = {
               description: true
             }
           },
-          reviews: {
-            select: {
-              id: true,
-              rating: true,
-              comment: true,
-              created_at: true,
-              users: {
-                select: {
-                  id: true,
-                  first_name: true,
-                  last_name: true,
-                  profile_image: true
-                }
-              }
-            },
-            orderBy: {
-              created_at: "desc"
-            },
-            take: 10
-          },
           shop_products: {
             select: {
               id: true,
@@ -189,7 +168,6 @@ export const productController = {
           },
           _count: {
             select: {
-              reviews: true,
               shop_products: true
             }
           }
@@ -200,21 +178,10 @@ export const productController = {
         return errorResponse(res, "Product not found", null, 404);
       }
 
-      // Calculate average rating
-      const avgRating = await prisma.reviews.aggregate({
-        where: { product_id: id },
-        _avg: {
-          rating: true
-        }
-      });
-
       return successResponse(
         res,
         "Product retrieved successfully",
-        {
-          ...product,
-          averageRating: avgRating._avg.rating || 0
-        },
+        product,
         200
       );
     } catch (error) {
@@ -434,7 +401,6 @@ export const productController = {
             categories: true,
             _count: {
               select: {
-                reviews: true,
                 shop_products: true
               }
             }

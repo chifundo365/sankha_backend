@@ -5,6 +5,7 @@ import shopRoutes from "./shop.routes";
 import shopProductRoutes from "./shop-product.routes";
 import cartRoutes from "./cart.routes";
 import orderRoutes from "./order.routes";
+import reviewRoutes from "./review.routes";
 
 const router = Router();
 
@@ -13,6 +14,7 @@ router.use("/products", productRoutes);
 router.use("/shops", shopRoutes);
 router.use("/cart", cartRoutes);
 router.use("/orders", orderRoutes);
+router.use("/reviews", reviewRoutes);
 // Shop product routes are nested under shops routes
 // They handle /shops/:shopId/products
 

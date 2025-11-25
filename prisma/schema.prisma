@@ -76,7 +76,6 @@ model products {
   created_at    DateTime?       @default(now()) @db.Timestamp(6)
   updated_at    DateTime?       @default(now()) @db.Timestamp(6)
   categories    categories?     @relation(fields: [category_id], references: [id], onUpdate: NoAction)
-  reviews       reviews[]
   shop_products shop_products[]
 
   @@index([name], map: "idx_products_name")
@@ -94,12 +93,15 @@ model shops {
   longitude                Decimal?        @db.Decimal(10, 6)
   phone                    String?         @db.VarChar(20)
   email                    String?         @db.VarChar(255)
+  logo                     String?
+  banner                   String?
+  gallery                  String[]
+  delivery_methods         String[]
   is_verified              Boolean?        @default(false)
   delivery_enabled         Boolean?        @default(true)
   created_at               DateTime?       @default(now()) @db.Timestamp(6)
   updated_at               DateTime?       @default(now()) @db.Timestamp(6)
   orders                   orders[]
-  reviews                  reviews[]
   shop_products            shop_products[]
   users                    users?          @relation(fields: [owner_id], references: [id], onUpdate: NoAction)
 }
@@ -164,19 +166,22 @@ model order_messages {
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model reviews {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  order_id    String?   @db.Uuid
-  reviewer_id String    @db.Uuid
-  shop_id     String    @db.Uuid
-  product_id  String    @db.Uuid
-  rating      Int?
-  comment     String?
-  created_at  DateTime? @default(now()) @db.Timestamp(6)
-  orders      orders?   @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  products    products  @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  users       users     @relation(fields: [reviewer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  shops       shops     @relation(fields: [shop_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id        String        @db.Uuid
+  reviewer_id     String        @db.Uuid
+  shop_product_id String        @db.Uuid
+  rating          Int
+  comment         String?
+  created_at      DateTime?     @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?     @default(now()) @db.Timestamp(6)
+  orders          orders        @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  shop_products   shop_products @relation(fields: [shop_product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           users         @relation(fields: [reviewer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([order_id, shop_product_id], name: "unique_review_per_order_product")
+  @@index([shop_product_id], map: "idx_reviews_shop_product_id")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -198,6 +203,7 @@ model shop_products {
   products          products            @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   shops             shops               @relation(fields: [shop_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   shop_products_log shop_products_log[]
+  reviews           reviews[]
 
   @@index([shop_id], map: "idx_shop_products_shop_id")
   @@index([product_id], map: "idx_shop_products_product_id")

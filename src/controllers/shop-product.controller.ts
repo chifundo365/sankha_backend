@@ -25,6 +25,37 @@ const checkShopOwnership = async (shopId: string, userId: string, userRole: stri
   return shop.owner_id === userId;
 };
 
+/**
+ * Helper function to calculate review statistics for a shop product
+ */
+const getReviewStats = async (shopProductId: string) => {
+  const reviews = await prisma.reviews.findMany({
+    where: { shop_product_id: shopProductId },
+    select: { rating: true }
+  });
+
+  if (reviews.length === 0) {
+    return {
+      average_rating: 0,
+      review_count: 0,
+      rating_breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+    };
+  }
+
+  const averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+  
+  const ratingBreakdown = reviews.reduce((acc, r) => {
+    acc[r.rating as keyof typeof acc] = (acc[r.rating as keyof typeof acc] || 0) + 1;
+    return acc;
+  }, { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 });
+
+  return {
+    average_rating: Number(averageRating.toFixed(2)),
+    review_count: reviews.length,
+    rating_breakdown: ratingBreakdown
+  };
+};
+
 export const shopProductController = {
   /**
    * Get all products for a specific shop
@@ -111,6 +142,17 @@ export const shopProductController = {
         prisma.shop_products.count({ where })
       ]);
 
+      // Add review statistics to each product
+      const productsWithReviews = await Promise.all(
+        shopProducts.map(async (product) => {
+          const reviewStats = await getReviewStats(product.id);
+          return {
+            ...product,
+            reviews: reviewStats
+          };
+        })
+      );
+
       const totalPages = Math.ceil(totalCount / take);
 
       return successResponse(
@@ -118,7 +160,7 @@ export const shopProductController = {
         "Shop products retrieved successfully",
         {
           shop,
-          products: shopProducts,
+          products: productsWithReviews,
           pagination: {
             currentPage: Number(page),
             totalPages,
@@ -173,10 +215,16 @@ export const shopProductController = {
         return errorResponse(res, "Shop product not found", null, 404);
       }
 
+      // Add review statistics
+      const reviewStats = await getReviewStats(shopProduct.id);
+
       return successResponse(
         res,
         "Shop product retrieved successfully",
-        shopProduct,
+        {
+          ...shopProduct,
+          reviews: reviewStats
+        },
         200
       );
     } catch (error) {

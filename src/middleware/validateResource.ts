@@ -4,7 +4,6 @@ import { errorResponse } from '../utils/response';
 
 const validateResource = (schema: ZodType) => {
     return (req: Request, res: Response, next: NextFunction) => {
-        // Handle missing body gracefully
         const data = {
             body: req.body || {},
             query: req.query || {},

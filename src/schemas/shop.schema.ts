@@ -51,7 +51,20 @@ export const createShopSchema = z.object({
       .max(255, "Email must not exceed 255 characters")
       .optional(),
 
-    delivery_enabled: z.boolean().default(true)
+    delivery_enabled: z.boolean().default(true),
+
+    logo: z.string().url("Logo must be a valid URL").optional(),
+
+    banner: z.string().url("Banner must be a valid URL").optional(),
+
+    gallery: z
+      .array(z.string().url("Each gallery image must be a valid URL"))
+      .max(10, "Gallery can contain a maximum of 10 images")
+      .optional(),
+
+    delivery_methods: z
+      .array(z.enum(["PICKUP_POINT", "COURIER", "DOOR_TO_DOOR"]))
+      .optional()
   })
 });
 
@@ -122,7 +135,26 @@ export const updateShopSchema = z.object({
         .optional()
         .nullable(),
 
-      delivery_enabled: z.boolean().optional()
+      delivery_enabled: z.boolean().optional(),
+
+      logo: z.string().url("Logo must be a valid URL").optional().nullable(),
+
+      banner: z
+        .string()
+        .url("Banner must be a valid URL")
+        .optional()
+        .nullable(),
+
+      gallery: z
+        .array(z.string().url("Each gallery image must be a valid URL"))
+        .max(10, "Gallery can contain a maximum of 10 images")
+        .optional()
+        .nullable(),
+
+      delivery_methods: z
+        .array(z.enum(["PICKUP_POINT", "COURIER", "DOOR_TO_DOOR"]))
+        .optional()
+        .nullable()
     })
     .refine(data => Object.keys(data).length > 0, {
       message: "At least one field must be provided for update"

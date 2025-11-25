@@ -281,7 +281,17 @@ async function main() {
         phone: "+265998765432",
         email: "info@techhub.mw",
         is_verified: true,
-        delivery_enabled: true
+        delivery_enabled: true,
+        logo:
+          "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400",
+        banner:
+          "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=1200",
+        gallery: [
+          "https://images.unsplash.com/photo-1593642532871-8b12e02d091c?w=600",
+          "https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=600",
+          "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=600"
+        ],
+        delivery_methods: ["PICKUP_POINT", "COURIER", "DOOR_TO_DOOR"]
       }
     })
   );
@@ -300,7 +310,16 @@ async function main() {
         phone: "+265997654321",
         email: "contact@digitalworld.mw",
         is_verified: true,
-        delivery_enabled: true
+        delivery_enabled: true,
+        logo:
+          "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=400",
+        banner:
+          "https://images.unsplash.com/photo-1487017159836-4e23ece2e4cf?w=1200",
+        gallery: [
+          "https://images.unsplash.com/photo-1591370874773-6702e8f12fd8?w=600",
+          "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600"
+        ],
+        delivery_methods: ["COURIER", "DOOR_TO_DOOR"]
       }
     })
   );
@@ -318,7 +337,14 @@ async function main() {
         phone: "+265995123456",
         email: "mzuzu@gadgetpalace.mw",
         is_verified: false,
-        delivery_enabled: true
+        delivery_enabled: true,
+        logo: "https://images.unsplash.com/photo-1556656793-08538906a9f8?w=400",
+        banner:
+          "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200",
+        gallery: [
+          "https://images.unsplash.com/photo-1527698266440-12104e498b76?w=600"
+        ],
+        delivery_methods: ["PICKUP_POINT"]
       }
     })
   );
@@ -337,7 +363,12 @@ async function main() {
         phone: "+265994321098",
         email: "zomba@smarttech.mw",
         is_verified: true,
-        delivery_enabled: false
+        delivery_enabled: false,
+        logo: "https://images.unsplash.com/photo-1542393545-10f5cde2c810?w=400",
+        banner:
+          "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200",
+        gallery: [],
+        delivery_methods: []
       }
     })
   );
@@ -355,7 +386,18 @@ async function main() {
         phone: "+265993210987",
         email: "karonga@gamezone.mw",
         is_verified: true,
-        delivery_enabled: true
+        delivery_enabled: true,
+        logo:
+          "https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=400",
+        banner:
+          "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=1200",
+        gallery: [
+          "https://images.unsplash.com/photo-1556438064-2d7646166914?w=600",
+          "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=600",
+          "https://images.unsplash.com/photo-1616588589676-62b3bd4ff6d2?w=600",
+          "https://images.unsplash.com/photo-1625805866449-3589fe3f71a3?w=600"
+        ],
+        delivery_methods: ["COURIER", "DOOR_TO_DOOR"]
       }
     })
   );
@@ -894,65 +936,70 @@ async function main() {
   console.log("⭐ Creating reviews...");
   const reviews = [];
 
+  // Review for Order 1: Alice bought iPhone from TechHub (DELIVERED)
   reviews.push(
     await prisma.reviews.create({
       data: {
         order_id: orders[0].id,
         reviewer_id: users[0].id,
-        shop_id: shops[0].id,
-        product_id: products[0].id,
+        shop_product_id: shopProducts[0].id, // iPhone at TechHub
         rating: 5,
         comment:
           "Excellent phone! Fast delivery and genuine product. Highly recommend TechHub Lilongwe!"
       }
     })
   );
+
+  // Review for Order 3: John bought Sony Headphones from Gadget Palace (PREPARING)
+  // Note: Can only review after DELIVERED, but keeping for seed data
   reviews.push(
     await prisma.reviews.create({
       data: {
         order_id: orders[2].id,
         reviewer_id: users[1].id,
-        shop_id: shops[2].id,
-        product_id: products[2].id,
+        shop_product_id: shopProducts[2].id, // Sony Headphones at Gadget Palace
         rating: 4,
         comment:
           "Great headphones with amazing noise cancellation. Good service from the team at Gadget Palace."
       }
     })
   );
+
+  // Review for Order 2: Mary bought MacBook from Digital World (CONFIRMED)
   reviews.push(
     await prisma.reviews.create({
       data: {
         order_id: orders[1].id,
         reviewer_id: users[4].id,
-        shop_id: shops[1].id,
-        product_id: products[1].id,
+        shop_product_id: shopProducts[1].id, // MacBook at Digital World
         rating: 5,
         comment:
           "Perfect laptop for my studies! Fast processing and great battery life. Digital World has excellent customer service."
       }
     })
   );
+
+  // Review for Order 4: Alice bought PS5 from GameZone (DELIVERED)
   reviews.push(
     await prisma.reviews.create({
       data: {
         order_id: orders[3].id,
         reviewer_id: users[0].id,
-        shop_id: shops[4].id,
-        product_id: products[3].id,
+        shop_product_id: shopProducts[3].id, // PS5 at GameZone
         rating: 5,
         comment:
           "Amazing gaming experience! Fast shipping to Lilongwe. GameZone really knows their gaming products."
       }
     })
   );
+
+  // Review for Order 5: Mary bought Echo Dot from TechVille (DELIVERED)
   reviews.push(
     await prisma.reviews.create({
       data: {
         order_id: orders[4].id,
         reviewer_id: users[4].id,
-        shop_id: shops[3].id,
-        product_id: products[4].id,
+        shop_product_id: shopProducts[4].id, // Echo Dot at TechVille
         rating: 4,
         comment:
           "Great smart speaker for my dorm room. Easy setup and Alexa works perfectly. Good price for students!"

@@ -93,6 +93,10 @@ export const shopController = {
             email: true,
             is_verified: true,
             delivery_enabled: true,
+            logo: true,
+            banner: true,
+            gallery: true,
+            delivery_methods: true,
             created_at: true,
             updated_at: true,
             users: {
@@ -107,8 +111,7 @@ export const shopController = {
             _count: {
               select: {
                 shop_products: true,
-                orders: true,
-                reviews: true
+                orders: true
               }
             }
           },
@@ -168,8 +171,7 @@ export const shopController = {
           _count: {
             select: {
               shop_products: true,
-              orders: true,
-              reviews: true
+              orders: true
             }
           }
         }
@@ -203,19 +205,23 @@ export const shopController = {
         longitude,
         phone,
         email,
-        delivery_enabled
+        delivery_enabled,
+        logo,
+        banner,
+        gallery,
+        delivery_methods
       } = req.body;
 
-      // Check if user already has a shop (sellers can only have one shop)
+      // Check if user already has reached the shop limit (sellers can own up to 5 shops)
       if (req.user!.role === "SELLER") {
-        const existingShop = await prisma.shops.findFirst({
+        const shopCount = await prisma.shops.count({
           where: { owner_id: req.user!.id }
         });
 
-        if (existingShop) {
+        if (shopCount >= 5) {
           return errorResponse(
             res,
-            "You already have a shop. Each seller can only own one shop.",
+            "You have reached the maximum limit of 5 shops. Each seller can own up to 5 shops.",
             null,
             409
           );
@@ -236,7 +242,11 @@ export const shopController = {
           phone,
           email,
           delivery_enabled: delivery_enabled ?? true,
-          is_verified: req.user!.role === "ADMIN" || req.user!.role === "SUPER_ADMIN" ? true : false
+          is_verified: req.user!.role === "ADMIN" || req.user!.role === "SUPER_ADMIN" ? true : false,
+          logo,
+          banner,
+          gallery,
+          delivery_methods
         },
         include: {
           users: {
@@ -448,8 +458,7 @@ export const shopController = {
           _count: {
             select: {
               shop_products: true,
-              orders: true,
-              reviews: true
+              orders: true
             }
           }
         },
