@@ -127,7 +127,58 @@ export const getShopOrdersSchema = z.object({
         "CANCELLED",
         "REFUNDED"
       ])
+      .optional(),
+    start_date: z.string().datetime().optional(),
+    end_date: z.string().datetime().optional()
+  })
+});
+
+/**
+ * Schema for getting order tracking
+ */
+export const getOrderTrackingSchema = z.object({
+  params: z.object({
+    orderId: z.string().uuid("Invalid order ID format")
+  })
+});
+
+/**
+ * Schema for getting all orders (admin)
+ */
+export const getAllOrdersSchema = z.object({
+  query: z.object({
+    page: z.string().optional().transform(val => (val ? parseInt(val, 10) : 1)),
+    limit: z
+      .string()
       .optional()
+      .transform(val => (val ? parseInt(val, 10) : 10)),
+    status: z
+      .enum([
+        "PENDING",
+        "CONFIRMED",
+        "PREPARING",
+        "READY_FOR_PICKUP",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED",
+        "CANCELLED",
+        "REFUNDED"
+      ])
+      .optional(),
+    shop_id: z.string().uuid("Invalid shop ID format").optional(),
+    start_date: z.string().datetime().optional(),
+    end_date: z.string().datetime().optional(),
+    search: z.string().optional()
+  })
+});
+
+/**
+ * Schema for getting order statistics
+ */
+export const getOrderStatsSchema = z.object({
+  query: z.object({
+    shop_id: z.string().uuid("Invalid shop ID format").optional(),
+    start_date: z.string().datetime().optional(),
+    end_date: z.string().datetime().optional()
   })
 });
 
@@ -138,3 +189,6 @@ export type ListOrdersInput = z.infer<typeof listOrdersSchema>;
 export type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>;
 export type CancelOrderInput = z.infer<typeof cancelOrderSchema>;
 export type GetShopOrdersInput = z.infer<typeof getShopOrdersSchema>;
+export type GetOrderTrackingInput = z.infer<typeof getOrderTrackingSchema>;
+export type GetAllOrdersInput = z.infer<typeof getAllOrdersSchema>;
+export type GetOrderStatsInput = z.infer<typeof getOrderStatsSchema>;

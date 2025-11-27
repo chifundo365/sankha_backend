@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { productController } from "../controllers/product.controller";
 import validateResource from "../middleware/validateResource";
+import { uploadMultiple } from "../middleware/upload.middleware";
 import {
   createProductSchema,
   updateProductSchema,
@@ -63,6 +64,23 @@ router.delete(
   authorize("ADMIN", "SUPER_ADMIN"),
   validateResource(deleteProductSchema),
   productController.deleteProduct
+);
+
+// Upload product images
+router.post(
+  "/:productId/images",
+  protect,
+  authorize("ADMIN", "SUPER_ADMIN"),
+  uploadMultiple,
+  productController.uploadProductImages
+);
+
+// Delete product image
+router.delete(
+  "/:productId/images/:imageIndex",
+  protect,
+  authorize("ADMIN", "SUPER_ADMIN"),
+  productController.deleteProductImage
 );
 
 export default router;

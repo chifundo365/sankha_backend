@@ -5,9 +5,13 @@ import {
   getMyOrders,
   getShopOrders,
   updateOrderStatus,
-  cancelOrder
+  cancelOrder,
+  getOrderTracking,
+  getAllOrders,
+  getOrderStats
 } from "../controllers/order.controller";
 import { protect } from "../middleware/auth.middleware";
+import { authorize } from "../middleware/authorize.middleware";
 import validateResource from "../middleware/validateResource";
 import {
   checkoutSchema,
@@ -15,7 +19,10 @@ import {
   listOrdersSchema,
   updateOrderStatusSchema,
   cancelOrderSchema,
-  getShopOrdersSchema
+  getShopOrdersSchema,
+  getOrderTrackingSchema,
+  getAllOrdersSchema,
+  getOrderStatsSchema
 } from "../schemas/order.schema";
 
 const router = Router();
@@ -44,6 +51,31 @@ router.get(
 );
 
 /**
+ * @route   GET /api/orders/admin/all
+ * @desc    Get all orders (admin only)
+ * @access  Protected (ADMIN, SUPER_ADMIN)
+ */
+router.get(
+  "/admin/all",
+  protect,
+  authorize("ADMIN"),
+  validateResource(getAllOrdersSchema),
+  getAllOrders
+);
+
+/**
+ * @route   GET /api/orders/stats
+ * @desc    Get order statistics
+ * @access  Protected (SELLER for own shops, ADMIN for all)
+ */
+router.get(
+  "/stats",
+  protect,
+  validateResource(getOrderStatsSchema),
+  getOrderStats
+);
+
+/**
  * @route   GET /api/orders/shop/:shopId
  * @desc    Get shop orders (seller view)
  * @access  Protected (SELLER/shop owner, ADMIN, SUPER_ADMIN)
@@ -65,6 +97,18 @@ router.get(
   protect,
   validateResource(getOrderSchema),
   getOrderById
+);
+
+/**
+ * @route   GET /api/orders/:orderId/tracking
+ * @desc    Get order tracking timeline
+ * @access  Protected (Buyer, Shop owner, ADMIN, SUPER_ADMIN)
+ */
+router.get(
+  "/:orderId/tracking",
+  protect,
+  validateResource(getOrderTrackingSchema),
+  getOrderTracking
 );
 
 /**

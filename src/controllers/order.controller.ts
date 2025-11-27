@@ -453,7 +453,7 @@ export const getShopOrders = async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const userRole = req.user!.role;
     const { shopId } = req.params;
-    const { page = 1, limit = 10, status } = req.query;
+    const { page = 1, limit = 10, status, start_date, end_date } = req.query;
 
     // Verify shop ownership or admin
     const shop = await prismaClient.shops.findUnique({
@@ -483,6 +483,16 @@ export const getShopOrders = async (req: Request, res: Response) => {
 
     if (status) {
       where.status = status;
+    }
+
+    if (start_date || end_date) {
+      where.created_at = {};
+      if (start_date) {
+        where.created_at.gte = new Date(start_date as string);
+      }
+      if (end_date) {
+        where.created_at.lte = new Date(end_date as string);
+      }
     }
 
     const [orders, totalCount] = await Promise.all([
@@ -772,6 +782,7 @@ export const cancelOrder = async (req: Request, res: Response) => {
         where: { id: order.payments[0].id },
         data: {
           status: "CANCELLED",
+          updated_at: new Date(),
         },
       });
     }
@@ -811,5 +822,348 @@ export const cancelOrder = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Cancel order error:", error);
     return errorResponse(res, "Failed to cancel order", 500);
+  }
+};
+
+/**
+ * Get order tracking timeline/status history
+ * GET /api/orders/:orderId/tracking
+ */
+export const getOrderTracking = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const { orderId } = req.params;
+
+    const order = await prismaClient.orders.findUnique({
+      where: { id: orderId },
+      include: {
+        shops: true,
+        user_addresses: true,
+        order_messages: {
+          orderBy: {
+            created_at: 'desc'
+          }
+        }
+      }
+    });
+
+    if (!order) {
+      return errorResponse(res, "Order not found", 404);
+    }
+
+    // Authorization
+    const isBuyer = order.buyer_id === userId;
+    const isShopOwner = order.shops.owner_id === userId;
+    const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(userRole);
+
+    if (!isBuyer && !isShopOwner && !isAdmin) {
+      return errorResponse(res, "Unauthorized to view this order", 403);
+    }
+
+    // Build status timeline
+    const timeline = [
+      {
+        status: "CONFIRMED",
+        label: "Order Confirmed",
+        completed: true,
+        timestamp: order.created_at,
+      },
+    ];
+
+    const statusOrder = [
+      "PREPARING",
+      "READY_FOR_PICKUP",
+      "OUT_FOR_DELIVERY",
+      "DELIVERED",
+    ];
+
+    const currentStatusIndex = statusOrder.indexOf(order.status || "CONFIRMED");
+
+    statusOrder.forEach((status, index) => {
+      timeline.push({
+        status,
+        label: status.replace(/_/g, " "),
+        completed: index <= currentStatusIndex,
+        timestamp: index <= currentStatusIndex ? order.updated_at : null,
+      });
+    });
+
+    return successResponse(
+      res,
+      "Order tracking retrieved successfully",
+      {
+        order: {
+          id: order.id,
+          order_number: order.order_number,
+          status: order.status,
+          created_at: order.created_at,
+          updated_at: order.updated_at,
+        },
+        delivery_address: order.user_addresses,
+        timeline,
+        notifications: order.order_messages.map((msg) => ({
+          type: msg.message_type,
+          subject: msg.subject,
+          created_at: msg.created_at,
+        })),
+      },
+      200
+    );
+  } catch (error) {
+    console.error("Get order tracking error:", error);
+    return errorResponse(res, "Failed to retrieve order tracking", 500);
+  }
+};
+
+/**
+ * Get all orders (admin only)
+ * GET /api/orders/admin/all
+ */
+export const getAllOrders = async (req: Request, res: Response) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      start_date,
+      end_date,
+      shop_id,
+      search,
+    } = req.query;
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const where: any = {
+      status: {
+        not: "CART",
+      },
+    };
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (shop_id) {
+      where.shop_id = shop_id;
+    }
+
+    if (start_date || end_date) {
+      where.created_at = {};
+      if (start_date) {
+        where.created_at.gte = new Date(start_date as string);
+      }
+      if (end_date) {
+        where.created_at.lte = new Date(end_date as string);
+      }
+    }
+
+    if (search) {
+      where.OR = [
+        {
+          order_number: {
+            contains: search as string,
+            mode: "insensitive",
+          },
+        },
+        {
+          users: {
+            OR: [
+              {
+                first_name: {
+                  contains: search as string,
+                  mode: "insensitive",
+                },
+              },
+              {
+                last_name: {
+                  contains: search as string,
+                  mode: "insensitive",
+                },
+              },
+              {
+                email: {
+                  contains: search as string,
+                  mode: "insensitive",
+                },
+              },
+            ],
+          },
+        },
+      ];
+    }
+
+    const [orders, totalCount] = await Promise.all([
+      prismaClient.orders.findMany({
+        where,
+        skip,
+        take: Number(limit),
+        orderBy: {
+          created_at: "desc",
+        },
+        include: {
+          users: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
+            },
+          },
+          shops: {
+            select: {
+              id: true,
+              name: true,
+              city: true,
+            },
+          },
+          order_items: {
+            select: {
+              id: true,
+              product_name: true,
+              quantity: true,
+              unit_price: true,
+            },
+          },
+          payments: {
+            select: {
+              payment_method: true,
+              status: true,
+              amount: true,
+            },
+          },
+        },
+      }),
+      prismaClient.orders.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / Number(limit));
+
+    return successResponse(
+      res,
+      "Orders retrieved successfully",
+      {
+        orders: orders.map((order) => ({
+          id: order.id,
+          order_number: order.order_number,
+          status: order.status,
+          total_amount: Number(order.total_amount),
+          created_at: order.created_at,
+          buyer: order.users,
+          shop: order.shops,
+          items_count: order.order_items.length,
+          payment_status: order.payments[0]?.status || "PENDING",
+        })),
+        pagination: {
+          currentPage: Number(page),
+          totalPages,
+          totalCount,
+          limit: Number(limit),
+          hasNextPage: Number(page) < totalPages,
+          hasPrevPage: Number(page) > 1,
+        },
+      },
+      200
+    );
+  } catch (error) {
+    console.error("Get all orders error:", error);
+    return errorResponse(res, "Failed to retrieve orders", 500);
+  }
+};
+
+/**
+ * Get order statistics
+ * GET /api/orders/stats (for own shops - seller)
+ * GET /api/orders/admin/stats (for all orders - admin)
+ */
+export const getOrderStats = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const { shop_id, start_date, end_date } = req.query;
+
+    const where: any = {
+      status: {
+        not: "CART",
+      },
+    };
+
+    // If shop_id provided, verify ownership or admin
+    if (shop_id) {
+      const shop = await prismaClient.shops.findUnique({
+        where: { id: shop_id as string },
+      });
+
+      if (!shop) {
+        return errorResponse(res, "Shop not found", 404);
+      }
+
+      const isOwner = shop.owner_id === userId;
+      const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(userRole);
+
+      if (!isOwner && !isAdmin) {
+        return errorResponse(res, "Unauthorized to view shop statistics", 403);
+      }
+
+      where.shop_id = shop_id;
+    } else if (!["ADMIN", "SUPER_ADMIN"].includes(userRole)) {
+      // Non-admin without shop_id - get stats for all their shops
+      const userShops = await prismaClient.shops.findMany({
+        where: { owner_id: userId },
+        select: { id: true },
+      });
+
+      where.shop_id = {
+        in: userShops.map((s) => s.id),
+      };
+    }
+
+    if (start_date || end_date) {
+      where.created_at = {};
+      if (start_date) {
+        where.created_at.gte = new Date(start_date as string);
+      }
+      if (end_date) {
+        where.created_at.lte = new Date(end_date as string);
+      }
+    }
+
+    const [totalOrders, ordersByStatus, revenueData] = await Promise.all([
+      prismaClient.orders.count({ where }),
+      prismaClient.orders.groupBy({
+        by: ["status"],
+        where,
+        _count: true,
+      }),
+      prismaClient.orders.aggregate({
+        where,
+        _sum: {
+          total_amount: true,
+        },
+      }),
+    ]);
+
+    const statusBreakdown = ordersByStatus.reduce((acc, item) => {
+      acc[item.status || "UNKNOWN"] = item._count;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return successResponse(
+      res,
+      "Order statistics retrieved successfully",
+      {
+        total_orders: totalOrders,
+        total_revenue: Number(revenueData._sum.total_amount || 0),
+        status_breakdown: statusBreakdown,
+        average_order_value:
+          totalOrders > 0
+            ? Number(revenueData._sum.total_amount || 0) / totalOrders
+            : 0,
+      },
+      200
+    );
+  } catch (error) {
+    console.error("Get order stats error:", error);
+    return errorResponse(res, "Failed to retrieve order statistics", 500);
   }
 };

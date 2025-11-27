@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import prisma from "../prismaClient";
 import { errorResponse, successResponse } from "../utils/response";
 import { Prisma } from "../../generated/prisma";
+import { CloudinaryService } from "../services/cloudinary.service";
 
 export const productController = {
   /**
@@ -437,6 +438,125 @@ export const productController = {
     } catch (error) {
       console.error("Get products by category error:", error);
       return errorResponse(res, "Failed to retrieve products", null, 500);
+    }
+  },
+
+  /**
+   * Upload product images
+   * POST /api/products/:productId/images
+   * Protected - ADMIN only
+   */
+  uploadProductImages: async (req: Request, res: Response) => {
+    try {
+      const { productId } = req.params;
+
+      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+        return errorResponse(res, "No image files provided", null, 400);
+      }
+
+      const product = await prisma.products.findUnique({
+        where: { id: productId },
+        select: { image_urls: true, name: true }
+      });
+
+      if (!product) {
+        return errorResponse(res, "Product not found", null, 404);
+      }
+
+      // Upload new images
+      const fileBuffers = req.files.map((file: Express.Multer.File) => file.buffer);
+      const uploadResults = await CloudinaryService.uploadMultiple(
+        fileBuffers,
+        `products/${productId}`
+      );
+
+      const successfulUploads = uploadResults
+        .filter(result => result.success && result.url)
+        .map(result => result.url!);
+
+      if (successfulUploads.length === 0) {
+        return errorResponse(res, "Failed to upload any images", null, 500);
+      }
+
+      // Merge with existing images
+      const existingImages = product.image_urls || [];
+      const newImages = [...existingImages, ...successfulUploads];
+
+      // Limit to 5 images total
+      const limitedImages = newImages.slice(0, 5);
+
+      const updatedProduct = await prisma.products.update({
+        where: { id: productId },
+        data: { image_urls: limitedImages },
+        select: {
+          id: true,
+          name: true,
+          image_urls: true
+        }
+      });
+
+      return successResponse(
+        res,
+        `${successfulUploads.length} image(s) uploaded successfully`,
+        updatedProduct,
+        200
+      );
+    } catch (error) {
+      console.error("Upload product images error:", error);
+      return errorResponse(res, "Failed to upload product images", null, 500);
+    }
+  },
+
+  /**
+   * Delete product image
+   * DELETE /api/products/:productId/images/:imageIndex
+   * Protected - ADMIN only
+   */
+  deleteProductImage: async (req: Request, res: Response) => {
+    try {
+      const { productId, imageIndex } = req.params;
+
+      const product = await prisma.products.findUnique({
+        where: { id: productId },
+        select: { image_urls: true, name: true }
+      });
+
+      if (!product) {
+        return errorResponse(res, "Product not found", null, 404);
+      }
+
+      const images = product.image_urls || [];
+      const index = parseInt(imageIndex);
+
+      if (index < 0 || index >= images.length) {
+        return errorResponse(res, "Invalid image index", null, 400);
+      }
+
+      const imageUrl = images[index];
+      
+      // Delete from Cloudinary
+      const publicId = CloudinaryService.extractPublicId(imageUrl);
+      if (publicId) {
+        await CloudinaryService.deleteImage(publicId);
+      }
+
+      // Remove from array
+      const updatedImages = images.filter((_, i) => i !== index);
+
+      const updatedProduct = await prisma.products.update({
+        where: { id: productId },
+        data: { image_urls: updatedImages },
+        select: {
+          id: true,
+          name: true,
+          image_urls: true
+        }
+      });
+
+      return successResponse(res, "Product image deleted successfully", updatedProduct, 200);
+    } catch (error) {
+      console.error("Delete product image error:", error);
+      return errorResponse(res, "Failed to delete product image", null, 500);
     }
   }
 };

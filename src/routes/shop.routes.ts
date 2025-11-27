@@ -3,6 +3,7 @@ import { shopController } from "../controllers/shop.controller";
 import { protect } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/authorize.middleware";
 import validateResource from "../middleware/validateResource";
+import { uploadSingle, uploadGallery } from "../middleware/upload.middleware";
 import {
   createShopSchema,
   updateShopSchema,
@@ -78,6 +79,41 @@ router.patch(
   authorize("ADMIN", "SUPER_ADMIN"),
   validateResource(verifyShopSchema),
   shopController.verifyShop
+);
+
+// POST /api/shops/:shopId/logo - Upload shop logo
+router.post(
+  "/:shopId/logo",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  uploadSingle,
+  shopController.uploadShopLogo
+);
+
+// POST /api/shops/:shopId/banner - Upload shop banner
+router.post(
+  "/:shopId/banner",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  uploadSingle,
+  shopController.uploadShopBanner
+);
+
+// POST /api/shops/:shopId/gallery - Upload shop gallery images
+router.post(
+  "/:shopId/gallery",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  uploadGallery,
+  shopController.uploadShopGallery
+);
+
+// DELETE /api/shops/:shopId/gallery/:imageIndex - Delete gallery image
+router.delete(
+  "/:shopId/gallery/:imageIndex",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  shopController.deleteShopGalleryImage
 );
 
 export default router;

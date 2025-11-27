@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import prisma from "../prismaClient";
 import { errorResponse, successResponse } from "../utils/response";
 import { Prisma } from "../../generated/prisma";
+import { CloudinaryService } from "../services/cloudinary.service";
 
 /**
  * Helper function to check if user owns the shop
@@ -471,6 +472,272 @@ export const shopController = {
     } catch (error) {
       console.error("Get my shops error:", error);
       return errorResponse(res, "Failed to retrieve your shops", null, 500);
+    }
+  },
+
+  /**
+   * Upload shop logo
+   * POST /api/shops/:shopId/logo
+   * Protected - Shop owner only
+   */
+  uploadShopLogo: async (req: Request, res: Response) => {
+    try {
+      const { shopId } = req.params;
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+
+      // Check ownership
+      const hasAccess = await checkShopOwnership(shopId, userId, userRole);
+      if (!hasAccess) {
+        return errorResponse(res, "Unauthorized access to shop", null, 403);
+      }
+
+      if (!req.file) {
+        return errorResponse(res, "No image file provided", null, 400);
+      }
+
+      // Get current shop to check for existing logo
+      const currentShop = await prisma.shops.findUnique({
+        where: { id: shopId },
+        select: { logo_url: true }
+      });
+
+      if (!currentShop) {
+        return errorResponse(res, "Shop not found", null, 404);
+      }
+
+      // Delete old logo if exists
+      if (currentShop.logo_url) {
+        const publicId = CloudinaryService.extractPublicId(currentShop.logo_url);
+        if (publicId) {
+          await CloudinaryService.deleteImage(publicId);
+        }
+      }
+
+      // Upload new logo
+      const uploadResult = await CloudinaryService.uploadImage(
+        req.file.buffer,
+        'shops/logos',
+        `shop_logo_${shopId}`
+      );
+
+      if (!uploadResult.success || !uploadResult.url) {
+        return errorResponse(res, uploadResult.error || "Upload failed", null, 500);
+      }
+
+      // Update shop with new logo URL
+      const updatedShop = await prisma.shops.update({
+        where: { id: shopId },
+        data: { logo_url: uploadResult.url },
+        select: {
+          id: true,
+          name: true,
+          logo_url: true
+        }
+      });
+
+      return successResponse(res, "Shop logo uploaded successfully", updatedShop, 200);
+    } catch (error) {
+      console.error("Upload shop logo error:", error);
+      return errorResponse(res, "Failed to upload shop logo", null, 500);
+    }
+  },
+
+  /**
+   * Upload shop banner
+   * POST /api/shops/:shopId/banner
+   * Protected - Shop owner only
+   */
+  uploadShopBanner: async (req: Request, res: Response) => {
+    try {
+      const { shopId } = req.params;
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+
+      const hasAccess = await checkShopOwnership(shopId, userId, userRole);
+      if (!hasAccess) {
+        return errorResponse(res, "Unauthorized access to shop", null, 403);
+      }
+
+      if (!req.file) {
+        return errorResponse(res, "No image file provided", null, 400);
+      }
+
+      const currentShop = await prisma.shops.findUnique({
+        where: { id: shopId },
+        select: { banner_url: true }
+      });
+
+      if (!currentShop) {
+        return errorResponse(res, "Shop not found", null, 404);
+      }
+
+      // Delete old banner if exists
+      if (currentShop.banner_url) {
+        const publicId = CloudinaryService.extractPublicId(currentShop.banner_url);
+        if (publicId) {
+          await CloudinaryService.deleteImage(publicId);
+        }
+      }
+
+      // Upload new banner
+      const uploadResult = await CloudinaryService.uploadImage(
+        req.file.buffer,
+        'shops/banners',
+        `shop_banner_${shopId}`
+      );
+
+      if (!uploadResult.success || !uploadResult.url) {
+        return errorResponse(res, uploadResult.error || "Upload failed", null, 500);
+      }
+
+      const updatedShop = await prisma.shops.update({
+        where: { id: shopId },
+        data: { banner_url: uploadResult.url },
+        select: {
+          id: true,
+          name: true,
+          banner_url: true
+        }
+      });
+
+      return successResponse(res, "Shop banner uploaded successfully", updatedShop, 200);
+    } catch (error) {
+      console.error("Upload shop banner error:", error);
+      return errorResponse(res, "Failed to upload shop banner", null, 500);
+    }
+  },
+
+  /**
+   * Upload shop gallery images
+   * POST /api/shops/:shopId/gallery
+   * Protected - Shop owner only
+   */
+  uploadShopGallery: async (req: Request, res: Response) => {
+    try {
+      const { shopId } = req.params;
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+
+      const hasAccess = await checkShopOwnership(shopId, userId, userRole);
+      if (!hasAccess) {
+        return errorResponse(res, "Unauthorized access to shop", null, 403);
+      }
+
+      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+        return errorResponse(res, "No image files provided", null, 400);
+      }
+
+      const shop = await prisma.shops.findUnique({
+        where: { id: shopId },
+        select: { gallery_urls: true }
+      });
+
+      if (!shop) {
+        return errorResponse(res, "Shop not found", null, 404);
+      }
+
+      // Upload new images
+      const fileBuffers = req.files.map((file: Express.Multer.File) => file.buffer);
+      const uploadResults = await CloudinaryService.uploadMultiple(
+        fileBuffers,
+        `shops/gallery/${shopId}`
+      );
+
+      const successfulUploads = uploadResults
+        .filter(result => result.success && result.url)
+        .map(result => result.url!);
+
+      if (successfulUploads.length === 0) {
+        return errorResponse(res, "Failed to upload any images", null, 500);
+      }
+
+      // Merge with existing gallery URLs
+      const existingGallery = shop.gallery_urls || [];
+      const newGallery = [...existingGallery, ...successfulUploads];
+
+      // Limit to 10 images total
+      const limitedGallery = newGallery.slice(0, 10);
+
+      const updatedShop = await prisma.shops.update({
+        where: { id: shopId },
+        data: { gallery_urls: limitedGallery },
+        select: {
+          id: true,
+          name: true,
+          gallery_urls: true
+        }
+      });
+
+      return successResponse(
+        res,
+        `${successfulUploads.length} image(s) uploaded successfully`,
+        updatedShop,
+        200
+      );
+    } catch (error) {
+      console.error("Upload shop gallery error:", error);
+      return errorResponse(res, "Failed to upload gallery images", null, 500);
+    }
+  },
+
+  /**
+   * Delete shop gallery image
+   * DELETE /api/shops/:shopId/gallery/:imageIndex
+   * Protected - Shop owner only
+   */
+  deleteShopGalleryImage: async (req: Request, res: Response) => {
+    try {
+      const { shopId, imageIndex } = req.params;
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+
+      const hasAccess = await checkShopOwnership(shopId, userId, userRole);
+      if (!hasAccess) {
+        return errorResponse(res, "Unauthorized access to shop", null, 403);
+      }
+
+      const shop = await prisma.shops.findUnique({
+        where: { id: shopId },
+        select: { gallery_urls: true }
+      });
+
+      if (!shop) {
+        return errorResponse(res, "Shop not found", null, 404);
+      }
+
+      const gallery = shop.gallery_urls || [];
+      const index = parseInt(imageIndex);
+
+      if (index < 0 || index >= gallery.length) {
+        return errorResponse(res, "Invalid image index", null, 400);
+      }
+
+      const imageUrl = gallery[index];
+      
+      // Delete from Cloudinary
+      const publicId = CloudinaryService.extractPublicId(imageUrl);
+      if (publicId) {
+        await CloudinaryService.deleteImage(publicId);
+      }
+
+      // Remove from array
+      const updatedGallery = gallery.filter((_, i) => i !== index);
+
+      const updatedShop = await prisma.shops.update({
+        where: { id: shopId },
+        data: { gallery_urls: updatedGallery },
+        select: {
+          id: true,
+          name: true,
+          gallery_urls: true
+        }
+      });
+
+      return successResponse(res, "Gallery image deleted successfully", updatedShop, 200);
+    } catch (error) {
+      console.error("Delete shop gallery image error:", error);
+      return errorResponse(res, "Failed to delete gallery image", null, 500);
     }
   }
 };
