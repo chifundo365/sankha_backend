@@ -499,7 +499,7 @@ export const shopController = {
       // Get current shop to check for existing logo
       const currentShop = await prisma.shops.findUnique({
         where: { id: shopId },
-        select: { logo_url: true }
+        select: { logo: true }
       });
 
       if (!currentShop) {
@@ -507,8 +507,8 @@ export const shopController = {
       }
 
       // Delete old logo if exists
-      if (currentShop.logo_url) {
-        const publicId = CloudinaryService.extractPublicId(currentShop.logo_url);
+      if (currentShop.logo) {
+        const publicId = CloudinaryService.extractPublicId(currentShop.logo);
         if (publicId) {
           await CloudinaryService.deleteImage(publicId);
         }
@@ -528,11 +528,11 @@ export const shopController = {
       // Update shop with new logo URL
       const updatedShop = await prisma.shops.update({
         where: { id: shopId },
-        data: { logo_url: uploadResult.url },
+        data: { logo: uploadResult.url },
         select: {
           id: true,
           name: true,
-          logo_url: true
+          logo: true
         }
       });
 
@@ -565,7 +565,7 @@ export const shopController = {
 
       const currentShop = await prisma.shops.findUnique({
         where: { id: shopId },
-        select: { banner_url: true }
+        select: { banner: true }
       });
 
       if (!currentShop) {
@@ -573,8 +573,8 @@ export const shopController = {
       }
 
       // Delete old banner if exists
-      if (currentShop.banner_url) {
-        const publicId = CloudinaryService.extractPublicId(currentShop.banner_url);
+      if (currentShop.banner) {
+        const publicId = CloudinaryService.extractPublicId(currentShop.banner);
         if (publicId) {
           await CloudinaryService.deleteImage(publicId);
         }
@@ -593,11 +593,11 @@ export const shopController = {
 
       const updatedShop = await prisma.shops.update({
         where: { id: shopId },
-        data: { banner_url: uploadResult.url },
+        data: { banner: uploadResult.url },
         select: {
           id: true,
           name: true,
-          banner_url: true
+          banner: true
         }
       });
 
@@ -630,7 +630,7 @@ export const shopController = {
 
       const shop = await prisma.shops.findUnique({
         where: { id: shopId },
-        select: { gallery_urls: true }
+        select: { gallery: true }
       });
 
       if (!shop) {
@@ -653,7 +653,7 @@ export const shopController = {
       }
 
       // Merge with existing gallery URLs
-      const existingGallery = shop.gallery_urls || [];
+      const existingGallery = shop.gallery || [];
       const newGallery = [...existingGallery, ...successfulUploads];
 
       // Limit to 10 images total
@@ -661,11 +661,11 @@ export const shopController = {
 
       const updatedShop = await prisma.shops.update({
         where: { id: shopId },
-        data: { gallery_urls: limitedGallery },
+        data: { gallery: limitedGallery },
         select: {
           id: true,
           name: true,
-          gallery_urls: true
+          gallery: true
         }
       });
 
@@ -699,14 +699,14 @@ export const shopController = {
 
       const shop = await prisma.shops.findUnique({
         where: { id: shopId },
-        select: { gallery_urls: true }
+        select: { gallery: true }
       });
 
       if (!shop) {
         return errorResponse(res, "Shop not found", null, 404);
       }
 
-      const gallery = shop.gallery_urls || [];
+      const gallery = shop.gallery || [];
       const index = parseInt(imageIndex);
 
       if (index < 0 || index >= gallery.length) {
@@ -726,11 +726,11 @@ export const shopController = {
 
       const updatedShop = await prisma.shops.update({
         where: { id: shopId },
-        data: { gallery_urls: updatedGallery },
+        data: { gallery: updatedGallery },
         select: {
           id: true,
           name: true,
-          gallery_urls: true
+          gallery: true
         }
       });
 

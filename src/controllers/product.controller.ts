@@ -456,7 +456,7 @@ export const productController = {
 
       const product = await prisma.products.findUnique({
         where: { id: productId },
-        select: { image_urls: true, name: true }
+        select: { images: true, name: true }
       });
 
       if (!product) {
@@ -479,19 +479,19 @@ export const productController = {
       }
 
       // Merge with existing images
-      const existingImages = product.image_urls || [];
+      const existingImages = product.images || [];
       const newImages = [...existingImages, ...successfulUploads];
 
-      // Limit to 5 images total
-      const limitedImages = newImages.slice(0, 5);
+      // Limit to 10 images total
+      const limitedImages = newImages.slice(0, 10);
 
       const updatedProduct = await prisma.products.update({
         where: { id: productId },
-        data: { image_urls: limitedImages },
+        data: { images: limitedImages },
         select: {
           id: true,
           name: true,
-          image_urls: true
+          images: true
         }
       });
 
@@ -518,14 +518,14 @@ export const productController = {
 
       const product = await prisma.products.findUnique({
         where: { id: productId },
-        select: { image_urls: true, name: true }
+        select: { images: true, name: true }
       });
 
       if (!product) {
         return errorResponse(res, "Product not found", null, 404);
       }
 
-      const images = product.image_urls || [];
+      const images = product.images || [];
       const index = parseInt(imageIndex);
 
       if (index < 0 || index >= images.length) {
@@ -545,11 +545,11 @@ export const productController = {
 
       const updatedProduct = await prisma.products.update({
         where: { id: productId },
-        data: { image_urls: updatedImages },
+        data: { images: updatedImages },
         select: {
           id: true,
           name: true,
-          image_urls: true
+          images: true
         }
       });
 
