@@ -162,9 +162,61 @@ export const listProductsSchema = z.object({
   })
 });
 
+/**
+ * Schema for getting products by category
+ */
+export const getProductsByCategorySchema = z.object({
+  params: z.object({
+    categoryId: z.string().uuid("Category ID must be a valid UUID")
+  }),
+  query: z.object({
+    page: z
+      .string()
+      .optional()
+      .default("1")
+      .refine(val => /^\d+$/.test(val), "Page must be a positive number")
+      .transform(Number)
+      .refine(val => val > 0, "Page must be greater than 0"),
+
+    limit: z
+      .string()
+      .optional()
+      .default("10")
+      .refine(val => /^\d+$/.test(val), "Limit must be a positive number")
+      .transform(Number)
+      .refine(val => val > 0 && val <= 100, "Limit must be between 1 and 100")
+  })
+});
+
+/**
+ * Schema for uploading product images
+ */
+export const uploadProductImagesSchema = z.object({
+  params: z.object({
+    productId: z.string().uuid("Product ID must be a valid UUID")
+  })
+});
+
+/**
+ * Schema for deleting a product image
+ */
+export const deleteProductImageSchema = z.object({
+  params: z.object({
+    productId: z.string().uuid("Product ID must be a valid UUID"),
+    imageIndex: z
+      .string()
+      .refine(val => /^\d+$/.test(val), "Image index must be a non-negative integer")
+      .transform(Number)
+      .refine(val => val >= 0, "Image index must be 0 or greater")
+  })
+});
+
 // Export TypeScript types
 export type CreateProductInput = z.infer<typeof createProductSchema>["body"];
 export type UpdateProductInput = z.infer<typeof updateProductSchema>["body"];
 export type GetProductParams = z.infer<typeof getProductSchema>["params"];
 export type DeleteProductParams = z.infer<typeof deleteProductSchema>["params"];
 export type ListProductsQuery = z.infer<typeof listProductsSchema>["query"];
+export type GetProductsByCategoryParams = z.infer<typeof getProductsByCategorySchema>["params"];
+export type UploadProductImagesParams = z.infer<typeof uploadProductImagesSchema>["params"];
+export type DeleteProductImageParams = z.infer<typeof deleteProductImageSchema>["params"];

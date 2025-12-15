@@ -9,18 +9,22 @@ export const checkoutSchema = z.object({
       .string({ message: "Delivery address ID is required" })
       .uuid("Invalid delivery address ID format"),
     payment_method: z
-      .string({ message: "Payment method is required" })
-      .min(1, "Payment method cannot be empty")
-      .max(50, "Payment method must not exceed 50 characters"),
-    provider: z
-      .string()
-      .max(100, "Provider name must not exceed 100 characters")
-      .optional(),
+      .enum(["paychangu", "cod", "bank_transfer"], { message: "Payment method must be paychangu, cod, or bank_transfer" }),
+    customer_email: z
+      .string({ message: "Customer email is required" })
+      .email("Invalid email format"),
     customer_phone: z
-      .string()
+      .string({ message: "Customer phone is required" })
       .min(10, "Phone number must be at least 10 characters")
-      .max(20, "Phone number must not exceed 20 characters")
-      .optional()
+      .max(20, "Phone number must not exceed 20 characters"),
+    customer_first_name: z
+      .string({ message: "First name is required" })
+      .min(1, "First name cannot be empty")
+      .max(100, "First name must not exceed 100 characters"),
+    customer_last_name: z
+      .string({ message: "Last name is required" })
+      .min(1, "Last name cannot be empty")
+      .max(100, "Last name must not exceed 100 characters")
   })
 });
 
@@ -47,6 +51,7 @@ export const listOrdersSchema = z.object({
       .enum([
         "CART",
         "PENDING",
+        "PENDING_PAYMENT",
         "CONFIRMED",
         "PREPARING",
         "READY_FOR_PICKUP",

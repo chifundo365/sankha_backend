@@ -6,15 +6,25 @@ import { protect } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/authorize.middleware";
 import { Request, Response } from "express";
 import { successResponse } from "../utils/response";
+import { rateLimitPresets } from "../middleware/rateLimiter.middleware";
 
 const router = Router();
 
+// Apply strict rate limiting for register (5 attempts per 15 minutes)
 router.post(
   "/register",
+  rateLimitPresets.strict,
   validateResource(registerSchema),
   authController.register
 );
-router.post("/login", validateResource(loginSchema), authController.login);
+
+// Apply strict rate limiting for login (5 attempts per 15 minutes)
+router.post(
+  "/login",
+  rateLimitPresets.strict,
+  validateResource(loginSchema),
+  authController.login
+);
 
 // Protected route - requires authentication
 router.get("/me", protect, (req: Request, res: Response) => {

@@ -7,7 +7,10 @@ import {
   updateProductSchema,
   getProductSchema,
   deleteProductSchema,
-  listProductsSchema
+  listProductsSchema,
+  getProductsByCategorySchema,
+  uploadProductImagesSchema,
+  deleteProductImageSchema
 } from "../schemas/product.schema";
 import { protect } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/authorize.middleware";
@@ -26,7 +29,11 @@ router.get(
 );
 
 // Get products by category
-router.get("/category/:categoryId", productController.getProductsByCategory);
+router.get(
+  "/category/:categoryId",
+  validateResource(getProductsByCategorySchema),
+  productController.getProductsByCategory
+);
 
 // Get single product by ID
 router.get(
@@ -71,6 +78,7 @@ router.post(
   "/:productId/images",
   protect,
   authorize("ADMIN", "SUPER_ADMIN"),
+  validateResource(uploadProductImagesSchema),
   uploadMultiple,
   productController.uploadProductImages
 );
@@ -80,6 +88,7 @@ router.delete(
   "/:productId/images/:imageIndex",
   protect,
   authorize("ADMIN", "SUPER_ADMIN"),
+  validateResource(deleteProductImageSchema),
   productController.deleteProductImage
 );
 

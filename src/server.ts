@@ -3,6 +3,9 @@ dotenv.config();
 import express, { Request, Response, NextFunction } from 'express';
 import routes from './routes/index';
 import { errorResponse } from './utils/response';
+import { redisClient } from './config/redis.config';
+import { validatePaychanguConfig } from './config/paychangu.config';
+import { paymentVerificationJob } from './jobs/paymentVerification.job';
 
 const app = express();
 
@@ -38,21 +41,39 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 const port = Number(process.env.PORT) || 3000;
 
-const server = app.listen(port, () => {
+const server = app.listen(port, async () => {
   console.log(`🚀 Server listening on http://localhost:${port}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Initialize Redis connection
+  try {
+    await redisClient.connect();
+    console.log('✅ Redis connected successfully');
+  } catch (error) {
+    console.warn('⚠️  Redis connection failed - rate limiting will fail open:', error);
+  }
+
+  // Validate PayChangu configuration
+  if (validatePaychanguConfig()) {
+    // Start payment verification background job
+    paymentVerificationJob.start();
+  }
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('SIGTERM signal received: closing HTTP server');
+  paymentVerificationJob.stop();
+  await redisClient.disconnect();
   server.close(() => {
     console.log('HTTP server closed');
   });
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('SIGINT signal received: closing HTTP server');
+  paymentVerificationJob.stop();
+  await redisClient.disconnect();
   server.close(() => {
     console.log('HTTP server closed');
     process.exit(0);

@@ -9,8 +9,20 @@ import reviewRoutes from "./review.routes";
 import categoryRoutes from "./category.routes";
 import addressRoutes from "./address.routes";
 import userRoutes from "./user.routes";
+import adminRoutes from "./admin.routes";
+import paymentRoutes from "./payment.routes";
+import { rateLimitPresets } from "../middleware/rateLimiter.middleware";
+import { ipBlocker } from "../middleware/ipBlocker.middleware";
 
 const router = Router();
+
+// IP Blocker - Check if IP is blocked before processing any request
+router.use(ipBlocker({
+  whitelist: ['127.0.0.1', '::1', '::ffff:127.0.0.1'], // Localhost whitelist
+}));
+
+// Global rate limiter for all API routes (100 requests per 15 minutes)
+router.use(rateLimitPresets.standard);
 
 router.use("/auth", authRoutes);
 router.use("/products", productRoutes);
@@ -21,6 +33,8 @@ router.use("/users", userRoutes);
 router.use("/cart", cartRoutes);
 router.use("/orders", orderRoutes);
 router.use("/reviews", reviewRoutes);
+router.use("/admin", adminRoutes);
+router.use("/payments", paymentRoutes);
 // Shop product routes are nested under shops routes
 // They handle /shops/:shopId/products
 

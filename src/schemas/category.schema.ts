@@ -54,14 +54,14 @@ export const getCategorySchema = z.object({
     include_counts: z
       .string()
       .optional()
-      .transform(val => val === "true")
-      .default("false"),
+      .default("false")
+      .transform(val => val === "true"),
 
     include_stats: z
       .string()
       .optional()
-      .transform(val => val === "true")
       .default("false")
+      .transform(val => val === "true")
   })
 });
 
@@ -98,8 +98,8 @@ export const listCategoriesSchema = z.object({
     include_counts: z
       .string()
       .optional()
-      .transform(val => val === "true")
-      .default("false"),
+      .default("false")
+      .transform(val => val === "true"),
 
     sort: z
       .enum([

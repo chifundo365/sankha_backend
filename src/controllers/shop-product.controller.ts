@@ -310,7 +310,7 @@ export const shopProductController = {
         );
       }
 
-      // Add product to shop
+      // Add product to shop (initial stock trigger handles logging automatically)
       const shopProduct = await prisma.shop_products.create({
         data: {
           shop_id: shopId,
@@ -332,18 +332,6 @@ export const shopProductController = {
           }
         }
       });
-
-      // Log initial stock
-      if (stock_quantity > 0) {
-        await prisma.shop_products_log.create({
-          data: {
-            shop_product_id: shopProduct.id,
-            change_type: "INCREASE",
-            change_qty: stock_quantity,
-            reason: "Initial stock - Product added to shop"
-          }
-        });
-      }
 
       return successResponse(
         res,
@@ -395,40 +383,45 @@ export const shopProductController = {
         return errorResponse(res, "Shop product not found", null, 404);
       }
 
-      // Log stock change if stock_quantity is being updated
+      // Update shop product (trigger handles stock change logging with custom reason)
+      let updatedShopProduct;
       if (updateData.stock_quantity !== undefined && updateData.stock_quantity !== existingShopProduct.stock_quantity) {
-        const oldStock = existingShopProduct.stock_quantity;
-        const newStock = updateData.stock_quantity;
-        const stockDifference = newStock - oldStock;
-
-        if (stockDifference !== 0) {
-          const changeType = stockDifference > 0 ? "INCREASE" : "DECREASE";
-          await prisma.shop_products_log.create({
+        // Use transaction with session variable for custom reason
+        const reason = `Stock adjustment during product update by ${req.user!.role}`;
+        updatedShopProduct = await prisma.$transaction(async (tx) => {
+          await tx.$executeRawUnsafe(`SET LOCAL app.stock_change_reason = '${reason.replace(/'/g, "''")}'`);
+          return tx.shop_products.update({
+            where: { id: shopProductId },
             data: {
-              shop_product_id: shopProductId,
-              change_type: changeType,
-              change_qty: Math.abs(stockDifference),
-              reason: `Stock adjustment during product update by ${req.user!.role}`
+              ...updateData,
+              updated_at: new Date()
+            },
+            include: {
+              products: {
+                include: {
+                  categories: true
+                }
+              }
             }
           });
-        }
-      }
-
-      // Update shop product
-      const updatedShopProduct = await prisma.shop_products.update({
-        where: { id: shopProductId },
-        data: {
-          ...updateData,
-          updated_at: new Date()
-        },
-        include: {
-          products: {
-            include: {
-              categories: true
+        });
+      } else {
+        // No stock change, update normally
+        updatedShopProduct = await prisma.shop_products.update({
+          where: { id: shopProductId },
+          data: {
+            ...updateData,
+            updated_at: new Date()
+          },
+          include: {
+            products: {
+              include: {
+                categories: true
+              }
             }
           }
-        }
-      });
+        });
+      }
 
       return successResponse(
         res,
@@ -551,26 +544,22 @@ export const shopProductController = {
       const oldStock = existingShopProduct.stock_quantity;
       const stockDifference = stock_quantity - oldStock;
 
-      // Update stock
-      const updatedShopProduct = await prisma.shop_products.update({
-        where: { id: shopProductId },
-        data: {
-          stock_quantity,
-          updated_at: new Date()
-        }
-      });
-
-      // Log stock change
+      // Update stock (trigger handles logging with custom reason)
+      let updatedShopProduct;
       if (stockDifference !== 0) {
-        const changeType = stockDifference > 0 ? "INCREASE" : "DECREASE";
-        await prisma.shop_products_log.create({
-          data: {
-            shop_product_id: shopProductId,
-            change_type: changeType,
-            change_qty: Math.abs(stockDifference),
-            reason: `Manual stock adjustment by ${req.user!.role}`
-          }
+        const reason = `Manual stock adjustment by ${req.user!.role}`;
+        updatedShopProduct = await prisma.$transaction(async (tx) => {
+          await tx.$executeRawUnsafe(`SET LOCAL app.stock_change_reason = '${reason.replace(/'/g, "''")}'`);
+          return tx.shop_products.update({
+            where: { id: shopProductId },
+            data: {
+              stock_quantity,
+              updated_at: new Date()
+            }
+          });
         });
+      } else {
+        updatedShopProduct = existingShopProduct;
       }
 
       return successResponse(

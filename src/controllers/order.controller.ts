@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import prismaClient from "../prismaClient";
 import { successResponse, errorResponse } from "../utils/response";
+import { paymentService } from "../services/payment.service";
+import { Prisma } from "../../generated/prisma";
 
 /**
  * Generate unique order number
@@ -35,14 +37,29 @@ const generateOrderNumber = async (): Promise<string> => {
 };
 
 /**
- * Checkout - Convert cart to confirmed order
+ * Checkout - Convert cart to order and initiate payment
  * POST /api/orders/checkout
+ * 
+ * Flow:
+ * 1. Validate delivery address
+ * 2. Validate cart and stock
+ * 3. Create order with PENDING_PAYMENT status
+ * 4. Reserve stock (reduce quantity)
+ * 5. Initiate PayChangu payment (if online payment)
+ * 6. Return checkout URL for payment
+ * 7. Webhook/verification confirms order after payment
  */
 export const checkout = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { delivery_address_id, payment_method, provider, customer_phone } =
-      req.body;
+    const { 
+      delivery_address_id, 
+      payment_method,
+      customer_email,
+      customer_phone,
+      customer_first_name,
+      customer_last_name
+    } = req.body;
 
     // 1. Verify delivery address exists and belongs to user
     const deliveryAddress = await prismaClient.user_addresses.findUnique({
@@ -123,18 +140,25 @@ export const checkout = async (req: Request, res: Response) => {
     }
 
     // 4. Process checkout for each cart (one order per shop)
-    const confirmedOrders = [];
+    const pendingOrders = [];
+    const orderIds: string[] = [];
+
+    // Calculate total amount across all carts
+    const totalAmount = carts.reduce((sum, cart) => sum + Number(cart.total_amount), 0);
 
     for (const cart of carts) {
       // Generate order number
       const orderNumber = await generateOrderNumber();
 
-      // Update cart to confirmed order
-      const confirmedOrder = await prismaClient.orders.update({
+      // Determine initial status based on payment method
+      const initialStatus = payment_method === "paychangu" ? "PENDING_PAYMENT" : "CONFIRMED";
+
+      // Update cart to pending payment order
+      const pendingOrder = await prismaClient.orders.update({
         where: { id: cart.id },
         data: {
           order_number: orderNumber,
-          status: "CONFIRMED",
+          status: initialStatus,
           delivery_address_id: delivery_address_id,
           updated_at: new Date(),
         },
@@ -153,73 +177,169 @@ export const checkout = async (req: Request, res: Response) => {
         },
       });
 
-      // 5. Reduce stock for each item
+      // 5. Reserve stock by reducing quantity (trigger handles logging)
       for (const item of cart.order_items) {
         if (item.shop_products) {
-          // Reduce stock
-          await prismaClient.shop_products.update({
-            where: { id: item.shop_product_id! },
-            data: {
-              stock_quantity: {
-                decrement: item.quantity,
+          const reason = `Stock reserved - Order ${orderNumber} (${payment_method === "paychangu" ? "pending payment" : "confirmed"})`;
+          await prismaClient.$transaction(async (tx) => {
+            await tx.$executeRawUnsafe(`SET LOCAL app.stock_change_reason = '${reason.replace(/'/g, "''")}'`);
+            await tx.shop_products.update({
+              where: { id: item.shop_product_id! },
+              data: {
+                stock_quantity: {
+                  decrement: item.quantity,
+                },
               },
-            },
-          });
-
-          // Log stock change
-          await prismaClient.shop_products_log.create({
-            data: {
-              shop_product_id: item.shop_product_id!,
-              change_type: "DECREASE",
-              change_qty: item.quantity,
-              reason: `Order placed - ${orderNumber}`,
-            },
+            });
           });
         }
       }
 
-      // 6. Create payment record
-      const payment = await prismaClient.payments.create({
-        data: {
-          order_id: confirmedOrder.id,
-          payment_method: payment_method,
-          provider: provider,
-          amount: confirmedOrder.total_amount,
-          status: "PENDING",
-          customer_phone: customer_phone,
-        },
-      });
-
-      confirmedOrders.push({
-        order: confirmedOrder,
-        payment: payment,
-      });
+      pendingOrders.push(pendingOrder);
+      orderIds.push(pendingOrder.id);
     }
 
+    // 6. Handle payment based on method
+    let paymentResult = null;
+    let checkoutUrl = null;
+
+    if (payment_method === "paychangu") {
+      // Initiate PayChangu payment for total amount
+      // We'll link the payment to the first order, but metadata contains all order IDs
+      try {
+        paymentResult = await paymentService.initiatePayment({
+          first_name: customer_first_name,
+          last_name: customer_last_name,
+          email: customer_email,
+          phone: customer_phone,
+          amount: totalAmount,
+          orderId: pendingOrders[0].id, // Primary order
+          metadata: {
+            order_ids: orderIds,
+            order_numbers: pendingOrders.map(o => o.order_number),
+            user_id: userId,
+          },
+        });
+
+        checkoutUrl = paymentResult.checkoutUrl;
+
+        // Update all orders with the payment reference
+        for (const order of pendingOrders) {
+          // Create payment record for tracking (linked to each order)
+          if (order.id !== pendingOrders[0].id) {
+            await prismaClient.payments.create({
+              data: {
+                order_id: order.id,
+                payment_method: "paychangu",
+                provider: "paychangu",
+                amount: order.total_amount,
+                status: "PENDING",
+                tx_ref: paymentResult.txRef, // Same tx_ref for all orders in this checkout
+                customer_email: customer_email,
+                customer_phone: customer_phone,
+                customer_first_name: customer_first_name,
+                customer_last_name: customer_last_name,
+                expired_at: paymentResult.expiresAt,
+                metadata: { primary_order_id: pendingOrders[0].id },
+              },
+            });
+          }
+        }
+      } catch (paymentError: any) {
+        // Payment initiation failed - restore stock and revert orders to CART
+        console.error("Payment initiation failed:", paymentError);
+
+        for (const order of pendingOrders) {
+          // Restore stock
+          const orderWithItems = await prismaClient.orders.findUnique({
+            where: { id: order.id },
+            include: { order_items: true },
+          });
+
+          if (orderWithItems) {
+            for (const item of orderWithItems.order_items) {
+              if (item.shop_product_id) {
+                const reason = `Stock restored - Payment initiation failed for ${order.order_number}`;
+                const shopProductId = item.shop_product_id; // Capture for type narrowing
+                await prismaClient.$transaction(async (tx) => {
+                  await tx.$executeRawUnsafe(`SET LOCAL app.stock_change_reason = '${reason.replace(/'/g, "''")}'`);
+                  await tx.shop_products.update({
+                    where: { id: shopProductId },
+                    data: {
+                      stock_quantity: {
+                        increment: item.quantity,
+                      },
+                    },
+                  });
+                });
+              }
+            }
+          }
+
+          // Revert order to cart status
+          await prismaClient.orders.update({
+            where: { id: order.id },
+            data: {
+              status: "CART",
+              order_number: `CART-${order.id.slice(0, 8)}`, // Temporary cart number
+              updated_at: new Date(),
+            },
+          });
+        }
+
+        return errorResponse(
+          res,
+          "Payment initiation failed. Please try again.",
+          paymentError?.response?.data || null,
+          500
+        );
+      }
+    } else {
+      // COD or bank_transfer - create basic payment record
+      for (const order of pendingOrders) {
+        await prismaClient.payments.create({
+          data: {
+            order_id: order.id,
+            payment_method: payment_method,
+            provider: payment_method,
+            amount: order.total_amount,
+            status: payment_method === "cod" ? "PENDING" : "PENDING",
+            customer_phone: customer_phone,
+            customer_email: customer_email,
+            customer_first_name: customer_first_name,
+            customer_last_name: customer_last_name,
+          },
+        });
+      }
+    }
+
+    // 7. Return response
     return successResponse(
       res,
-      "Order placed successfully",
+      payment_method === "paychangu" 
+        ? "Order created. Please complete payment." 
+        : "Order placed successfully",
       {
-        orders: confirmedOrders.map((o) => ({
-          order_id: o.order.id,
-          order_number: o.order.order_number,
-          shop: o.order.shops.name,
-          total_amount: Number(o.order.total_amount),
-          status: o.order.status,
-          items_count: o.order.order_items.length,
-          delivery_address: o.order.user_addresses,
-          payment: {
-            id: o.payment.id,
-            method: o.payment.payment_method,
-            status: o.payment.status,
-            amount: Number(o.payment.amount),
-          },
+        orders: pendingOrders.map((o) => ({
+          order_id: o.id,
+          order_number: o.order_number,
+          shop: o.shops.name,
+          total_amount: Number(o.total_amount),
+          status: o.status,
+          items_count: o.order_items.length,
+          delivery_address: o.user_addresses,
         })),
-        total_orders: confirmedOrders.length,
-        total_amount: confirmedOrders.reduce(
-          (sum, o) => sum + Number(o.order.total_amount),
-          0
-        ),
+        total_orders: pendingOrders.length,
+        total_amount: totalAmount,
+        payment: payment_method === "paychangu" ? {
+          tx_ref: paymentResult?.txRef,
+          checkout_url: checkoutUrl,
+          expires_at: paymentResult?.expiresAt,
+          status: "PENDING",
+        } : {
+          method: payment_method,
+          status: "PENDING",
+        },
       },
       201
     );
@@ -752,26 +872,20 @@ export const cancelOrder = async (req: Request, res: Response) => {
       },
     });
 
-    // Restore stock for cancelled order
+    // Restore stock for cancelled order (trigger handles logging)
     for (const item of order.order_items) {
       if (item.shop_products) {
-        await prismaClient.shop_products.update({
-          where: { id: item.shop_product_id! },
-          data: {
-            stock_quantity: {
-              increment: item.quantity,
+        const reason = `Order cancelled - ${order.order_number}`;
+        await prismaClient.$transaction(async (tx) => {
+          await tx.$executeRawUnsafe(`SET LOCAL app.stock_change_reason = '${reason.replace(/'/g, "''")}'`);
+          await tx.shop_products.update({
+            where: { id: item.shop_product_id! },
+            data: {
+              stock_quantity: {
+                increment: item.quantity,
+              },
             },
-          },
-        });
-
-        // Log stock restoration
-        await prismaClient.shop_products_log.create({
-          data: {
-            shop_product_id: item.shop_product_id!,
-            change_type: "INCREASE",
-            change_qty: item.quantity,
-            reason: `Order cancelled - ${order.order_number}`,
-          },
+          });
         });
       }
     }
