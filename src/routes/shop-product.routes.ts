@@ -10,6 +10,7 @@ import {
 } from "../schemas/shop-product.schema";
 import { protect } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/authorize.middleware";
+import { uploadMultiple } from "../middleware/upload.middleware";
 
 // mergeParams: true allows access to :shopId from parent router
 const router = Router({ mergeParams: true });
@@ -75,6 +76,34 @@ router.patch(
   protect,
   authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
   shopProductController.updateStock
+);
+
+// Get stock change logs
+// Route: GET /api/shops/:shopId/products/:shopProductId/stock-logs
+router.get(
+  "/:shopProductId/stock-logs",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  shopProductController.getStockLogs
+);
+
+// Upload shop product images
+// Route: POST /api/shops/:shopId/products/:shopProductId/images
+router.post(
+  "/:shopProductId/images",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  uploadMultiple,
+  shopProductController.uploadShopProductImages
+);
+
+// Delete shop product image
+// Route: DELETE /api/shops/:shopId/products/:shopProductId/images/:imageIndex
+router.delete(
+  "/:shopProductId/images/:imageIndex",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  shopProductController.deleteShopProductImage
 );
 
 export default router;

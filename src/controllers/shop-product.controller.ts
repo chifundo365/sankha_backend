@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import prisma from "../prismaClient";
 import { errorResponse, successResponse } from "../utils/response";
 import { Prisma } from "../../generated/prisma";
+import { CloudinaryService } from "../services/cloudinary.service";
 
 /**
  * Helper function to check if user owns the shop
@@ -332,6 +333,18 @@ export const shopProductController = {
         }
       });
 
+      // Log initial stock
+      if (stock_quantity > 0) {
+        await prisma.shop_products_log.create({
+          data: {
+            shop_product_id: shopProduct.id,
+            change_type: "INCREASE",
+            change_qty: stock_quantity,
+            reason: "Initial stock - Product added to shop"
+          }
+        });
+      }
+
       return successResponse(
         res,
         "Product added to shop successfully",
@@ -380,6 +393,25 @@ export const shopProductController = {
 
       if (!existingShopProduct) {
         return errorResponse(res, "Shop product not found", null, 404);
+      }
+
+      // Log stock change if stock_quantity is being updated
+      if (updateData.stock_quantity !== undefined && updateData.stock_quantity !== existingShopProduct.stock_quantity) {
+        const oldStock = existingShopProduct.stock_quantity;
+        const newStock = updateData.stock_quantity;
+        const stockDifference = newStock - oldStock;
+
+        if (stockDifference !== 0) {
+          const changeType = stockDifference > 0 ? "INCREASE" : "DECREASE";
+          await prisma.shop_products_log.create({
+            data: {
+              shop_product_id: shopProductId,
+              change_type: changeType,
+              change_qty: Math.abs(stockDifference),
+              reason: `Stock adjustment during product update by ${req.user!.role}`
+            }
+          });
+        }
       }
 
       // Update shop product
@@ -515,6 +547,10 @@ export const shopProductController = {
         return errorResponse(res, "Shop product not found", null, 404);
       }
 
+      // Calculate stock change
+      const oldStock = existingShopProduct.stock_quantity;
+      const stockDifference = stock_quantity - oldStock;
+
       // Update stock
       const updatedShopProduct = await prisma.shop_products.update({
         where: { id: shopProductId },
@@ -523,6 +559,19 @@ export const shopProductController = {
           updated_at: new Date()
         }
       });
+
+      // Log stock change
+      if (stockDifference !== 0) {
+        const changeType = stockDifference > 0 ? "INCREASE" : "DECREASE";
+        await prisma.shop_products_log.create({
+          data: {
+            shop_product_id: shopProductId,
+            change_type: changeType,
+            change_qty: Math.abs(stockDifference),
+            reason: `Manual stock adjustment by ${req.user!.role}`
+          }
+        });
+      }
 
       return successResponse(
         res,
@@ -536,6 +585,199 @@ export const shopProductController = {
     } catch (error) {
       console.error("Update stock error:", error);
       return errorResponse(res, "Failed to update stock", null, 500);
+    }
+  },
+
+  /**
+   * Upload shop product images
+   * POST /api/shops/:shopId/products/:shopProductId/images
+   * Protected - Shop owner only
+   */
+  uploadShopProductImages: async (req: Request, res: Response) => {
+    try {
+      const { shopId, shopProductId } = req.params;
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+
+      // Check ownership
+      const hasAccess = await checkShopOwnership(shopId, userId, userRole);
+      if (!hasAccess) {
+        return errorResponse(res, "Unauthorized access to shop", null, 403);
+      }
+
+      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+        return errorResponse(res, "No image files provided", null, 400);
+      }
+
+      const shopProduct = await prisma.shop_products.findUnique({
+        where: { id: shopProductId },
+        select: { images: true, shop_id: true }
+      });
+
+      if (!shopProduct) {
+        return errorResponse(res, "Shop product not found", null, 404);
+      }
+
+      // Verify product belongs to this shop
+      if (shopProduct.shop_id !== shopId) {
+        return errorResponse(res, "Product does not belong to this shop", null, 400);
+      }
+
+      // Upload new images
+      const fileBuffers = req.files.map((file: Express.Multer.File) => file.buffer);
+      const uploadResults = await CloudinaryService.uploadMultiple(
+        fileBuffers,
+        `shop_products/${shopProductId}`
+      );
+
+      const successfulUploads = uploadResults
+        .filter(result => result.success && result.url)
+        .map(result => result.url!);
+
+      if (successfulUploads.length === 0) {
+        return errorResponse(res, "Failed to upload any images", null, 500);
+      }
+
+      // Merge with existing images
+      const existingImages = shopProduct.images || [];
+      const newImages = [...existingImages, ...successfulUploads];
+
+      // Limit to 10 images total
+      const limitedImages = newImages.slice(0, 10);
+
+      const updatedShopProduct = await prisma.shop_products.update({
+        where: { id: shopProductId },
+        data: { images: limitedImages },
+        select: {
+          id: true,
+          images: true,
+          products: {
+            select: {
+              name: true
+            }
+          }
+        }
+      });
+
+      return successResponse(
+        res,
+        `${successfulUploads.length} image(s) uploaded successfully`,
+        updatedShopProduct,
+        200
+      );
+    } catch (error) {
+      console.error("Upload shop product images error:", error);
+      return errorResponse(res, "Failed to upload shop product images", null, 500);
+    }
+  },
+
+  /**
+   * Get stock change history for a shop product
+   * GET /api/shops/:shopId/products/:shopProductId/stock-logs
+   * Protected - Shop owner only
+   */
+  getStockLogs: async (req: Request, res: Response) => {
+    try {
+      const { shopId, shopProductId } = req.params;
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+
+      const hasAccess = await checkShopOwnership(shopId, userId, userRole);
+      if (!hasAccess) {
+        return errorResponse(res, "Unauthorized access to shop", null, 403);
+      }
+
+      const shopProduct = await prisma.shop_products.findUnique({
+        where: { id: shopProductId },
+        select: { shop_id: true }
+      });
+
+      if (!shopProduct) {
+        return errorResponse(res, "Shop product not found", null, 404);
+      }
+
+      if (shopProduct.shop_id !== shopId) {
+        return errorResponse(res, "Product does not belong to this shop", null, 400);
+      }
+
+      const logs = await prisma.shop_products_log.findMany({
+        where: { shop_product_id: shopProductId },
+        orderBy: { created_at: 'desc' },
+        take: 50
+      });
+
+      return successResponse(res, "Stock logs retrieved successfully", { logs }, 200);
+    } catch (error) {
+      console.error("Get stock logs error:", error);
+      return errorResponse(res, "Failed to retrieve stock logs", null, 500);
+    }
+  },
+
+  /**
+   * Delete shop product image
+   * DELETE /api/shops/:shopId/products/:shopProductId/images/:imageIndex
+   * Protected - Shop owner only
+   */
+  deleteShopProductImage: async (req: Request, res: Response) => {
+    try {
+      const { shopId, shopProductId, imageIndex } = req.params;
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+
+      const hasAccess = await checkShopOwnership(shopId, userId, userRole);
+      if (!hasAccess) {
+        return errorResponse(res, "Unauthorized access to shop", null, 403);
+      }
+
+      const shopProduct = await prisma.shop_products.findUnique({
+        where: { id: shopProductId },
+        select: { images: true, shop_id: true }
+      });
+
+      if (!shopProduct) {
+        return errorResponse(res, "Shop product not found", null, 404);
+      }
+
+      if (shopProduct.shop_id !== shopId) {
+        return errorResponse(res, "Product does not belong to this shop", null, 400);
+      }
+
+      const images = shopProduct.images || [];
+      const index = parseInt(imageIndex);
+
+      if (index < 0 || index >= images.length) {
+        return errorResponse(res, "Invalid image index", null, 400);
+      }
+
+      const imageUrl = images[index];
+      
+      // Delete from Cloudinary
+      const publicId = CloudinaryService.extractPublicId(imageUrl);
+      if (publicId) {
+        await CloudinaryService.deleteImage(publicId);
+      }
+
+      // Remove from array
+      const updatedImages = images.filter((_, i) => i !== index);
+
+      const updatedShopProduct = await prisma.shop_products.update({
+        where: { id: shopProductId },
+        data: { images: updatedImages },
+        select: {
+          id: true,
+          images: true,
+          products: {
+            select: {
+              name: true
+            }
+          }
+        }
+      });
+
+      return successResponse(res, "Shop product image deleted successfully", updatedShopProduct, 200);
+    } catch (error) {
+      console.error("Delete shop product image error:", error);
+      return errorResponse(res, "Failed to delete shop product image", null, 500);
     }
   }
 };

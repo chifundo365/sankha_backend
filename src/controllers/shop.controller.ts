@@ -163,7 +163,7 @@ export const shopController = {
             select: {
               id: true,
               first_name: true,
-              last_name: true,
+                last_name: true,
               email: true,
               phone_number: true,
               profile_image: true
@@ -254,7 +254,7 @@ export const shopController = {
             select: {
               id: true,
               first_name: true,
-              last_name: true,
+                last_name: true,
               email: true
             }
           }
@@ -312,7 +312,7 @@ export const shopController = {
             select: {
               id: true,
               first_name: true,
-              last_name: true,
+                last_name: true,
               email: true
             }
           }
@@ -427,7 +427,7 @@ export const shopController = {
             select: {
               id: true,
               first_name: true,
-              last_name: true,
+                last_name: true,
               email: true
             }
           }
