@@ -37,7 +37,7 @@ export const protect = async (
     }
 
     // Verify token
-    const jwtSecret = process.env.JWT_SECRET;
+    const jwtSecret = process.env.JWT_ACCESS_SECRET;
 
     if (!jwtSecret) {
       errorResponse(res, "Server configuration error", 500);

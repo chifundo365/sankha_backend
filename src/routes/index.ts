@@ -11,18 +11,26 @@ import addressRoutes from "./address.routes";
 import userRoutes from "./user.routes";
 import adminRoutes from "./admin.routes";
 import paymentRoutes from "./payment.routes";
-import { rateLimitPresets } from "../middleware/rateLimiter.middleware";
+import { rateLimiter } from "../middleware/rateLimiter.middleware";
 import { ipBlocker } from "../middleware/ipBlocker.middleware";
 
 const router = Router();
 
+// Localhost whitelist for development/testing
+const localhostWhitelist = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+
 // IP Blocker - Check if IP is blocked before processing any request
 router.use(ipBlocker({
-  whitelist: ['127.0.0.1', '::1', '::ffff:127.0.0.1'], // Localhost whitelist
+  whitelist: localhostWhitelist,
 }));
 
 // Global rate limiter for all API routes (100 requests per 15 minutes)
-router.use(rateLimitPresets.standard);
+// Localhost is whitelisted for development/testing
+router.use(rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  whitelist: localhostWhitelist,
+}));
 
 router.use("/auth", authRoutes);
 router.use("/products", productRoutes);

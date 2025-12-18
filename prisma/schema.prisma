@@ -94,20 +94,46 @@ model payment_reports {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model products {
-  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name          String          @db.VarChar(255)
-  brand         String?         @db.VarChar(100)
-  description   String?
-  category_id   String?         @db.Uuid
-  base_price    Decimal?        @db.Decimal(10, 2)
-  images        String[]
-  is_active     Boolean?        @default(true)
-  created_at    DateTime?       @default(now()) @db.Timestamp(6)
-  updated_at    DateTime?       @default(now()) @db.Timestamp(6)
-  categories    categories?     @relation(fields: [category_id], references: [id], onUpdate: NoAction)
-  shop_products shop_products[]
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String          @db.VarChar(255)
+  normalized_name String?         @db.VarChar(255)  // Lowercase, cleaned for matching
+  brand           String?         @db.VarChar(100)
+  model           String?         @db.VarChar(100)  // Model number/name
+  description     String?
+  category_id     String?         @db.Uuid
+  base_price      Decimal?        @db.Decimal(10, 2)
+  images          String[]
+  
+  // Matching & Search helpers
+  aliases         String[]        // Alternative names for matching
+  keywords        String[]        // Searchable terms
+  gtin            String?         @db.VarChar(50)   // Barcode/UPC/EAN
+  mpn             String?         @db.VarChar(100)  // Manufacturer Part Number
+  
+  // Quality control
+  status          product_status? @default(PENDING)
+  confidence      Float?          // AI confidence score (0-1)
+  created_by      String?         @db.Uuid          // User who created
+  approved_by     String?         @db.Uuid          // Admin who approved
+  merged_into_id  String?         @db.Uuid          // If duplicate, points to canonical
+  rejection_reason String?        // Why it was rejected
+  
+  is_active       Boolean?        @default(true)
+  created_at      DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?       @default(now()) @db.Timestamp(6)
+  
+  categories      categories?     @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  shop_products   shop_products[]
+  created_by_user users?          @relation("ProductCreator", fields: [created_by], references: [id], onUpdate: NoAction)
+  approved_by_user users?         @relation("ProductApprover", fields: [approved_by], references: [id], onUpdate: NoAction)
+  merged_into     products?       @relation("ProductMerge", fields: [merged_into_id], references: [id], onUpdate: NoAction)
+  merged_products products[]      @relation("ProductMerge")
 
   @@index([name], map: "idx_products_name")
+  @@index([normalized_name], map: "idx_products_normalized_name")
+  @@index([brand], map: "idx_products_brand")
+  @@index([gtin], map: "idx_products_gtin")
+  @@index([status], map: "idx_products_status")
 }
 
 model shops {
@@ -154,21 +180,23 @@ model user_addresses {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model users {
-  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  first_name     String           @db.VarChar(75)
-  last_name      String           @db.VarChar(75)
-  email          String           @unique @db.VarChar(255)
-  phone_number   String?          @db.VarChar(20)
-  password_hash  String           @db.VarChar(255)
-  role           user_role        @default(USER)
-  profile_image  String?
-  is_active      Boolean?         @default(true)
-  created_at     DateTime?        @default(now()) @db.Timestamp(6)
-  updated_at     DateTime?        @default(now()) @db.Timestamp(6)
-  orders         orders[]
-  reviews        reviews[]
-  shops          shops[]
-  user_addresses user_addresses[]
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  first_name        String           @db.VarChar(75)
+  last_name         String           @db.VarChar(75)
+  email             String           @unique @db.VarChar(255)
+  phone_number      String?          @db.VarChar(20)
+  password_hash     String           @db.VarChar(255)
+  role              user_role        @default(USER)
+  profile_image     String?
+  is_active         Boolean?         @default(true)
+  created_at        DateTime?        @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?        @default(now()) @db.Timestamp(6)
+  orders            orders[]
+  reviews           reviews[]
+  shops             shops[]
+  user_addresses    user_addresses[]
+  products_created  products[]       @relation("ProductCreator")
+  products_approved products[]       @relation("ProductApprover")
 
   @@index([email], map: "idx_users_email")
 }
@@ -332,4 +360,11 @@ enum payment_verified_by {
   VERIFY_ENDPOINT
   WEBHOOK
   BACKGROUND_JOB
+}
+
+enum product_status {
+  PENDING       // Awaiting admin review
+  APPROVED      // Verified and live
+  REJECTED      // Not approved
+  MERGED        // Duplicate, merged into another product
 }

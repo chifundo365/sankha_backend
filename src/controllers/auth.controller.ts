@@ -2,7 +2,19 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import prisma from "../prismaClient";
 import { errorResponse, successResponse } from "../utils/response";
-import * as jwt from "jsonwebtoken";
+import {
+  generateTokenPair,
+  rotateRefreshToken,
+  revokeRefreshToken,
+  revokeAllUserTokens,
+  getRefreshTokenExpirySeconds,
+  TokenPayload
+} from "../services/token.service";
+import {
+  setRefreshTokenCookie,
+  clearRefreshTokenCookie,
+  getRefreshToken
+} from "../utils/cookie";
 
 export const authController = {
   register: async (req: Request, res: Response) => {
@@ -87,13 +99,13 @@ export const authController = {
         return errorResponse(res, "invalid email or password", null, 401);
       }
 
-      // Check if JWT_SECRET exists
-      if (!process.env.JWT_SECRET) {
-        console.error("JWT_SECRET is not defined in environment variables");
+      // Check if JWT_ACCESS_SECRET exists
+      if (!process.env.JWT_ACCESS_SECRET) {
+        console.error("JWT_ACCESS_SECRET is not defined in environment variables");
         return errorResponse(res, "Server configuration error", null, 500);
       }
 
-      const payload = {
+      const payload: TokenPayload = {
         id: user.id,
         email: user.email,
         role: user.role,
@@ -101,24 +113,125 @@ export const authController = {
         last_name: user.last_name
       };
 
-      // Ensure JWT secret is defined
-      const jwtSecret = process.env.JWT_SECRET!; // Non-null assertion (already checked above)
+      // Get device info and IP for token tracking
+      const deviceInfo = req.headers["user-agent"] || undefined;
+      const ipAddress =
+        (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+        req.ip ||
+        req.socket.remoteAddress ||
+        undefined;
 
-      // Generate JWT token
-      // @ts-ignore - Type mismatch with jsonwebtoken v9.0.2 and @types/jsonwebtoken v9.0.10
-      const token = jwt.sign(payload, jwtSecret, {
-        expiresIn: process.env.JWT_EXPIRES_IN || "1h"
-      });
+      // Generate token pair (access + refresh)
+      const tokens = await generateTokenPair(payload, deviceInfo, ipAddress);
+
+      // Set refresh token as httpOnly cookie (NOT in response body for security)
+      setRefreshTokenCookie(res, tokens.refreshToken, getRefreshTokenExpirySeconds());
 
       const { password_hash, ...userWithoutPassword } = user;
 
+      // Return ONLY access token in body - refresh token is in httpOnly cookie only
       return successResponse(res, "Login successful", {
         user: userWithoutPassword,
-        token
+        accessToken: tokens.accessToken,
+        expiresIn: tokens.expiresIn
       });
     } catch (error) {
       console.error("Login error:", error);
       return errorResponse(res, "Login failed", null, 500);
+    }
+  },
+
+  /**
+   * Refresh access token using refresh token
+   */
+  refresh: async (req: Request, res: Response) => {
+    try {
+      // Get refresh token from httpOnly cookie or body (backward compatibility)
+      const refreshToken = getRefreshToken(req);
+
+      if (!refreshToken) {
+        return errorResponse(res, "Refresh token is required", null, 400);
+      }
+
+      // Get device info and IP
+      const deviceInfo = req.headers["user-agent"] || undefined;
+      const ipAddress =
+        (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+        req.ip ||
+        req.socket.remoteAddress ||
+        undefined;
+
+      // Rotate token (validates old, revokes it, issues new pair)
+      const tokens = await rotateRefreshToken(refreshToken, deviceInfo, ipAddress);
+
+      if (!tokens) {
+        // Clear invalid cookie if present
+        clearRefreshTokenCookie(res);
+        return errorResponse(res, "Invalid or expired refresh token", null, 401);
+      }
+
+      // Set new refresh token as httpOnly cookie (NOT in response body for security)
+      setRefreshTokenCookie(res, tokens.refreshToken, getRefreshTokenExpirySeconds());
+
+      // Return ONLY access token in body - refresh token is in httpOnly cookie only
+      return successResponse(res, "Token refreshed successfully", {
+        accessToken: tokens.accessToken,
+        expiresIn: tokens.expiresIn
+      });
+    } catch (error) {
+      console.error("Token refresh error:", error);
+      return errorResponse(res, "Token refresh failed", null, 500);
+    }
+  },
+
+  /**
+   * Logout - revoke the current refresh token
+   */
+  logout: async (req: Request, res: Response) => {
+    try {
+      // Get refresh token from httpOnly cookie or body (backward compatibility)
+      const refreshToken = getRefreshToken(req);
+
+      if (!refreshToken) {
+        // No token to revoke, just clear cookie and return success
+        clearRefreshTokenCookie(res);
+        return successResponse(res, "Logged out successfully", null);
+      }
+
+      await revokeRefreshToken(refreshToken);
+
+      // Clear the httpOnly cookie
+      clearRefreshTokenCookie(res);
+
+      return successResponse(res, "Logged out successfully", null);
+    } catch (error) {
+      console.error("Logout error:", error);
+      return errorResponse(res, "Logout failed", null, 500);
+    }
+  },
+
+  /**
+   * Logout from all devices - revoke all refresh tokens for the user
+   */
+  logoutAll: async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return errorResponse(res, "User not authenticated", null, 401);
+      }
+
+      const revokedCount = await revokeAllUserTokens(userId);
+
+      // Clear the httpOnly cookie for current session
+      clearRefreshTokenCookie(res);
+
+      return successResponse(res, "Logged out from all devices", {
+        sessionsRevoked: revokedCount
+      });
+    } catch (error) {
+      console.error("Logout all error:", error);
+      return errorResponse(res, "Failed to logout from all devices", null, 500);
     }
   }
 };

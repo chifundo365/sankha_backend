@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import express, { Request, Response, NextFunction } from 'express';
+import cookieParser from 'cookie-parser';
 import routes from './routes/index';
 import { errorResponse } from './utils/response';
 import { redisClient } from './config/redis.config';
@@ -12,6 +13,7 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); // Parse cookies for httpOnly refresh token
 
 // Health check endpoint
 app.get('/', (_req: Request, res: Response) => {

@@ -1,19 +1,30 @@
 import { Router } from "express";
 import { authController } from "../controllers/auth.controller";
 import validateResource from "../middleware/validateResource";
-import { loginSchema, registerSchema } from "../schemas/auth.schema";
+import { loginSchema, registerSchema, refreshTokenSchema } from "../schemas/auth.schema";
 import { protect } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/authorize.middleware";
 import { Request, Response } from "express";
 import { successResponse } from "../utils/response";
-import { rateLimitPresets } from "../middleware/rateLimiter.middleware";
+import { rateLimiter } from "../middleware/rateLimiter.middleware";
 
 const router = Router();
+
+// Localhost whitelist for development/testing
+const localhostWhitelist = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+
+// Strict rate limiter with localhost whitelist
+const strictRateLimiter = rateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  message: 'Too many attempts, please try again after 15 minutes.',
+  whitelist: localhostWhitelist,
+});
 
 // Apply strict rate limiting for register (5 attempts per 15 minutes)
 router.post(
   "/register",
-  rateLimitPresets.strict,
+  strictRateLimiter,
   validateResource(registerSchema),
   authController.register
 );
@@ -21,10 +32,32 @@ router.post(
 // Apply strict rate limiting for login (5 attempts per 15 minutes)
 router.post(
   "/login",
-  rateLimitPresets.strict,
+  strictRateLimiter,
   validateResource(loginSchema),
   authController.login
 );
+
+// Refresh token endpoint - rate limited to prevent abuse
+router.post(
+  "/refresh",
+  rateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    whitelist: localhostWhitelist,
+  }),
+  validateResource(refreshTokenSchema),
+  authController.refresh
+);
+
+// Logout - revoke current refresh token
+router.post(
+  "/logout",
+  validateResource(refreshTokenSchema),
+  authController.logout
+);
+
+// Logout from all devices - requires authentication
+router.post("/logout-all", protect, authController.logoutAll);
 
 // Protected route - requires authentication
 router.get("/me", protect, (req: Request, res: Response) => {

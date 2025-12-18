@@ -36,5 +36,16 @@ export const registerSchema = z.object({
   })
 });
 
+export const refreshTokenSchema = z.object({
+  body: z.object({
+    // Optional in body since it can come from httpOnly cookie
+    refreshToken: z
+      .string()
+      .min(1, "Refresh token cannot be empty")
+      .optional()
+  })
+});
+
 export type LoginInput = z.infer<typeof loginSchema>["body"];
 export type RegisterInput = z.infer<typeof registerSchema>["body"];
+export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>["body"];
