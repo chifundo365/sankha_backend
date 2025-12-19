@@ -716,11 +716,27 @@ export const productController = {
    * Approve a pending product
    * POST /api/products/:id/approve
    * Admin only
+   * 
+   * Body (optional):
+   * - auto_add_to_shop: boolean (default: true) - Auto-add to seller's shop
+   * - price: number - Override price for shop listing
+   * - stock_quantity: number - Initial stock (default: 0)
+   * - condition: string - NEW, USED, REFURBISHED (default: NEW)
+   * - sku: string - Custom SKU (auto-generated if not provided)
+   * - shop_description: string - Custom description for shop listing
    */
   approveProduct: async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const adminId = req.user?.id;
+      const {
+        auto_add_to_shop = true,
+        price,
+        stock_quantity,
+        condition,
+        sku,
+        shop_description
+      } = req.body;
 
       if (!adminId) {
         return errorResponse(res, "Admin not authenticated", null, 401);
@@ -728,7 +744,17 @@ export const productController = {
 
       // Check product exists and is pending
       const product = await prisma.products.findUnique({
-        where: { id }
+        where: { id },
+        include: {
+          created_by_user: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              email: true
+            }
+          }
+        }
       });
 
       if (!product) {
@@ -739,9 +765,27 @@ export const productController = {
         return errorResponse(res, `Product is already ${product.status}`, null, 400);
       }
 
-      const approved = await productMatchingService.approveProduct(id, adminId);
+      const result = await productMatchingService.approveProduct(id, adminId, {
+        autoAddToShop: auto_add_to_shop,
+        shopListingDetails: {
+          price,
+          stock_quantity,
+          condition,
+          sku,
+          shop_description
+        }
+      });
 
-      return successResponse(res, "Product approved successfully", approved, 200);
+      const message = result.autoAdded
+        ? `Product approved and automatically added to ${result.shopProduct?.shops?.name || "seller's shop"}`
+        : "Product approved successfully";
+
+      return successResponse(res, message, {
+        product: result.product,
+        shopListing: result.shopProduct,
+        autoAddedToShop: result.autoAdded,
+        requestedBy: product.created_by_user
+      }, 200);
     } catch (error) {
       console.error("Approve product error:", error);
       return errorResponse(res, "Failed to approve product", null, 500);

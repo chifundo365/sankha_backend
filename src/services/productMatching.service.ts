@@ -282,21 +282,105 @@ export async function createPendingProduct(
 }
 
 /**
- * Approve a pending product
+ * Approve a pending product and optionally add to seller's shop
  */
 export async function approveProduct(
   productId: string,
-  approvedById: string
-): Promise<any> {
-  return prisma.products.update({
+  approvedById: string,
+  options?: {
+    autoAddToShop?: boolean;
+    shopListingDetails?: {
+      price?: number;
+      stock_quantity?: number;
+      condition?: string;
+      sku?: string;
+      shop_description?: string;
+    };
+  }
+): Promise<{
+  product: any;
+  shopProduct?: any;
+  autoAdded: boolean;
+}> {
+  // Update product status
+  const product = await prisma.products.update({
     where: { id: productId },
     data: {
       status: "APPROVED",
       approved_by: approvedById,
       is_active: true,
       updated_at: new Date()
+    },
+    include: {
+      categories: true,
+      created_by_user: {
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true
+        }
+      }
     }
   });
+
+  let shopProduct = null;
+  let autoAdded = false;
+
+  // Auto-add to seller's shop if requested and seller exists
+  if (options?.autoAddToShop !== false && product.created_by) {
+    // Find the seller's shop
+    const sellerShop = await prisma.shops.findFirst({
+      where: { owner_id: product.created_by }
+    });
+
+    if (sellerShop) {
+      // Check if product already exists in this shop
+      const existingShopProduct = await prisma.shop_products.findFirst({
+        where: {
+          shop_id: sellerShop.id,
+          product_id: productId
+        }
+      });
+
+      if (!existingShopProduct) {
+        // Generate a unique SKU
+        const sku = options?.shopListingDetails?.sku || 
+          `${product.brand?.substring(0, 3).toUpperCase() || 'PRD'}-${Date.now()}`;
+
+        // Create shop product listing
+        shopProduct = await prisma.shop_products.create({
+          data: {
+            shop_id: sellerShop.id,
+            product_id: productId,
+            sku,
+            price: options?.shopListingDetails?.price || product.base_price || 0,
+            stock_quantity: options?.shopListingDetails?.stock_quantity || 0,
+            condition: (options?.shopListingDetails?.condition as any) || "NEW",
+            shop_description: options?.shopListingDetails?.shop_description || 
+              `${product.name} - Now available at ${sellerShop.name}`,
+            images: product.images || [],
+            is_available: true
+          },
+          include: {
+            shops: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        });
+        autoAdded = true;
+      }
+    }
+  }
+
+  return {
+    product,
+    shopProduct,
+    autoAdded
+  };
 }
 
 /**
