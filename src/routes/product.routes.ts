@@ -35,11 +35,74 @@ router.get(
   productController.getProductsByCategory
 );
 
-// Get single product by ID
+/**
+ * Product Matching routes - Authenticated users (sellers)
+ * These must come BEFORE /:id route to avoid conflicts
+ */
+
+// Search for matching products (seller looking to create listing)
+router.get(
+  "/match",
+  protect,
+  productController.findMatchingProducts
+);
+
+// Request a new product (pending approval)
+router.post(
+  "/request",
+  protect,
+  productController.requestNewProduct
+);
+
+// Get pending products for admin review
+router.get(
+  "/pending",
+  protect,
+  authorize("ADMIN", "SUPER_ADMIN"),
+  productController.getPendingProducts
+);
+
+// Get single product by ID (must come after /match, /request, /pending)
 router.get(
   "/:id",
   validateResource(getProductSchema),
   productController.getProductById
+);
+
+/**
+ * Admin product approval routes
+ */
+
+// Approve a pending product
+router.post(
+  "/:id/approve",
+  protect,
+  authorize("ADMIN", "SUPER_ADMIN"),
+  productController.approveProduct
+);
+
+// Reject a pending product
+router.post(
+  "/:id/reject",
+  protect,
+  authorize("ADMIN", "SUPER_ADMIN"),
+  productController.rejectProduct
+);
+
+// Merge duplicate product into canonical
+router.post(
+  "/:id/merge",
+  protect,
+  authorize("ADMIN", "SUPER_ADMIN"),
+  productController.mergeProducts
+);
+
+// Find potential duplicates for a product
+router.get(
+  "/:id/duplicates",
+  protect,
+  authorize("ADMIN", "SUPER_ADMIN"),
+  productController.findDuplicates
 );
 
 /**

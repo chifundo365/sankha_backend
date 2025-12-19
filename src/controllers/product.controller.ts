@@ -3,6 +3,7 @@ import prisma from "../prismaClient";
 import { errorResponse, successResponse } from "../utils/response";
 import { Prisma } from "../../generated/prisma";
 import { CloudinaryService } from "../services/cloudinary.service";
+import { productMatchingService } from "../services/productMatching.service";
 
 export const productController = {
   /**
@@ -557,6 +558,306 @@ export const productController = {
     } catch (error) {
       console.error("Delete product image error:", error);
       return errorResponse(res, "Failed to delete product image", null, 500);
+    }
+  },
+
+  // =============================================
+  // PRODUCT MATCHING ENDPOINTS
+  // =============================================
+
+  /**
+   * Search for matching products (for sellers creating listings)
+   * GET /api/products/match
+   * Authenticated users (sellers)
+   */
+  findMatchingProducts: async (req: Request, res: Response) => {
+    try {
+      const { query, brand, gtin, category_id, limit } = req.query;
+
+      if (!query || typeof query !== "string") {
+        return errorResponse(res, "Search query is required", null, 400);
+      }
+
+      const result = await productMatchingService.findMatchingProducts(query, {
+        brand: brand as string | undefined,
+        gtin: gtin as string | undefined,
+        categoryId: category_id as string | undefined,
+        limit: limit ? Number(limit) : 5
+      });
+
+      return successResponse(res, "Product matches found", {
+        ...result,
+        message: result.hasExactMatch 
+          ? "Exact match found! Use this product for your listing."
+          : result.suggestions.length > 0
+            ? "Similar products found. Select one or create a new product."
+            : "No matches found. You can create a new product."
+      }, 200);
+    } catch (error) {
+      console.error("Find matching products error:", error);
+      return errorResponse(res, "Failed to search for products", null, 500);
+    }
+  },
+
+  /**
+   * Create a new product (pending approval)
+   * POST /api/products/request
+   * Authenticated users (sellers)
+   */
+  requestNewProduct: async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return errorResponse(res, "User not authenticated", null, 401);
+      }
+
+      const {
+        name,
+        brand,
+        model,
+        description,
+        category_id,
+        base_price,
+        images,
+        gtin,
+        mpn,
+        keywords,
+        aliases
+      } = req.body;
+
+      if (!name) {
+        return errorResponse(res, "Product name is required", null, 400);
+      }
+
+      // Check for existing matches first
+      const matches = await productMatchingService.findMatchingProducts(name, {
+        brand,
+        gtin
+      });
+
+      if (matches.hasExactMatch) {
+        return errorResponse(
+          res, 
+          "A matching product already exists. Please use the existing product for your listing.",
+          { existingProduct: matches.bestMatch },
+          409
+        );
+      }
+
+      // Validate category exists if provided
+      if (category_id) {
+        const categoryExists = await prisma.categories.findUnique({
+          where: { id: category_id }
+        });
+
+        if (!categoryExists) {
+          return errorResponse(res, "Category not found", null, 404);
+        }
+      }
+
+      // Create pending product
+      const product = await productMatchingService.createPendingProduct(
+        {
+          name,
+          brand,
+          model,
+          description,
+          category_id,
+          base_price,
+          images,
+          gtin,
+          mpn,
+          keywords,
+          aliases
+        },
+        userId
+      );
+
+      return successResponse(
+        res,
+        "Product submitted for review. You'll be notified once it's approved.",
+        {
+          product,
+          status: "PENDING",
+          similarProducts: matches.suggestions.slice(0, 3) // Show similar products for reference
+        },
+        201
+      );
+    } catch (error) {
+      console.error("Request new product error:", error);
+      return errorResponse(res, "Failed to submit product request", null, 500);
+    }
+  },
+
+  /**
+   * Get pending products for admin review
+   * GET /api/products/pending
+   * Admin only
+   */
+  getPendingProducts: async (req: Request, res: Response) => {
+    try {
+      const { page, limit, category_id } = req.query;
+
+      const result = await productMatchingService.getPendingProducts({
+        page: page ? Number(page) : 1,
+        limit: limit ? Number(limit) : 20,
+        categoryId: category_id as string | undefined
+      });
+
+      return successResponse(res, "Pending products retrieved", result, 200);
+    } catch (error) {
+      console.error("Get pending products error:", error);
+      return errorResponse(res, "Failed to retrieve pending products", null, 500);
+    }
+  },
+
+  /**
+   * Approve a pending product
+   * POST /api/products/:id/approve
+   * Admin only
+   */
+  approveProduct: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const adminId = req.user?.id;
+
+      if (!adminId) {
+        return errorResponse(res, "Admin not authenticated", null, 401);
+      }
+
+      // Check product exists and is pending
+      const product = await prisma.products.findUnique({
+        where: { id }
+      });
+
+      if (!product) {
+        return errorResponse(res, "Product not found", null, 404);
+      }
+
+      if (product.status !== "PENDING") {
+        return errorResponse(res, `Product is already ${product.status}`, null, 400);
+      }
+
+      const approved = await productMatchingService.approveProduct(id, adminId);
+
+      return successResponse(res, "Product approved successfully", approved, 200);
+    } catch (error) {
+      console.error("Approve product error:", error);
+      return errorResponse(res, "Failed to approve product", null, 500);
+    }
+  },
+
+  /**
+   * Reject a pending product
+   * POST /api/products/:id/reject
+   * Admin only
+   */
+  rejectProduct: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+
+      if (!reason) {
+        return errorResponse(res, "Rejection reason is required", null, 400);
+      }
+
+      // Check product exists and is pending
+      const product = await prisma.products.findUnique({
+        where: { id }
+      });
+
+      if (!product) {
+        return errorResponse(res, "Product not found", null, 404);
+      }
+
+      if (product.status !== "PENDING") {
+        return errorResponse(res, `Product is already ${product.status}`, null, 400);
+      }
+
+      const rejected = await productMatchingService.rejectProduct(id, reason);
+
+      return successResponse(res, "Product rejected", rejected, 200);
+    } catch (error) {
+      console.error("Reject product error:", error);
+      return errorResponse(res, "Failed to reject product", null, 500);
+    }
+  },
+
+  /**
+   * Merge duplicate product into canonical product
+   * POST /api/products/:id/merge
+   * Admin only
+   */
+  mergeProducts: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params; // duplicate product ID
+      const { canonical_id } = req.body; // product to merge into
+
+      if (!canonical_id) {
+        return errorResponse(res, "Canonical product ID is required", null, 400);
+      }
+
+      if (id === canonical_id) {
+        return errorResponse(res, "Cannot merge product into itself", null, 400);
+      }
+
+      // Verify both products exist
+      const [duplicate, canonical] = await Promise.all([
+        prisma.products.findUnique({ where: { id } }),
+        prisma.products.findUnique({ where: { id: canonical_id } })
+      ]);
+
+      if (!duplicate) {
+        return errorResponse(res, "Duplicate product not found", null, 404);
+      }
+
+      if (!canonical) {
+        return errorResponse(res, "Canonical product not found", null, 404);
+      }
+
+      const merged = await productMatchingService.mergeProducts(id, canonical_id);
+
+      return successResponse(res, "Products merged successfully", {
+        merged,
+        mergedInto: canonical
+      }, 200);
+    } catch (error) {
+      console.error("Merge products error:", error);
+      return errorResponse(res, "Failed to merge products", null, 500);
+    }
+  },
+
+  /**
+   * Find potential duplicates for a product
+   * GET /api/products/:id/duplicates
+   * Admin only
+   */
+  findDuplicates: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const product = await prisma.products.findUnique({
+        where: { id }
+      });
+
+      if (!product) {
+        return errorResponse(res, "Product not found", null, 404);
+      }
+
+      const duplicates = await productMatchingService.findPotentialDuplicates(id);
+
+      return successResponse(res, "Potential duplicates found", {
+        product: {
+          id: product.id,
+          name: product.name,
+          brand: product.brand
+        },
+        potentialDuplicates: duplicates
+      }, 200);
+    } catch (error) {
+      console.error("Find duplicates error:", error);
+      return errorResponse(res, "Failed to find duplicates", null, 500);
     }
   }
 };
