@@ -1,6 +1,15 @@
 # ShopTech Backend
 
-Backend API for ShopTech, an e-commerce marketplace platform built for Malawi. Handles user authentication, shop management, product catalog, shopping cart, orders, and payment processing through PayChangu.
+Backend API for ShopTech, a **price-comparison marketplace** built for Malawi. Unlike traditional e-commerce platforms where each shop operates in isolation, ShopTech lets buyers compare prices for the same product across multiple shops — helping them find the best deal while giving sellers fair visibility.
+
+## How It Works
+
+1. **Unified Product Catalog** — Products exist once in a master catalog. When sellers list items, they link to existing products rather than creating duplicates.
+2. **Multi-Shop Comparison** — Buyers searching for "iPhone 15" see all shops selling it, with prices, stock, and conditions side by side.
+3. **Shop-Specific Listings** — Each shop sets their own price, stock quantity, condition (new/refurbished/used), and can add shop-specific descriptions.
+4. **Single Checkout** — Buyers can purchase from any shop through a unified cart and checkout experience.
+
+This architecture makes ShopTech a **"find the best price"** platform rather than just another online store.
 
 ## Tech Stack
 
