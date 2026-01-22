@@ -2,6 +2,17 @@
 #env
 .env
 
+# Test artifacts and temporary files
+*.txt
+!LICENSE.txt
+token.txt
+admin_token.txt
+cookies.txt
+*_login.json
+*_response.json
+*_test*.json
+temp_test_images/
+
 # Logs
 logs
 *.log

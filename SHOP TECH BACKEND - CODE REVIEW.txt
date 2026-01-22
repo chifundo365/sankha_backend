@@ -1,9 +1,0 @@
-SHOP TECH BACKEND - CODE REVIEW
-
-1 SHOPS
-  - Shop should have shop images
-  - A user should be able to create a maximum of 5 shops
-  - Add Supported delivery methods of a shop (BUS<PICKUPOINT>, COURIER, DOOR TO DOOR, )
-
-2 SHOP PRODUCTS
-  - It should include the review of the shop product
