@@ -58,7 +58,7 @@ const server = app.listen(port, async () => {
   // Validate PayChangu configuration
   if (validatePaychanguConfig()) {
     // Start payment verification background job
-    paymentVerificationJob.start();
+    // paymentVerificationJob.start();
   }
 });
 

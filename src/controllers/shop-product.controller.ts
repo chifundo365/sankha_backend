@@ -4,6 +4,17 @@ import { errorResponse, successResponse } from "../utils/response";
 import { Prisma } from "../../generated/prisma";
 import { CloudinaryService } from "../services/cloudinary.service";
 
+// Sankha pricing: 3% PayChangu fee + 2% Sankha commission = 5.26% markup
+const PRICE_MARKUP_MULTIPLIER = 1.0526;
+
+/**
+ * Calculate display price from base price (seller's net amount)
+ * display_price = base_price × 1.0526
+ */
+const calculateDisplayPrice = (basePrice: number): number => {
+  return Math.round(basePrice * PRICE_MARKUP_MULTIPLIER * 100) / 100;
+};
+
 /**
  * Helper function to check if user owns the shop
  */
@@ -245,7 +256,7 @@ export const shopProductController = {
       const {
         product_id,
         sku,
-        price,
+        base_price,
         stock_quantity,
         condition,
         shop_description,
@@ -310,13 +321,17 @@ export const shopProductController = {
         );
       }
 
+      // Calculate display price from base price (includes PayChangu 3% + Sankha 2%)
+      const displayPrice = calculateDisplayPrice(base_price);
+
       // Add product to shop (initial stock trigger handles logging automatically)
       const shopProduct = await prisma.shop_products.create({
         data: {
           shop_id: shopId,
           product_id,
           sku,
-          price,
+          base_price,
+          price: displayPrice,
           stock_quantity,
           condition: condition || "NEW",
           shop_description,
@@ -336,7 +351,18 @@ export const shopProductController = {
       return successResponse(
         res,
         "Product added to shop successfully",
-        shopProduct,
+        {
+          ...shopProduct,
+          pricing_info: {
+            base_price: shopProduct.base_price,
+            display_price: shopProduct.price,
+            markup_percentage: "5.26%",
+            breakdown: {
+              paychangu_fee: "3%",
+              sankha_commission: "2%"
+            }
+          }
+        },
         201
       );
     } catch (error) {
@@ -353,7 +379,7 @@ export const shopProductController = {
   updateShopProduct: async (req: Request, res: Response) => {
     try {
       const { shopId, shopProductId } = req.params;
-      const updateData = req.body;
+      const updateData = { ...req.body };
 
       // Check shop ownership
       const hasAccess = await checkShopOwnership(
@@ -381,6 +407,11 @@ export const shopProductController = {
 
       if (!existingShopProduct) {
         return errorResponse(res, "Shop product not found", null, 404);
+      }
+
+      // If base_price is being updated, recalculate display price
+      if (updateData.base_price !== undefined) {
+        updateData.price = calculateDisplayPrice(updateData.base_price);
       }
 
       // Update shop product (trigger handles stock change logging with custom reason)
@@ -426,7 +457,14 @@ export const shopProductController = {
       return successResponse(
         res,
         "Shop product updated successfully",
-        updatedShopProduct,
+        {
+          ...updatedShopProduct,
+          pricing_info: {
+            base_price: updatedShopProduct.base_price,
+            display_price: updatedShopProduct.price,
+            markup_percentage: "5.26%"
+          }
+        },
         200
       );
     } catch (error) {

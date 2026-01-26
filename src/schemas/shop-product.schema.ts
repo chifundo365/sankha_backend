@@ -14,10 +14,10 @@ export const addShopProductSchema = z.object({
 
     sku: z.string().max(50, "SKU must not exceed 50 characters").optional(),
 
-    price: z
-      .number({ message: "Price is required" })
-      .positive("Price must be greater than 0")
-      .max(99999999.99, "Price is too large"),
+    base_price: z
+      .number({ message: "Base price is required" })
+      .positive("Base price must be greater than 0")
+      .max(99999999.99, "Base price is too large"),
 
     stock_quantity: z
       .number({ message: "Stock quantity is required" })
@@ -60,10 +60,10 @@ export const updateShopProductSchema = z.object({
         .optional()
         .nullable(),
 
-      price: z
+      base_price: z
         .number()
-        .positive("Price must be greater than 0")
-        .max(99999999.99, "Price is too large")
+        .positive("Base price must be greater than 0")
+        .max(99999999.99, "Base price is too large")
         .optional(),
 
       stock_quantity: z
