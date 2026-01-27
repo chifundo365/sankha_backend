@@ -3,6 +3,7 @@ import prismaClient from "../prismaClient";
 import { successResponse, errorResponse } from "../utils/response";
 import { paymentService } from "../services/payment.service";
 import { Prisma } from "../../generated/prisma";
+import { orderConfirmationService } from "../services/orderConfirmation.service";
 
 /**
  * Generate unique order number
@@ -310,6 +311,16 @@ export const checkout = async (req: Request, res: Response) => {
             customer_last_name: customer_last_name,
           },
         });
+        
+        // Auto-generate release code for confirmed orders (COD)
+        if (payment_method === "cod") {
+          try {
+            await orderConfirmationService.generateReleaseCode(order.id);
+          } catch (releaseCodeError) {
+            console.error(`Failed to generate release code for order ${order.id}:`, releaseCodeError);
+            // Don't fail checkout if release code generation fails - can be retried
+          }
+        }
       }
     }
 
@@ -1279,5 +1290,195 @@ export const getOrderStats = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Get order stats error:", error);
     return errorResponse(res, "Failed to retrieve order statistics", 500);
+  }
+};
+
+/**
+ * Verify release code - Seller confirms delivery
+ * POST /api/orders/:orderId/verify-release-code
+ * 
+ * When buyer receives the order and gives the release code to seller,
+ * seller enters this code to confirm delivery and receive payment.
+ */
+export const verifyReleaseCode = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const { orderId } = req.params;
+    const { release_code } = req.body;
+
+    if (!release_code) {
+      return errorResponse(res, "Release code is required", 400);
+    }
+
+    // Get the order to verify shop ownership
+    const order = await prismaClient.orders.findUnique({
+      where: { id: orderId },
+      include: {
+        shops: {
+          select: {
+            id: true,
+            owner_id: true,
+            name: true,
+          }
+        }
+      }
+    });
+
+    if (!order) {
+      return errorResponse(res, "Order not found", 404);
+    }
+
+    // Only shop owner (seller) or admin can verify
+    const isShopOwner = order.shops?.owner_id === userId;
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+
+    if (!isShopOwner && !isAdmin) {
+      return errorResponse(res, "Only the shop owner can verify release codes", 403);
+    }
+
+    // Use the service to verify
+    const result = await orderConfirmationService.verifyReleaseCode(
+      orderId,
+      release_code,
+      order.shop_id
+    );
+
+    if (!result.success) {
+      const statusCode = result.errorCode === 'INVALID_CODE' || result.errorCode === 'WRONG_SHOP' ? 400 
+                       : result.errorCode === 'EXPIRED' ? 410 
+                       : result.errorCode === 'ALREADY_VERIFIED' ? 409 
+                       : 400;
+      return errorResponse(res, result.error || "Verification failed", statusCode);
+    }
+
+    return successResponse(
+      res,
+      "Delivery confirmed! Payment has been credited to your wallet.",
+      {
+        order_id: orderId,
+        order_number: result.order?.order_number,
+        seller_payout: Number(result.sellerPayout),
+        new_wallet_balance: Number(result.newWalletBalance),
+        verified_at: result.order?.release_code_verified_at,
+      },
+      200
+    );
+  } catch (error) {
+    console.error("Verify release code error:", error);
+    return errorResponse(res, "Failed to verify release code", 500);
+  }
+};
+
+/**
+ * Get release code for buyer - Buyer views their release code
+ * GET /api/orders/:orderId/release-code
+ * 
+ * Only the buyer can see their release code
+ */
+export const getReleaseCode = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { orderId } = req.params;
+
+    const order = await prismaClient.orders.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        order_number: true,
+        buyer_id: true,
+        status: true,
+        release_code: true,
+        release_code_status: true,
+        release_code_expires_at: true,
+        release_code_verified_at: true,
+        shops: {
+          select: {
+            name: true,
+          }
+        }
+      }
+    });
+
+    if (!order) {
+      return errorResponse(res, "Order not found", 404);
+    }
+
+    // Only the buyer can view their release code
+    if (order.buyer_id !== userId) {
+      return errorResponse(res, "You can only view your own release codes", 403);
+    }
+
+    // Check if release code exists
+    if (!order.release_code) {
+      return errorResponse(res, "Release code not yet generated. It will be available after payment confirmation.", 400);
+    }
+
+    // Format code for display (e.g., "X7K-9M2")
+    const formattedCode = order.release_code.length === 6 
+      ? `${order.release_code.substring(0, 3)}-${order.release_code.substring(3)}`
+      : order.release_code;
+
+    return successResponse(
+      res,
+      "Release code retrieved successfully",
+      {
+        order_id: order.id,
+        order_number: order.order_number,
+        shop_name: order.shops?.name,
+        release_code: formattedCode,
+        status: order.release_code_status,
+        expires_at: order.release_code_expires_at,
+        verified_at: order.release_code_verified_at,
+        instructions: order.release_code_status === 'PENDING' 
+          ? "Give this code to the seller ONLY after you have received and verified your order."
+          : order.release_code_status === 'VERIFIED'
+          ? "This code has been verified. Thank you for your purchase!"
+          : "This code has expired.",
+      },
+      200
+    );
+  } catch (error) {
+    console.error("Get release code error:", error);
+    return errorResponse(res, "Failed to retrieve release code", 500);
+  }
+};
+
+/**
+ * Generate release code (Admin/System use)
+ * POST /api/orders/:orderId/generate-release-code
+ * 
+ * Normally called automatically when payment is confirmed,
+ * but admins can manually trigger if needed.
+ */
+export const generateReleaseCode = async (req: Request, res: Response) => {
+  try {
+    const userRole = req.user!.role;
+    const { orderId } = req.params;
+
+    // Only admins can manually generate
+    if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+      return errorResponse(res, "Only admins can manually generate release codes", 403);
+    }
+
+    const result = await orderConfirmationService.generateReleaseCode(orderId);
+
+    if (!result.success) {
+      return errorResponse(res, result.error || "Failed to generate release code", 400);
+    }
+
+    return successResponse(
+      res,
+      "Release code generated successfully",
+      {
+        order_id: orderId,
+        release_code: result.code,
+        expires_at: result.expiresAt,
+      },
+      200
+    );
+  } catch (error) {
+    console.error("Generate release code error:", error);
+    return errorResponse(res, "Failed to generate release code", 500);
   }
 };

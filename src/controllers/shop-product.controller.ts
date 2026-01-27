@@ -3,9 +3,7 @@ import prisma from "../prismaClient";
 import { errorResponse, successResponse } from "../utils/response";
 import { Prisma } from "../../generated/prisma";
 import { CloudinaryService } from "../services/cloudinary.service";
-
-// Sankha pricing: 3% PayChangu fee + 2% Sankha commission = 5.26% markup
-const PRICE_MARKUP_MULTIPLIER = 1.0526;
+import { PRICE_MARKUP_MULTIPLIER, FEES } from "../utils/constants";
 
 /**
  * Calculate display price from base price (seller's net amount)

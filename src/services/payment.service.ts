@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import prisma from '../prismaClient';
 import { paychanguConfig } from '../config/paychangu.config';
 import { payment_status, payment_verified_by, Prisma } from '../../generated/prisma';
+import { orderConfirmationService } from './orderConfirmation.service';
 
 // Types
 export interface InitiatePaymentData {
@@ -579,6 +580,16 @@ class PaymentService {
           });
           confirmedOrders.push(confirmedOrder);
           console.log(`Order confirmed after payment: ${order.order_number}`);
+          
+          // Auto-generate release code for confirmed order
+          try {
+            const releaseCodeResult = await orderConfirmationService.generateReleaseCode(confirmedOrder.id);
+            if (releaseCodeResult.success) {
+              console.log(`Release code generated for order ${order.order_number}: ${releaseCodeResult.code}`);
+            }
+          } catch (releaseCodeError) {
+            console.error(`Failed to generate release code for order ${order.order_number}:`, releaseCodeError);
+          }
         }
       }
     }

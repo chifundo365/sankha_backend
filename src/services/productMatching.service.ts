@@ -1,6 +1,7 @@
 import Fuse, { IFuseOptions } from "fuse.js";
 import prisma from "../prismaClient";
 import { product_status } from "../../generated/prisma";
+import { calculateDisplayPrice } from "../utils/constants";
 
 /**
  * Product Matching Service
@@ -348,13 +349,18 @@ export async function approveProduct(
         const sku = options?.shopListingDetails?.sku || 
           `${product.brand?.substring(0, 3).toUpperCase() || 'PRD'}-${Date.now()}`;
 
-        // Create shop product listing
+        // Calculate base_price (seller's price) and display price
+        const basePrice = options?.shopListingDetails?.price || Number(product.base_price) || 0;
+        const displayPrice = calculateDisplayPrice(basePrice);
+
+        // Create shop product listing with dual pricing
         shopProduct = await prisma.shop_products.create({
           data: {
             shop_id: sellerShop.id,
             product_id: productId,
             sku,
-            price: options?.shopListingDetails?.price || product.base_price || 0,
+            base_price: basePrice,        // Seller's price
+            price: displayPrice,           // Display price with markup
             stock_quantity: options?.shopListingDetails?.stock_quantity || 0,
             condition: (options?.shopListingDetails?.condition as any) || "NEW",
             shop_description: options?.shopListingDetails?.shop_description || 

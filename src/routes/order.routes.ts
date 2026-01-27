@@ -8,7 +8,10 @@ import {
   cancelOrder,
   getOrderTracking,
   getAllOrders,
-  getOrderStats
+  getOrderStats,
+  verifyReleaseCode,
+  getReleaseCode,
+  generateReleaseCode
 } from "../controllers/order.controller";
 import { protect } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/authorize.middleware";
@@ -133,6 +136,44 @@ router.post(
   protect,
   validateResource(cancelOrderSchema),
   cancelOrder
+);
+
+/**
+ * Release Code Routes
+ */
+
+/**
+ * @route   GET /api/orders/:orderId/release-code
+ * @desc    Get release code (buyer view)
+ * @access  Protected (Buyer only)
+ */
+router.get(
+  "/:orderId/release-code",
+  protect,
+  getReleaseCode
+);
+
+/**
+ * @route   POST /api/orders/:orderId/verify-release-code
+ * @desc    Verify release code to confirm delivery (seller action)
+ * @access  Protected (Shop owner, ADMIN, SUPER_ADMIN)
+ */
+router.post(
+  "/:orderId/verify-release-code",
+  protect,
+  verifyReleaseCode
+);
+
+/**
+ * @route   POST /api/orders/:orderId/generate-release-code
+ * @desc    Manually generate release code (admin only)
+ * @access  Protected (ADMIN, SUPER_ADMIN)
+ */
+router.post(
+  "/:orderId/generate-release-code",
+  protect,
+  authorize("ADMIN", "SUPER_ADMIN"),
+  generateReleaseCode
 );
 
 export default router;

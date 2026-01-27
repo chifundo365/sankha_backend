@@ -150,6 +150,7 @@ export const addToCart = async (req: Request, res: Response) => {
           product_name: shopProduct.products.name,
           quantity: quantity,
           unit_price: shopProduct.price,
+          base_price: shopProduct.base_price,  // Freeze seller's payout amount
         },
         include: {
           shop_products: {
@@ -235,12 +236,10 @@ export const getCart = async (req: Request, res: Response) => {
       },
     });
 
-    // Calculate totals
+    // Calculate totals - compute subtotal from items directly for accuracy
     const cartSummary = {
-      carts: carts.map((cart) => ({
-        cart_id: cart.id,
-        shop: cart.shops,
-        items: cart.order_items.map((item) => ({
+      carts: carts.map((cart) => {
+        const items = cart.order_items.map((item) => ({
           id: item.id,
           shop_product_id: item.shop_product_id,
           product: item.shop_products?.products,
@@ -250,20 +249,29 @@ export const getCart = async (req: Request, res: Response) => {
           total_price: Number(item.quantity) * Number(item.unit_price),
           stock_available: item.shop_products?.stock_quantity || 0,
           is_available: item.shop_products?.is_available || false,
-        })),
-        subtotal: Number(cart.total_amount),
-        item_count: cart.order_items.length,
-      })),
+        }));
+        const subtotal = items.reduce((sum, item) => sum + item.total_price, 0);
+        return {
+          cart_id: cart.id,
+          shop: cart.shops,
+          items,
+          subtotal,
+          item_count: cart.order_items.length,
+        };
+      }),
       total_items: carts.reduce(
         (sum, cart) => sum + cart.order_items.length,
         0
       ),
-      total_amount: carts.reduce(
-        (sum, cart) => sum + Number(cart.total_amount),
-        0
-      ),
+      total_amount: 0, // Will be calculated below
       shop_count: carts.length,
     };
+    
+    // Calculate grand total from all cart subtotals
+    cartSummary.total_amount = cartSummary.carts.reduce(
+      (sum, cart) => sum + cart.subtotal,
+      0
+    );
 
     return successResponse(res, "Cart retrieved successfully", cartSummary, 200);
   } catch (error) {
