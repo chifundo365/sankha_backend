@@ -177,6 +177,7 @@ model shops {
   shop_products            shop_products[]
   transactions             transactions[]
   withdrawals              withdrawals[]
+  bulk_uploads             bulk_uploads[]
   users                    users?          @relation(fields: [owner_id], references: [id], onUpdate: NoAction)
 }
 
@@ -278,6 +279,12 @@ model shop_products {
   specs             Json?
   images            String[]
   is_available      Boolean?            @default(true)
+  
+  // Listing approval workflow
+  listing_status    listing_status?     @default(LIVE)  // Default LIVE for backward compatibility
+  bulk_upload_id    String?             @db.Uuid        // Groups products from same bulk upload
+  rejection_reason  String?                             // Why listing was rejected
+  
   created_at        DateTime?           @default(now()) @db.Timestamp(6)
   updated_at        DateTime?           @default(now()) @db.Timestamp(6)
   order_items       order_items[]
@@ -285,9 +292,12 @@ model shop_products {
   shops             shops               @relation(fields: [shop_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   shop_products_log shop_products_log[]
   reviews           reviews[]
+  bulk_upload       bulk_uploads?       @relation(fields: [bulk_upload_id], references: [id], onUpdate: NoAction)
 
   @@index([shop_id], map: "idx_shop_products_shop_id")
   @@index([product_id], map: "idx_shop_products_product_id")
+  @@index([listing_status], map: "idx_shop_products_listing_status")
+  @@index([bulk_upload_id], map: "idx_shop_products_bulk_upload_id")
 }
 
 model shop_products_log {
@@ -388,6 +398,43 @@ enum product_status {
   APPROVED      // Verified and live
   REJECTED      // Not approved
   MERGED        // Duplicate, merged into another product
+}
+
+// Listing status for shop_products (seller inventory)
+enum listing_status {
+  NEEDS_IMAGES      // Bulk uploaded, waiting for images
+  PENDING_REVIEW    // Has images, awaiting admin approval
+  LIVE              // Approved and visible to buyers
+  REJECTED          // Not approved by admin
+  PAUSED            // Temporarily hidden by seller
+}
+
+// ========== SANKHA MVP: Bulk Upload Tracking ==========
+
+model bulk_uploads {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shop_id         String          @db.Uuid
+  file_name       String          @db.VarChar(255)
+  total_rows      Int             // Total rows in file
+  successful      Int             @default(0)       // Successfully created
+  failed          Int             @default(0)       // Failed rows
+  skipped         Int             @default(0)       // Skipped (duplicates, etc.)
+  errors          Json?           // Array of error details: [{row, field, message}]
+  status          upload_status   @default(PROCESSING)
+  created_at      DateTime        @default(now()) @db.Timestamp(6)
+  completed_at    DateTime?       @db.Timestamp(6)
+  
+  shops           shops           @relation(fields: [shop_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  shop_products   shop_products[]
+  
+  @@index([shop_id], map: "idx_bulk_uploads_shop_id")
+  @@index([status], map: "idx_bulk_uploads_status")
+}
+
+enum upload_status {
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 // ========== SANKHA MVP: Wallet & Transactions ==========

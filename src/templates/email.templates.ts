@@ -62,7 +62,7 @@ const baseTemplate = (content: string, preheader: string = ''): string => `
   <!-- Preheader (hidden preview text) -->
   <div style="display: none; max-height: 0; overflow: hidden;">
     ${preheader}
-    &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+    &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
   </div>
   
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: ${COLORS.background};">
@@ -524,5 +524,44 @@ ${data.ctaUrl ? `${data.ctaText}: ${data.ctaUrl}` : ''}
 ${emailConfig.app.name}
   `.trim();
   
+  return { subject, html, text };
+};
+
+/**
+ * Bulk upload summary email template
+ */
+export const bulkUploadSummaryTemplate = (data: {
+  userName: string;
+  subject: string;
+  htmlSummary: string;
+  textSummary?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+}): { subject: string; html: string; text: string } => {
+  const subject = data.subject;
+  const preheader = 'Bulk upload summary for your shop.';
+  const ctaSection = data.ctaText && data.ctaUrl ? `
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="${data.ctaUrl}" 
+         style="display: inline-block; padding: 14px 32px; background-color: #2563eb; color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px;">
+        ${data.ctaText}
+      </a>
+    </div>
+  ` : '';
+  const content = `
+    <div style="text-align: center; margin-bottom: 24px;">
+      <span style="font-size: 48px;">📦</span>
+    </div>
+    <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 600; color: #1a237e; text-align: center;">
+      ${subject}
+    </h2>
+    <p style="margin: 0 0 16px; font-size: 16px; color: #1e293b; line-height: 1.6;">
+      Hi <strong>${data.userName}</strong>,
+    </p>
+    <div>${data.htmlSummary}</div>
+    ${ctaSection}
+  `;
+  const html = baseTemplate(content, preheader);
+  const text = data.textSummary || `${subject}\n\nSee your shop dashboard for details.`;
   return { subject, html, text };
 };
