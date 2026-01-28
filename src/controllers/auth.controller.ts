@@ -15,6 +15,7 @@ import {
   clearRefreshTokenCookie,
   getRefreshToken
 } from "../utils/cookie";
+import { passwordResetService } from "../services/passwordReset.service";
 
 export const authController = {
   register: async (req: Request, res: Response) => {
@@ -232,6 +233,83 @@ export const authController = {
     } catch (error) {
       console.error("Logout all error:", error);
       return errorResponse(res, "Failed to logout from all devices", null, 500);
+    }
+  },
+
+  /**
+   * Request password reset (Forgot Password)
+   * POST /api/auth/forgot-password
+   */
+  forgotPassword: async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+
+      const result = await passwordResetService.requestPasswordReset(email);
+
+      if (!result.success) {
+        return errorResponse(res, result.message, null, 500);
+      }
+
+      // Build response data
+      const responseData: any = {
+        expiresInMinutes: passwordResetService.getTokenExpiryMinutes(),
+      };
+
+      // In development, include token for testing without email
+      if (result.token) {
+        responseData._dev_token = result.token;
+        responseData._dev_reset_url = `/reset-password?token=${result.token}`;
+      }
+
+      return successResponse(res, result.message, responseData);
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      return errorResponse(res, "Failed to process request", null, 500);
+    }
+  },
+
+  /**
+   * Verify reset token is valid
+   * GET /api/auth/verify-reset-token/:token
+   */
+  verifyResetToken: async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+
+      const result = await passwordResetService.verifyToken(token);
+
+      if (!result.valid) {
+        return errorResponse(res, result.error || "Invalid token", null, 400);
+      }
+
+      return successResponse(res, "Token is valid", {
+        valid: true,
+        expiresInMinutes: passwordResetService.getTokenExpiryMinutes()
+      });
+    } catch (error) {
+      console.error("Verify reset token error:", error);
+      return errorResponse(res, "Failed to verify token", null, 500);
+    }
+  },
+
+  /**
+   * Reset password with token
+   * POST /api/auth/reset-password
+   */
+  resetPassword: async (req: Request, res: Response) => {
+    try {
+      const { token, password } = req.body;
+
+      const result = await passwordResetService.resetPassword(token, password);
+
+      if (!result.success) {
+        return errorResponse(res, result.message, null, 400);
+      }
+
+      return successResponse(res, result.message, null);
+    } catch (error) {
+      console.error("Reset password error:", error);
+      return errorResponse(res, "Failed to reset password", null, 500);
     }
   }
 };

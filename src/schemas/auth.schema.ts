@@ -46,6 +46,42 @@ export const refreshTokenSchema = z.object({
   })
 });
 
+// Password Reset Schemas
+export const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z
+      .string({ message: "Email is required" })
+      .email("Invalid email address")
+  })
+});
+
+export const resetPasswordSchema = z.object({
+  body: z.object({
+    token: z
+      .string({ message: "Reset token is required" })
+      .min(1, "Reset token cannot be empty"),
+    password: z
+      .string({ message: "Password is required" })
+      .min(6, "Password must be at least 6 characters")
+      .max(100, "Password must not exceed 100 characters"),
+    confirmPassword: z
+      .string({ message: "Confirm password is required" })
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  })
+});
+
+export const verifyResetTokenSchema = z.object({
+  params: z.object({
+    token: z
+      .string({ message: "Reset token is required" })
+      .min(1, "Reset token cannot be empty")
+  })
+});
+
 export type LoginInput = z.infer<typeof loginSchema>["body"];
 export type RegisterInput = z.infer<typeof registerSchema>["body"];
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>["body"];
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>["body"];
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>["body"];

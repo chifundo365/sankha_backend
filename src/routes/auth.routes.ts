@@ -1,7 +1,14 @@
 import { Router } from "express";
 import { authController } from "../controllers/auth.controller";
 import validateResource from "../middleware/validateResource";
-import { loginSchema, registerSchema, refreshTokenSchema } from "../schemas/auth.schema";
+import { 
+  loginSchema, 
+  registerSchema, 
+  refreshTokenSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  verifyResetTokenSchema
+} from "../schemas/auth.schema";
 import { protect } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/authorize.middleware";
 import { Request, Response } from "express";
@@ -58,6 +65,45 @@ router.post(
 
 // Logout from all devices - requires authentication
 router.post("/logout-all", protect, authController.logoutAll);
+
+// ==================== PASSWORD RESET ROUTES ====================
+
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Request password reset email
+ * @access  Public
+ */
+router.post(
+  "/forgot-password",
+  strictRateLimiter,  // Strict rate limiting to prevent abuse
+  validateResource(forgotPasswordSchema),
+  authController.forgotPassword
+);
+
+/**
+ * @route   GET /api/auth/verify-reset-token/:token
+ * @desc    Verify if reset token is valid (for frontend to show reset form)
+ * @access  Public
+ */
+router.get(
+  "/verify-reset-token/:token",
+  validateResource(verifyResetTokenSchema),
+  authController.verifyResetToken
+);
+
+/**
+ * @route   POST /api/auth/reset-password
+ * @desc    Reset password using token
+ * @access  Public
+ */
+router.post(
+  "/reset-password",
+  strictRateLimiter,  // Strict rate limiting
+  validateResource(resetPasswordSchema),
+  authController.resetPassword
+);
+
+// ==================== PROTECTED ROUTES ====================
 
 // Protected route - requires authentication
 router.get("/me", protect, (req: Request, res: Response) => {
