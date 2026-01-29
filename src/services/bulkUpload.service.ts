@@ -1,3 +1,155 @@
+import xlsx from 'xlsx';
+import prisma from '../prismaClient';
+import { emailService } from './email.service';
+import { bulkUploadSummaryTemplate } from '../templates/email.templates';
+
+type ParsedRow = { [key: string]: any };
+type RowError = { row: number; field?: string; message: string };
+
+export const bulkUploadService = {
+  generateTemplate(): Buffer {
+    const headers = [
+      'name',
+      'brand',
+      'sku',
+      'description',
+      'base_price',
+      'price',
+      'stock_quantity',
+      'condition',
+      'shop_description',
+      'specs'
+    ];
+
+    const ws = xlsx.utils.aoa_to_sheet([headers, []]);
+    const wb = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(wb, ws, 'Products');
+
+    return xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  },
+
+  parseExcelFile(buffer: Buffer): { rows: ParsedRow[]; errors: RowError[] } {
+    try {
+      const workbook = xlsx.read(buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+
+      const rawRows: ParsedRow[] = xlsx.utils.sheet_to_json(sheet, { defval: '' });
+
+      // Normalize keys to snake_case-ish lowercased keys
+      const rows = rawRows.map((r: ParsedRow) => {
+        const obj: ParsedRow = {};
+        Object.keys(r).forEach(k => {
+          const key = String(k).trim().toLowerCase().replace(/\s+/g, '_');
+          obj[key] = r[k];
+        });
+        return obj;
+      });
+
+      return { rows, errors: [] };
+    } catch (error: any) {
+      return { rows: [], errors: [{ row: 0, message: error.message || 'Failed to parse file' }] };
+    }
+  },
+
+  async processBulkUpload(
+    shopId: string,
+    fileName: string,
+    parsedRows: ParsedRow[],
+    parseErrors: RowError[] = []
+  ) {
+    const totalRows = parsedRows.length;
+
+    // Create a bulk_uploads record to track this upload
+    const upload = await prisma.bulk_uploads.create({
+      data: {
+        shop_id: shopId,
+        file_name: fileName,
+        total_rows: totalRows,
+        successful: 0,
+        failed: parseErrors.length,
+        skipped: 0,
+        errors: parseErrors.length > 0 ? parseErrors : undefined,
+        status: 'COMPLETED',
+        completed_at: new Date()
+      }
+    });
+
+    return {
+      uploadId: upload.id,
+      totalRows,
+      successful: 0,
+      failed: parseErrors.length,
+      skipped: 0,
+      products: [],
+      errors: parseErrors
+    };
+  },
+
+  async getProductsNeedingImages(shopId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, totalCount] = await Promise.all([
+      prisma.shop_products.findMany({
+        where: { shop_id: shopId, listing_status: 'NEEDS_IMAGES' },
+        include: { products: { select: { name: true, brand: true } } },
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.shop_products.count({ where: { shop_id: shopId, listing_status: 'NEEDS_IMAGES' } })
+    ]);
+
+    return {
+      items: items.map(i => ({ id: i.id, name: i.products.name, brand: i.products.brand, images: i.images || [], listing_status: i.listing_status })),
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount,
+        limit
+      }
+    };
+  },
+
+  async getUploadHistory(shopId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const [uploads, totalCount] = await Promise.all([
+      prisma.bulk_uploads.findMany({ where: { shop_id: shopId }, orderBy: { created_at: 'desc' }, skip, take: limit }),
+      prisma.bulk_uploads.count({ where: { shop_id: shopId } })
+    ]);
+
+    return {
+      uploads,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount,
+        limit
+      }
+    };
+  },
+
+  async sendUploadSummaryEmail(sellerEmail: string, sellerName: string, result: any) {
+    const htmlSummary = `
+      <p>Total rows: ${result.totalRows}</p>
+      <p>Successful: ${result.successful}</p>
+      <p>Failed: ${result.failed}</p>
+      <p>Skipped: ${result.skipped}</p>
+    `;
+
+    const template = bulkUploadSummaryTemplate({
+      userName: sellerName,
+      subject: 'Bulk Upload Summary',
+      htmlSummary,
+      textSummary: `Bulk upload completed: ${result.successful} successful, ${result.failed} failed.`,
+      ctaText: 'View Uploads',
+      ctaUrl: `/seller/uploads`
+    });
+
+    return emailService.send({ to: sellerEmail, subject: template.subject, html: template.html, text: template.text });
+  }
+};
+
+export type { ParsedRow, RowError };
 import * as XLSX from 'xlsx';
 import prisma from '../prismaClient';
 import { PRICE_MARKUP_MULTIPLIER } from '../utils/constants';

@@ -1,4 +1,0 @@
-Product Name,Category,Brand,SKU,Base Price (MWK),Stock Quantity,Condition,Description,Specs (JSON)
-Itel A70,Smartphones,Itel,,90000,15,NEW,Affordable smartphone with good battery life,"{\"storage\":\"128GB\",\"color\":\"Blue\"}"
-Samsung 32" TV,Electronics,Samsung,,250000,5,NEW,HD Ready LED TV,"{\"size\":\"32\",\"type\":\"LED\"}"
-HP 250 G8,Laptops,HP,,450000,7,REFURBISHED,Refurbished laptop with warranty,"{\"ram\":\"8GB\",\"storage\":\"256GB SSD\"}"

@@ -59,7 +59,9 @@ export const bulkUploadController = {
       // Validate file type
       const validTypes = [
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-excel'
+        'application/vnd.ms-excel',
+        'text/csv',
+        'application/octet-stream'
       ];
       if (!validTypes.includes(file.mimetype)) {
         return errorResponse(res, 'Invalid file type. Please upload an Excel file (.xlsx)', null, 400);

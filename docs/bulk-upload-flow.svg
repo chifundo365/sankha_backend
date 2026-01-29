@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <style>
+    .box { fill:#ffffff; stroke:#1f2937; stroke-width:1.5; rx:10; }
+    .title { font-family: Inter, Arial, sans-serif; font-size:16px; font-weight:700; fill:#0f172a }
+    .text { font-family: Inter, Arial, sans-serif; font-size:13px; fill:#0f172a }
+    .muted { font-family: Inter, Arial, sans-serif; font-size:12px; fill:#6b7280 }
+    .arrow { stroke:#374151; stroke-width:2; fill:none; marker-end: url(#arrowhead); }
+  </style>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#374151" />
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Title -->
+  <text x="40" y="40" class="title">Bulk Upload Flow Diagram</text>
+  <text x="40" y="64" class="muted">Repository: src/controllers/bulkUpload.controller.ts → src/services/bulkUpload.service.ts</text>
+
+  <!-- Left column: Seller actions -->
+  <g transform="translate(40,100)">
+    <rect class="box" width="260" height="70" rx="10" filter="url(#shadow)"/>
+    <text x="16" y="28" class="text">Download Template</text>
+    <text x="16" y="48" class="muted">GET /api/shops/:shopId/products/bulk/template</text>
+
+    <g transform="translate(0,110)">
+      <rect class="box" width="260" height="70" rx="10" filter="url(#shadow)"/>
+      <text x="16" y="28" class="text">Fill Products Sheet</text>
+        <text x="16" y="48" class="muted">Ensure headers: Product Name, Base Price (MWK), Stock Quantity</text>
+    </g>
+
+    <g transform="translate(0,220)">
+      <rect class="box" width="260" height="70" rx="10" filter="url(#shadow)"/>
+      <text x="16" y="28" class="text">Upload XLSX</text>
+      <text x="16" y="48" class="muted">POST /api/shops/:shopId/products/bulk (multipart, field=file)</text>
+    </g>
+  </g>
+
+  <!-- Center: Server processing -->
+  <g transform="translate(360,60)">
+    <rect class="box" x="0" y="0" width="420" height="80" rx="10" filter="url(#shadow)"/>
+    <text x="16" y="28" class="text">Upload Middleware</text>
+      <text x="16" y="48" class="muted">`uploadExcel` — mime/extension &amp; size checks (10 MB)</text>
+
+    <g transform="translate(0,110)">
+      <rect class="box" x="0" y="0" width="420" height="90" rx="10" filter="url(#shadow)"/>
+      <text x="16" y="28" class="text">bulkUploadController.bulkUpload()</text>
+      <text x="16" y="48" class="muted">ownership check → parse → validate headers/rows → process</text>
+    </g>
+
+    <g transform="translate(0,220)">
+      <rect class="box" x="0" y="0" width="420" height="200" rx="10" filter="url(#shadow)"/>
+      <text x="16" y="28" class="text">bulkUploadService.parseExcelFile() &amp; processBulkUpload()</text>
+      <text x="16" y="52" class="muted">• Validate required columns &amp; max rows (200)</text>
+      <text x="16" y="72" class="muted">• For each row: normalize name → find/create product → auto-SKU → calc display price</text>
+      <text x="16" y="92" class="muted">• Create `shop_products` with listing_status = NEEDS_IMAGES, is_available = false</text>
+      <text x="16" y="112" class="muted">• Create bulk_uploads record (PROCESSING → COMPLETED) and record errors</text>
+      <text x="16" y="132" class="muted">• Send summary email to seller</text>
+    </g>
+  </g>
+
+  <!-- Right column: Post-upload actions -->
+  <g transform="translate(820,100)">
+    <rect class="box" width="420" height="90" rx="10" filter="url(#shadow)"/>
+    <text x="16" y="28" class="text">Seller: Add Images</text>
+    <text x="16" y="48" class="muted">POST /api/shops/:shopId/products/:shopProductId/image (single)</text>
+    <text x="16" y="66" class="muted">→ listing_status becomes PENDING_REVIEW</text>
+
+    <g transform="translate(0,130)">
+      <rect class="box" width="420" height="100" rx="10" filter="url(#shadow)"/>
+      <text x="16" y="28" class="text">Admin: Review &amp; Approve</text>
+      <text x="16" y="52" class="muted">POST /api/products/:id/approve</text>
+      <text x="16" y="72" class="muted">→ listing_status = LIVE (or is_available toggled)</text>
+    </g>
+  </g>
+
+  <!-- Arrows -->
+  <path class="arrow" d="M300 250 L360 250" />
+  <path class="arrow" d="M300 360 L360 360" />
+  <path class="arrow" d="M450 380 L820 380" />
+  <path class="arrow" d="M780 420 L820 420" />
+  <path class="arrow" d="M780 520 L820 520" />
+
+  <!-- Legend -->
+  <rect x="40" y="760" width="1320" height="110" rx="8" fill="#f8fafc" stroke="#e6eef8" />
+  <text x="56" y="788" class="muted">Legend:</text>
+  <text x="56" y="808" class="text">• `bulk_uploads` table stores metadata, counts and errors</text>
+  <text x="56" y="828" class="text">• `shop_products` created with `listing_status = NEEDS_IMAGES` and linked via `bulk_upload_id`</text>
+  <text x="56" y="848" class="text">• Required headers must match exactly: Product Name, Base Price (MWK), Stock Quantity</text>
+
+</svg>
