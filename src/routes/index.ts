@@ -12,6 +12,7 @@ import userRoutes from "./user.routes";
 import adminRoutes from "./admin.routes";
 import paymentRoutes from "./payment.routes";
 import withdrawalRoutes from "./withdrawal.routes";
+import sellerInventoryRoutes from "./sellerInventory.routes";
 import { rateLimiter } from "../middleware/rateLimiter.middleware";
 import { ipBlocker } from "../middleware/ipBlocker.middleware";
 
@@ -45,6 +46,7 @@ router.use("/reviews", reviewRoutes);
 router.use("/admin", adminRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/withdrawals", withdrawalRoutes);
+router.use("/seller/inventory", sellerInventoryRoutes);
 // Shop product routes are nested under shops routes
 // They handle /shops/:shopId/products
 
