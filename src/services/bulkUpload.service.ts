@@ -1,31 +1,17 @@
 /**
- * Bulk Upload Service v4.0
- * ========================
- * Dual-template system with staging pipeline and tech spec validation.
+ * Bulk Upload Service
+ * ===================
+ * Handles Excel template generation, parsing, and product creation.
  * 
- * Template A: Electronics (Spec: prefixed columns with strict validation)
- * Template B: General (Label_x/Value_x for flexible attributes)
- * 
- * Flow: Upload → Parse → Stage → Validate → Preview → Commit
+ * Flow: Upload → Parse → Match/Create Products → Create Shop Products
  */
 import * as XLSX from 'xlsx';
 import prisma from '../prismaClient';
+import { Prisma, listing_status, upload_status, product_condition } from '../../generated/prisma';
 import { PRICE_MARKUP_MULTIPLIER, calculateDisplayPrice } from '../utils/constants';
 import { emailService } from './email.service';
 import { bulkUploadSummaryTemplate } from '../templates/email.templates';
-import { bulkUploadStagingService } from './bulkUploadStaging.service';
-import { techSpecValidator } from './techSpecValidator.service';
-import {
-  TemplateType,
-  ListingStatusV4,
-  UploadStatusV4,
-  RawExcelRow,
-  RowError,
-  StagingSummary,
-  CommitSummary,
-  TECH_CATEGORIES,
-  normalizeProductName
-} from '../types/bulkUpload.types';
+import { normalizeProductName } from '../types/bulkUpload.types';
 
 // ============================================================================
 // CONFIGURATION
@@ -36,8 +22,8 @@ const CONFIG = {
   MAX_FILE_SIZE_MB: 10
 };
 
-// Column mapping for the Excel template (v4.0)
-const COLUMN_MAPPING = {
+// Column mapping for the Excel template
+const COLUMN_MAPPING: Record<string, string> = {
   'Product Name': 'product_name',
   'Category': 'category_name',
   'Brand': 'brand',
@@ -46,26 +32,33 @@ const COLUMN_MAPPING = {
   'Stock Quantity': 'stock_quantity',
   'Condition': 'condition',
   'Description': 'shop_description'
-} as const;
+};
 
 const REQUIRED_COLUMNS = ['Product Name', 'Base Price (MWK)', 'Stock Quantity'];
-const VALID_CONDITIONS = ['NEW', 'REFURBISHED', 'USED_LIKE_NEW', 'USED_GOOD', 'USED_FAIR'];
+const VALID_CONDITIONS: product_condition[] = ['NEW', 'REFURBISHED', 'USED_LIKE_NEW', 'USED_GOOD', 'USED_FAIR'];
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
+interface RowError {
+  row: number;
+  field: string;
+  message: string;
+}
+
 interface ParsedRow {
   rowNumber: number;
   product_name: string;
+  normalized_name: string;
   category_name?: string;
   brand?: string;
   sku?: string;
   base_price: number;
   stock_quantity: number;
-  condition: string;
+  condition: product_condition;
   shop_description?: string;
-  specs?: any;
+  specs?: Record<string, string>;
 }
 
 interface UploadResult {
@@ -75,459 +68,239 @@ interface UploadResult {
   successful: number;
   failed: number;
   skipped: number;
-  needsSpecs: number;
-  needsImages: number;
   errors: RowError[];
   products: Array<{
     id: string;
     product_name: string;
-    sku?: string;
+    sku?: string | null;
     price: number;
     listing_status: string;
   }>;
 }
 
-interface StagingUploadResult {
-  uploadId: string;
-  batchId: string;
-  fileName: string;
-  templateType: TemplateType;
-  totalRows: number;
-  status: string;
-  previewUrl: string;
+interface ParseResult {
+  rows: ParsedRow[];
+  errors: RowError[];
 }
 
 // ============================================================================
-// BULK UPLOAD SERVICE v4.0
+// SERVICE
 // ============================================================================
 
 export const bulkUploadService = {
   /**
-   * Generate Excel template for bulk upload (v4.0 with dual template support)
+   * Generate Excel template for bulk upload
    */
-  generateTemplate(templateType: TemplateType = TemplateType.ELECTRONICS): Buffer {
-    const workbook = XLSX.utils.book_new();
-
-    // ========== Instructions Sheet ==========
-    const instructions = [
-      ['BULK UPLOAD TEMPLATE v4.0 - ' + (templateType === TemplateType.ELECTRONICS ? 'ELECTRONICS' : 'GENERAL')],
-      [''],
-      ['Required Columns:'],
-      ['- Product Name: The name of the product (will be matched to existing catalog or create new)'],
-      ['- Base Price (MWK): Your selling price BEFORE platform fees (5.26% markup added automatically)'],
-      ['- Stock Quantity: Number of items in stock'],
-      [''],
-      ['Optional Columns:'],
-      ['- Category: Category name (e.g., Smartphones, Laptops)'],
-      ['- Brand: Product brand (e.g., Apple, Samsung)'],
-      ['- SKU: Your internal product code (auto-generated if blank)'],
-      ['- Condition: NEW, REFURBISHED, USED_LIKE_NEW, USED_GOOD, or USED_FAIR (default: NEW)'],
-      ['- Description: Your product description'],
-      [''],
+  generateTemplate(): Buffer {
+    // Sample data showing both standard and spec columns
+    const sampleData = [
+      {
+        'Product Name': 'Samsung Galaxy S24 Ultra',
+        'Category': 'Smartphones',
+        'Brand': 'Samsung',
+        'SKU': '',
+        'Base Price (MWK)': 850000,
+        'Stock Quantity': 5,
+        'Condition': 'NEW',
+        'Description': 'Latest Samsung flagship with S Pen',
+        'Spec: Storage': '256GB',
+        'Spec: RAM': '12GB',
+        'Spec: Screen Size': '6.8"',
+        'Spec: Color': 'Titanium Black'
+      },
+      {
+        'Product Name': 'iPhone 15 Pro Max',
+        'Category': 'Smartphones',
+        'Brand': 'Apple',
+        'SKU': '',
+        'Base Price (MWK)': 1200000,
+        'Stock Quantity': 3,
+        'Condition': 'NEW',
+        'Description': 'Apple flagship phone',
+        'Spec: Storage': '512GB',
+        'Spec: RAM': '8GB',
+        'Spec: Screen Size': '6.7"',
+        'Spec: Color': 'Natural Titanium'
+      },
+      {
+        'Product Name': 'Generic Office Chair',
+        'Category': 'Furniture',
+        'Brand': '',
+        'SKU': 'CHAIR-001',
+        'Base Price (MWK)': 45000,
+        'Stock Quantity': 10,
+        'Condition': 'NEW',
+        'Description': 'Comfortable office chair',
+        'Label_1': 'Material',
+        'Value_1': 'Mesh',
+        'Label_2': 'Color',
+        'Value_2': 'Black'
+      }
     ];
 
-    if (templateType === TemplateType.ELECTRONICS) {
-      instructions.push(
-        ['ELECTRONICS TEMPLATE - Spec Columns:'],
-        ['Use "Spec:" prefix for technical specifications (required for electronics)'],
-        ['- Spec: Storage - e.g., 256GB, 512GB'],
-        ['- Spec: RAM - e.g., 8GB, 16GB'],
-        ['- Spec: Screen Size - e.g., 6.1", 15.6"'],
-        ['- Spec: Color - e.g., Black, Space Gray'],
-        ['- Spec: Processor - e.g., A17 Pro, M3 Chip'],
-        [''],
-        ['Missing required specs will result in NEEDS_SPECS status.'],
-        ['']
-      );
-    } else {
-      instructions.push(
-        ['GENERAL TEMPLATE - Label/Value Columns:'],
-        ['Use Label_X / Value_X pairs for flexible attributes'],
-        ['- Label_1, Value_1 - First attribute'],
-        ['- Label_2, Value_2 - Second attribute'],
-        ['- ... up to Label_10, Value_10'],
-        [''],
-        ['Example: Label_1="Color", Value_1="Red"'],
-        ['']
-      );
-    }
-
-    instructions.push(
-      ['PRICING EXAMPLE:'],
-      ['If you set Base Price = MWK 100,000'],
-      ['Display Price will be = MWK 105,260 (your base price + 5.26% platform fee)'],
-      ['You receive = MWK 100,000 when product sells'],
-      [''],
-      ['STATUS FLOW:'],
-      ['1. BROKEN - Invalid data (fix and re-upload)'],
-      ['2. NEEDS_SPECS - Missing required specifications (electronics only)'],
-      ['3. NEEDS_IMAGES - Add product images'],
-      ['4. LIVE - Visible to buyers'],
-      [''],
-      ['Maximum ' + CONFIG.MAX_ROWS_PER_UPLOAD + ' products per upload.']
-    );
-
-    const instructionSheet = XLSX.utils.aoa_to_sheet(instructions);
-    instructionSheet['!cols'] = [{ wch: 90 }];
-    XLSX.utils.book_append_sheet(workbook, instructionSheet, 'Instructions');
-
-    // ========== Products Sheet ==========
-    let headers: string[];
-    let sampleData: Record<string, any>[];
-
-    if (templateType === TemplateType.ELECTRONICS) {
-      headers = [
-        'Product Name', 'Category', 'Brand', 'SKU', 'Base Price (MWK)',
-        'Stock Quantity', 'Condition', 'Description',
-        'Spec: Storage', 'Spec: RAM', 'Spec: Screen Size', 'Spec: Color', 'Spec: Processor'
-      ];
-
-      sampleData = [
-        {
-          'Product Name': 'iPhone 15 Pro Max 256GB',
-          'Category': 'Smartphones',
-          'Brand': 'Apple',
-          'SKU': 'IP15PM-256-BLK',
-          'Base Price (MWK)': 1500000,
-          'Stock Quantity': 10,
-          'Condition': 'NEW',
-          'Description': 'Brand new, sealed in box. 1 year warranty.',
-          'Spec: Storage': '256GB',
-          'Spec: RAM': '8GB',
-          'Spec: Screen Size': '6.7"',
-          'Spec: Color': 'Black Titanium',
-          'Spec: Processor': 'A17 Pro'
-        },
-        {
-          'Product Name': 'Samsung Galaxy S24 Ultra',
-          'Category': 'Smartphones',
-          'Brand': 'Samsung',
-          'SKU': 'SGS24U-512-GRY',
-          'Base Price (MWK)': 1350000,
-          'Stock Quantity': 5,
-          'Condition': 'NEW',
-          'Description': 'Factory unlocked. Includes S Pen.',
-          'Spec: Storage': '512GB',
-          'Spec: RAM': '12GB',
-          'Spec: Screen Size': '6.8"',
-          'Spec: Color': 'Titanium Gray',
-          'Spec: Processor': 'Snapdragon 8 Gen 3'
-        },
-        {
-          'Product Name': 'MacBook Air M3',
-          'Category': 'Laptops',
-          'Brand': 'Apple',
-          'SKU': '',
-          'Base Price (MWK)': 2100000,
-          'Stock Quantity': 3,
-          'Condition': 'REFURBISHED',
-          'Description': 'Certified refurbished. 90-day warranty.',
-          'Spec: Storage': '512GB SSD',
-          'Spec: RAM': '16GB',
-          'Spec: Screen Size': '13.6"',
-          'Spec: Color': 'Space Gray',
-          'Spec: Processor': 'M3 Chip'
-        }
-      ];
-    } else {
-      headers = [
-        'Product Name', 'Category', 'Brand', 'SKU', 'Base Price (MWK)',
-        'Stock Quantity', 'Condition', 'Description',
-        'Label_1', 'Value_1', 'Label_2', 'Value_2', 'Label_3', 'Value_3',
-        'Label_4', 'Value_4', 'Label_5', 'Value_5'
-      ];
-
-      sampleData = [
-        {
-          'Product Name': 'Leather Office Chair',
-          'Category': 'Furniture',
-          'Brand': 'ErgoMax',
-          'SKU': 'CHAIR-001',
-          'Base Price (MWK)': 85000,
-          'Stock Quantity': 15,
-          'Condition': 'NEW',
-          'Description': 'Ergonomic office chair with lumbar support.',
-          'Label_1': 'Material', 'Value_1': 'Genuine Leather',
-          'Label_2': 'Color', 'Value_2': 'Black',
-          'Label_3': 'Weight Capacity', 'Value_3': '120kg',
-          'Label_4': 'Adjustable Height', 'Value_4': 'Yes',
-          'Label_5': 'Warranty', 'Value_5': '2 Years'
-        },
-        {
-          'Product Name': 'Nike Air Max 90',
-          'Category': 'Footwear',
-          'Brand': 'Nike',
-          'SKU': 'NIKE-AM90-42',
-          'Base Price (MWK)': 125000,
-          'Stock Quantity': 8,
-          'Condition': 'NEW',
-          'Description': 'Classic Air Max 90 sneakers.',
-          'Label_1': 'Size', 'Value_1': '42',
-          'Label_2': 'Color', 'Value_2': 'White/Red',
-          'Label_3': 'Material', 'Value_3': 'Leather/Mesh',
-          'Label_4': '', 'Value_4': '',
-          'Label_5': '', 'Value_5': ''
-        }
-      ];
-    }
-
-    const worksheet = XLSX.utils.json_to_sheet(sampleData, { header: headers });
-    
-    // Set column widths
-    worksheet['!cols'] = headers.map(h => ({
-      wch: Math.max(h.length + 5, 15)
-    }));
-
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
 
-    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    // Add instructions sheet
+    const instructionData = [
+      ['Sankha Bulk Upload Template - Instructions'],
+      [''],
+      ['REQUIRED COLUMNS (must have data):'],
+      ['• Product Name - Name of the product'],
+      ['• Base Price (MWK) - Your selling price (platform fee will be added)'],
+      ['• Stock Quantity - Number of items in stock'],
+      [''],
+      ['OPTIONAL COLUMNS:'],
+      ['• Category - Product category (e.g., Smartphones, Laptops)'],
+      ['• Brand - Brand name (e.g., Samsung, Apple)'],
+      ['• SKU - Your product code (auto-generated if empty)'],
+      ['• Condition - NEW, REFURBISHED, USED_LIKE_NEW, USED_GOOD, USED_FAIR'],
+      ['• Description - Product description'],
+      [''],
+      ['FOR ELECTRONICS (Tech specs):'],
+      ['• Use "Spec: [Name]" columns (e.g., "Spec: Storage", "Spec: RAM")'],
+      ['• Common specs: Storage, RAM, Screen Size, Battery, Color'],
+      [''],
+      ['FOR GENERAL PRODUCTS:'],
+      ['• Use Label_1/Value_1, Label_2/Value_2 pairs for attributes'],
+      [''],
+      ['NOTES:'],
+      ['• Products start with "Needs Images" status'],
+      ['• Add images to make products visible to buyers'],
+      ['• Maximum 200 products per upload']
+    ];
+
+    const instructionSheet = XLSX.utils.aoa_to_sheet(instructionData);
+    XLSX.utils.book_append_sheet(workbook, instructionSheet, 'Instructions');
+
+    return Buffer.from(XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }));
   },
 
   /**
-   * Parse uploaded Excel file (v4.0 - returns raw rows for staging)
+   * Parse Excel file and extract product data
    */
-  parseExcelFile(fileBuffer: Buffer): { 
-    rows: Array<{ raw: RawExcelRow; rowNumber: number }>; 
-    headers: string[];
-    errors: RowError[];
-    templateType: TemplateType;
-  } {
-    try {
-      const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-      
-      // Get the Products sheet (or first non-instruction sheet)
-      let sheetName = 'Products';
-      if (!workbook.SheetNames.includes('Products')) {
-        sheetName = workbook.SheetNames.find(s => s !== 'Instructions') || workbook.SheetNames[0];
-      }
-      
-      const worksheet = workbook.Sheets[sheetName];
-      const rawRows: RawExcelRow[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+  parseExcelFile(buffer: Buffer): ParseResult {
+    const errors: RowError[] = [];
+    const rows: ParsedRow[] = [];
 
-      if (rawRows.length === 0) {
+    try {
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const rawData: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+      if (rawData.length === 0) {
+        return { rows: [], errors: [{ row: 0, field: 'file', message: 'No data found in file' }] };
+      }
+
+      // Check for required columns
+      const headers = Object.keys(rawData[0] || {});
+      const missingColumns = REQUIRED_COLUMNS.filter(col => !headers.includes(col));
+      if (missingColumns.length > 0) {
         return {
           rows: [],
-          headers: [],
-          errors: [{ row: 0, field: 'file', message: 'No data found in the file' }],
-          templateType: TemplateType.AUTO
+          errors: [{
+            row: 0,
+            field: 'headers',
+            message: `Missing required columns: ${missingColumns.join(', ')}`
+          }]
         };
       }
 
-      // Get headers from first row
-      const headers = Object.keys(rawRows[0]);
+      // Parse each row
+      for (let i = 0; i < rawData.length; i++) {
+        const rawRow = rawData[i];
+        const rowNumber = i + 2; // Excel rows start at 1, header is row 1
+        const rowErrors: RowError[] = [];
 
-      // Detect template type
-      const templateType = bulkUploadStagingService.detectTemplateType(headers);
+        // Extract and validate required fields
+        const productName = String(rawRow['Product Name'] || '').trim();
+        if (!productName) {
+          rowErrors.push({ row: rowNumber, field: 'Product Name', message: 'Product name is required' });
+        }
 
-      // Map rows with row numbers
-      const rows = rawRows
-        .map((raw, index) => ({
-          raw,
-          rowNumber: index + 2 // Excel row number (1-indexed + header)
-        }))
-        .filter(({ raw }) => {
-          // Filter out empty rows
-          const productName = raw['Product Name'] || raw['product_name'];
-          const basePrice = raw['Base Price (MWK)'] || raw['base_price'];
-          return productName || basePrice;
-        });
+        const basePrice = parseFloat(rawRow['Base Price (MWK)']);
+        if (isNaN(basePrice) || basePrice <= 0) {
+          rowErrors.push({ row: rowNumber, field: 'Base Price (MWK)', message: 'Valid price is required' });
+        }
 
-      // Check for required columns
-      const errors: RowError[] = [];
-      const firstRow = rawRows[0];
-      
-      for (const col of REQUIRED_COLUMNS) {
-        if (!(col in firstRow)) {
-          // Check alternate names
-          const altCol = col.toLowerCase().replace(/\s+/g, '_').replace(/[()]/g, '');
-          if (!(altCol in firstRow)) {
-            errors.push({ row: 0, field: col, message: `Missing required column: ${col}` });
+        const stockQty = parseInt(rawRow['Stock Quantity']);
+        if (isNaN(stockQty) || stockQty < 0) {
+          rowErrors.push({ row: rowNumber, field: 'Stock Quantity', message: 'Valid stock quantity is required' });
+        }
+
+        // Validate condition
+        let condition: product_condition = 'NEW';
+        const rawCondition = String(rawRow['Condition'] || 'NEW').toUpperCase().trim();
+        if (rawCondition && !VALID_CONDITIONS.includes(rawCondition as product_condition)) {
+          rowErrors.push({
+            row: rowNumber,
+            field: 'Condition',
+            message: `Invalid condition. Must be one of: ${VALID_CONDITIONS.join(', ')}`
+          });
+        } else {
+          condition = (rawCondition || 'NEW') as product_condition;
+        }
+
+        // If row has errors, skip it
+        if (rowErrors.length > 0) {
+          errors.push(...rowErrors);
+          continue;
+        }
+
+        // Extract specs (Spec: columns or Label_x/Value_x pairs)
+        const specs: Record<string, string> = {};
+        for (const key of Object.keys(rawRow)) {
+          if (key.startsWith('Spec: ')) {
+            const specName = key.replace('Spec: ', '').trim();
+            const specValue = String(rawRow[key] || '').trim();
+            if (specValue) {
+              specs[specName] = specValue;
+            }
+          }
+          if (key.startsWith('Label_')) {
+            const num = key.replace('Label_', '');
+            const valueKey = `Value_${num}`;
+            const label = String(rawRow[key] || '').trim();
+            const value = String(rawRow[valueKey] || '').trim();
+            if (label && value) {
+              specs[label] = value;
+            }
           }
         }
+
+        // Build parsed row
+        const parsedRow: ParsedRow = {
+          rowNumber,
+          product_name: productName,
+          normalized_name: normalizeProductName(productName),
+          category_name: String(rawRow['Category'] || '').trim() || undefined,
+          brand: String(rawRow['Brand'] || '').trim() || undefined,
+          sku: String(rawRow['SKU'] || '').trim() || undefined,
+          base_price: basePrice,
+          stock_quantity: stockQty,
+          condition,
+          shop_description: String(rawRow['Description'] || '').trim() || undefined,
+          specs: Object.keys(specs).length > 0 ? specs : undefined
+        };
+
+        rows.push(parsedRow);
       }
 
-      // Check row limit
-      if (rows.length > CONFIG.MAX_ROWS_PER_UPLOAD) {
-        errors.push({
-          row: 0,
-          field: 'file',
-          message: `Too many rows. Maximum ${CONFIG.MAX_ROWS_PER_UPLOAD} products per upload. Found ${rows.length}.`
-        });
-      }
-
-      return { rows, headers, errors, templateType };
-    } catch (error: any) {
+      return { rows, errors };
+    } catch (error) {
+      console.error('Parse Excel error:', error);
       return {
         rows: [],
-        headers: [],
-        errors: [{ row: 0, field: 'file', message: error.message || 'Failed to parse Excel file' }],
-        templateType: TemplateType.AUTO
+        errors: [{ row: 0, field: 'file', message: 'Failed to parse Excel file' }]
       };
     }
   },
 
   /**
-   * Stage upload for preview (v4.0 - new staging workflow)
-   */
-  async stageUpload(
-    shopId: string,
-    fileName: string,
-    fileBuffer: Buffer
-  ): Promise<StagingUploadResult> {
-    // Parse file
-    const { rows, headers, errors, templateType } = this.parseExcelFile(fileBuffer);
-
-    if (errors.length > 0 && rows.length === 0) {
-      throw new Error(errors.map(e => e.message).join('; '));
-    }
-
-    // Generate batch ID
-    const batchId = bulkUploadStagingService.generateBatchId(shopId);
-
-    // Create bulk upload record with STAGING status
-    const upload = await prisma.bulk_uploads.create({
-      data: {
-        shop_id: shopId,
-        file_name: fileName,
-        batch_id: batchId,
-        template_type: templateType,
-        total_rows: rows.length,
-        status: 'STAGING'
-      }
-    });
-
-    // Insert rows into staging table
-    await bulkUploadStagingService.insertStagingRows(
-      batchId,
-      upload.id,
-      shopId,
-      rows,
-      templateType
-    );
-
-    // Validate staging rows
-    const summary = await bulkUploadStagingService.validateStagingBatch(batchId, shopId);
-
-    // Update upload with validation results
-    await prisma.bulk_uploads.update({
-      where: { id: upload.id },
-      data: {
-        successful: summary.valid,
-        failed: summary.invalid,
-        needs_specs: summary.willNeedSpecs,
-        needs_images: summary.willNeedImages
-      }
-    });
-
-    return {
-      uploadId: upload.id,
-      batchId,
-      fileName,
-      templateType,
-      totalRows: rows.length,
-      status: 'STAGING',
-      previewUrl: `/api/bulk-upload/preview/${batchId}`
-    };
-  },
-
-  /**
-   * Get staging preview
-   */
-  async getPreview(
-    batchId: string,
-    page: number = 1,
-    limit: number = 50,
-    filter: 'all' | 'valid' | 'invalid' = 'all'
-  ) {
-    return bulkUploadStagingService.getPreview(batchId, page, limit, filter);
-  },
-
-  /**
-   * Get correction CSV for invalid rows
-   */
-  async getCorrectionCSV(batchId: string): Promise<Buffer> {
-    const correctionData = await bulkUploadStagingService.getCorrectionData(batchId);
-    
-    if (correctionData.length === 0) {
-      throw new Error('No invalid rows to correct');
-    }
-
-    const worksheet = XLSX.utils.json_to_sheet(correctionData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Corrections');
-
-    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-  },
-
-  /**
-   * Commit staging batch to production
-   */
-  async commitBatch(shopId: string, batchId: string): Promise<CommitSummary> {
-    return bulkUploadStagingService.commitBatch(shopId, batchId);
-  },
-
-  /**
-   * Cancel staging batch
-   */
-  async cancelBatch(batchId: string): Promise<void> {
-    return bulkUploadStagingService.cancelBatch(batchId);
-  },
-
-  /**
-   * Process bulk upload (v4.0 - direct processing without staging)
-   * For backwards compatibility and CLI usage
-   */
-      
-      // Validate condition
-      let condition = String(row['Condition'] || 'NEW').toUpperCase().trim();
-      if (!VALID_CONDITIONS.includes(condition)) {
-        rowErrors.push({ 
-          row: rowNumber, 
-          field: 'Condition', 
-          message: `Invalid condition. Must be one of: ${VALID_CONDITIONS.join(', ')}` 
-        });
-        condition = 'NEW'; // Default to NEW if invalid
-      }
-      
-      // Parse specs JSON
-      let specs = null;
-      const specsRaw = row['Specs (JSON)'];
-      if (specsRaw) {
-        try {
-          specs = typeof specsRaw === 'string' ? JSON.parse(specsRaw) : specsRaw;
-        } catch (e) {
-          rowErrors.push({ row: rowNumber, field: 'Specs', message: 'Invalid JSON format in Specs column' });
-        }
-      }
-      
-      // If there are errors for this row, add to errors array
-      if (rowErrors.length > 0) {
-        errors.push(...rowErrors);
-        return;
-      }
-      
-      // Add valid row
-      rows.push({
-        rowNumber,
-        product_name: productName,
-        category_name: String(row['Category'] || '').trim() || undefined,
-        brand: String(row['Brand'] || '').trim() || undefined,
-        sku: String(row['SKU'] || '').trim() || undefined,
-        base_price: basePrice,
-        stock_quantity: stockQuantity,
-        condition,
-        shop_description: String(row['Description'] || '').trim() || undefined,
-        specs
-      });
-    });
-    
-    return { rows, errors };
-  },
-
-  /**
    * Process bulk upload and create shop products
    */
-
   async processBulkUpload(
     shopId: string,
     fileName: string,
@@ -539,129 +312,39 @@ export const bulkUploadService = {
     let successful = 0;
     let failed = parseErrors.length;
     let skipped = 0;
-    let needsSpecs = 0;
-    let needsImages = 0;
-
-    // Fetch shop for code
-    const shop = await prisma.shops.findUnique({ where: { id: shopId } });
-    let shopCode = 'SHOP';
-    if (shop && shop.name) {
-      shopCode = shop.name.replace(/[^A-Z0-9]/gi, '').substring(0, 6).toUpperCase();
-    }
-    const dateCode = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    let skuSeq = 1;
 
     // Create bulk upload record
     const bulkUpload = await prisma.bulk_uploads.create({
       data: {
         shop_id: shopId,
         file_name: fileName,
-        batch_id: bulkUploadStagingService.generateBatchId(shopId),
         total_rows: parsedRows.length + parseErrors.length,
-        status: 'PROCESSING'
+        status: 'PROCESSING' as upload_status
       }
     });
+
+    // Get shop for SKU generation
+    const shop = await prisma.shops.findUnique({
+      where: { id: shopId },
+      select: { name: true }
+    });
+    const shopCode = this.generateShopCode(shop?.name || 'SHOP');
 
     // Process each row
     for (const row of parsedRows) {
       try {
-        // Auto-generate SKU if missing
-        let sku = row.sku && row.sku.trim() ? row.sku.trim() : null;
-        if (!sku) {
-          // Find next available SKU for this shop/date
-          let candidateSku;
-          let exists = true;
-          let tryCount = 0;
-          do {
-            candidateSku = `${shopCode}-${dateCode}-${String(skuSeq).padStart(3, '0')}`;
-            // Check if SKU exists for this shop
-            const existingSku = await prisma.shop_products.findFirst({
-              where: { shop_id: shopId, sku: candidateSku }
-            });
-            if (!existingSku) {
-              exists = false;
-              sku = candidateSku;
-            } else {
-              skuSeq++;
-              tryCount++;
-            }
-          } while (exists && tryCount < 1000);
-          if (!sku) {
-            errors.push({
-              row: row.rowNumber,
-              field: 'SKU',
-              message: 'Could not auto-generate unique SKU for this product.'
-            });
-            failed++;
-            continue;
-          }
-          skuSeq++;
-        }
+        const normalizedName = row.normalized_name || normalizeProductName(row.product_name);
 
-        // Smart Match: Try to find existing product by name match
-        const matchResult = await bulkUploadStagingService.findMatchingProduct(
-          row.product_name,
-          row.brand
-        );
-
-        let product;
-        if (matchResult.found && matchResult.productId) {
-          product = await prisma.products.findUnique({ 
-            where: { id: matchResult.productId } 
-          });
-        }
-
-        // If no existing product, create a new one (pending approval)
-        if (!product) {
-          // Find or create category
-          let categoryId: string | null = null;
-          if (row.category_name) {
-            const category = await prisma.categories.findFirst({
-              where: { name: { contains: row.category_name, mode: 'insensitive' } }
-            });
-            categoryId = category?.id || null;
-          }
-
-          // Create new product (pending admin approval)
-          product = await prisma.products.create({
-            data: {
-              name: row.product_name,
-              normalized_name: normalizeProductName(row.product_name),
-              brand: row.brand,
-              category_id: categoryId,
-              base_price: row.base_price,
-              status: 'PENDING',
-              is_verified: false,
-              images: []
-            }
-          });
-        }
-
-        // Check for duplicate SKU in this shop
-        if (sku) {
-          const existingSku = await prisma.shop_products.findFirst({
-            where: {
-              shop_id: shopId,
-              sku: sku
-            }
-          });
-
-          if (existingSku) {
-            skipped++;
-            errors.push({
-              row: row.rowNumber,
-              field: 'SKU',
-              message: `Duplicate SKU "${sku}" already exists in your shop`
-            });
-            continue;
-          }
-        }
-
-        // Check if this exact product already exists in this shop
+        // DUPLICATE DETECTION - Check if shop already has this product by normalized name
         const existingShopProduct = await prisma.shop_products.findFirst({
           where: {
             shop_id: shopId,
-            product_id: product.id
+            products: {
+              normalized_name: normalizedName
+            }
+          },
+          include: {
+            products: { select: { name: true } }
           }
         });
 
@@ -670,47 +353,87 @@ export const bulkUploadService = {
           errors.push({
             row: row.rowNumber,
             field: 'Product Name',
-            message: `Product "${row.product_name}" already exists in your shop inventory`
+            message: `Duplicate: You already have "${existingShopProduct.products.name}" in your shop`
           });
           continue;
         }
 
-        // Validate specs for tech categories
-        const specResult = await techSpecValidator.validateSpecs(
-          product.category_id,
-          row.category_name,
-          row.specs || {}
-        );
-
-        // Determine listing status
-        let listingStatus: string;
-        if (specResult.isTechCategory && !specResult.isValid) {
-          listingStatus = 'NEEDS_SPECS';
-          needsSpecs++;
-        } else {
-          listingStatus = 'NEEDS_IMAGES';
-          needsImages++;
+        // Also check by SKU if provided
+        if (row.sku) {
+          const existingBySku = await prisma.shop_products.findFirst({
+            where: {
+              shop_id: shopId,
+              sku: row.sku
+            }
+          });
+          if (existingBySku) {
+            skipped++;
+            errors.push({
+              row: row.rowNumber,
+              field: 'SKU',
+              message: `Duplicate: SKU "${row.sku}" already exists in your shop`
+            });
+            continue;
+          }
         }
 
-        // Calculate display price
+        // Find or create the master product
+        let product = await prisma.products.findFirst({
+          where: {
+            normalized_name: normalizedName,
+            OR: [
+              { status: 'APPROVED' },
+              { status: 'PENDING' }
+            ]
+          }
+        });
+
+        // Get category ID if provided
+        let categoryId: string | null = null;
+        if (row.category_name) {
+          const category = await prisma.categories.findFirst({
+            where: {
+              name: { equals: row.category_name, mode: 'insensitive' }
+            }
+          });
+          categoryId = category?.id || null;
+        }
+
+        if (!product) {
+          // Create new master product
+          product = await prisma.products.create({
+            data: {
+              name: row.product_name,
+              normalized_name: normalizedName,
+              brand: row.brand || null,
+              category_id: categoryId,
+              description: row.shop_description || null,
+              status: 'PENDING'
+            }
+          });
+        }
+
+        // Generate SKU if not provided
+        const sku = row.sku || await this.generateSku(shopCode, shopId);
+
+        // Calculate display price with markup
         const displayPrice = calculateDisplayPrice(row.base_price);
 
-        // Create shop product with appropriate status
+        // Create shop product with NEEDS_IMAGES status
         const shopProduct = await prisma.shop_products.create({
           data: {
             shop_id: shopId,
             product_id: product.id,
-            sku: sku,
+            sku,
             base_price: row.base_price,
             price: displayPrice,
             stock_quantity: row.stock_quantity,
-            condition: row.condition as any,
-            shop_description: row.shop_description,
-            specs: specResult.normalizedValues,
-            variant_values: specResult.normalizedValues,
+            condition: row.condition,
+            shop_description: row.shop_description || null,
+            specs: row.specs ? (row.specs as Prisma.InputJsonValue) : Prisma.JsonNull,
             images: [],
             is_available: false,
-            listing_status: listingStatus,
+            listing_status: 'NEEDS_IMAGES' as listing_status,
             bulk_upload_id: bulkUpload.id
           }
         });
@@ -719,71 +442,101 @@ export const bulkUploadService = {
         createdProducts.push({
           id: shopProduct.id,
           product_name: row.product_name,
-          sku: sku || undefined,
-          price: displayPrice,
-          listing_status: listingStatus
+          sku: shopProduct.sku,
+          price: Number(shopProduct.price),
+          listing_status: shopProduct.listing_status || 'NEEDS_IMAGES'
         });
 
       } catch (error) {
-        failed++;
         console.error(`Error processing row ${row.rowNumber}:`, error);
+        failed++;
         errors.push({
           row: row.rowNumber,
-          field: 'system',
-          message: `Failed to process: ${error instanceof Error ? error.message : 'Unknown error'}`
+          field: 'processing',
+          message: error instanceof Error ? error.message : 'Unknown error'
         });
       }
     }
 
-    // Update bulk upload record
+    // Update bulk upload with final results
     await prisma.bulk_uploads.update({
       where: { id: bulkUpload.id },
       data: {
         successful,
         failed,
         skipped,
-        needs_specs: needsSpecs,
-        needs_images: needsImages,
-        errors: errors.length > 0 ? JSON.parse(JSON.stringify(errors)) : undefined,
-        status: 'COMPLETED',
+        errors: errors as unknown as Prisma.InputJsonValue,
+        status: 'COMPLETED' as upload_status,
         completed_at: new Date()
       }
     });
 
     return {
       uploadId: bulkUpload.id,
-      batchId: bulkUpload.batch_id || '',
+      batchId: bulkUpload.id, // Use uploadId as batchId for compatibility
       totalRows: parsedRows.length + parseErrors.length,
       successful,
       failed,
       skipped,
-      needsSpecs,
-      needsImages,
       errors,
       products: createdProducts
     };
   },
 
   /**
-   * Get products that need specs for a shop (v4.0)
+   * Generate shop code from shop name
    */
-  async getProductsNeedingSpecs(shopId: string, page: number = 1, limit: number = 20) {
-    const skip = (page - 1) * limit;
+  generateShopCode(shopName: string): string {
+    return shopName
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .substring(0, 6)
+      .padEnd(6, 'X');
+  },
+
+  /**
+   * Generate unique SKU for shop
+   */
+  async generateSku(shopCode: string, shopId: string): Promise<string> {
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     
-    const [products, totalCount] = await Promise.all([
+    // Get count of products created today for this shop
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const count = await prisma.shop_products.count({
+      where: {
+        shop_id: shopId,
+        created_at: { gte: todayStart }
+      }
+    });
+
+    const seq = String(count + 1).padStart(3, '0');
+    return `${shopCode}-${today}-${seq}`;
+  },
+
+  /**
+   * Get products that need images
+   */
+  async getProductsNeedingImages(
+    shopId: string,
+    page: number = 1,
+    limit: number = 20
+  ) {
+    const skip = (page - 1) * limit;
+
+    const [products, total] = await Promise.all([
       prisma.shop_products.findMany({
         where: {
           shop_id: shopId,
-          listing_status: 'NEEDS_SPECS'
+          listing_status: 'NEEDS_IMAGES' as listing_status
         },
         include: {
           products: {
             select: {
               name: true,
               brand: true,
-              categories: {
-                select: { name: true }
-              }
+              categories: { select: { name: true } }
             }
           }
         },
@@ -794,11 +547,11 @@ export const bulkUploadService = {
       prisma.shop_products.count({
         where: {
           shop_id: shopId,
-          listing_status: 'NEEDS_SPECS'
+          listing_status: 'NEEDS_IMAGES' as listing_status
         }
       })
     ]);
-    
+
     return {
       products: products.map(p => ({
         id: p.id,
@@ -811,172 +564,29 @@ export const bulkUploadService = {
         stock_quantity: p.stock_quantity,
         condition: p.condition,
         specs: p.specs,
-        variant_values: p.variant_values,
-        listing_status: p.listing_status,
-        created_at: p.created_at
+        images: p.images,
+        listing_status: p.listing_status
       })),
       pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalCount / limit),
-        totalCount,
+        total,
+        page,
         limit,
-        hasNextPage: page < Math.ceil(totalCount / limit),
-        hasPrevPage: page > 1
+        totalPages: Math.ceil(total / limit)
       }
-    };
-  },
-            shop_id: shopId,
-            product_id: product.id,
-            sku: sku,
-            base_price: row.base_price,
-            price: displayPrice,
-            stock_quantity: row.stock_quantity,
-            condition: row.condition as any,
-            shop_description: row.shop_description,
-            specs: row.specs,
-            images: [],
-            is_available: false, // Not available until images are added
-            listing_status: 'NEEDS_IMAGES',
-            bulk_upload_id: bulkUpload.id
-          }
-        });
-
-        successful++;
-        createdProducts.push({
-          id: shopProduct.id,
-          product_name: row.product_name,
-          sku: sku,
-          price: displayPrice,
-          listing_status: 'NEEDS_IMAGES'
-        });
-
-      } catch (error) {
-        failed++;
-        console.error(`Error processing row ${row.rowNumber}:`, error);
-        errors.push({
-          row: row.rowNumber,
-          field: 'system',
-          message: `Failed to process: ${error instanceof Error ? error.message : 'Unknown error'}`
-        });
-      }
-    }
-
-    // Update bulk upload record
-    await prisma.bulk_uploads.update({
-      where: { id: bulkUpload.id },
-      data: {
-        successful,
-        failed,
-        skipped,
-        errors: errors.length > 0 ? JSON.parse(JSON.stringify(errors)) : undefined,
-        status: 'COMPLETED',
-        completed_at: new Date()
-      }
-    });
-
-    return {
-      uploadId: bulkUpload.id,
-      totalRows: parsedRows.length + parseErrors.length,
-      successful,
-      failed,
-      skipped,
-      errors,
-      products: createdProducts
     };
   },
 
   /**
-   * Get products that need images for a shop
+   * Get upload history for shop
    */
-  async getProductsNeedingImages(shopId: string, page: number = 1, limit: number = 20) {
+  async getUploadHistory(
+    shopId: string,
+    page: number = 1,
+    limit: number = 10
+  ) {
     const skip = (page - 1) * limit;
-    
-    const [products, totalCount] = await Promise.all([
-      prisma.shop_products.findMany({
-        where: {
-          shop_id: shopId,
-          listing_status: 'NEEDS_IMAGES'
-        },
-        include: {
-          products: {
-            select: {
-              name: true,
-              brand: true,
-              categories: {
-                select: { name: true }
-              }
-            }
-          }
-        },
-        orderBy: { created_at: 'desc' },
-        skip,
-        take: limit
-      }),
-      prisma.shop_products.count({
-        where: {
-          shop_id: shopId,
-          listing_status: 'NEEDS_IMAGES'
-        }
-      })
-    ]);
-    
-    return {
-      products: products.map(p => ({
-        id: p.id,
-        product_name: p.products.name,
-        brand: p.products.brand,
-        category: p.products.categories?.name,
-        sku: p.sku,
-        base_price: p.base_price,
-        display_price: p.price,
-        stock_quantity: p.stock_quantity,
-        condition: p.condition,
-        listing_status: p.listing_status,
-        created_at: p.created_at
-      })),
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalCount / limit),
-        totalCount,
-        limit,
-        hasNextPage: page < Math.ceil(totalCount / limit),
-        hasPrevPage: page > 1
-      }
-    };
-  },
 
-  /**
-   * Get product counts by listing status
-   */
-  async getStatusCounts(shopId: string) {
-    const counts = await prisma.shop_products.groupBy({
-      by: ['listing_status'],
-      where: { shop_id: shopId },
-      _count: true
-    });
-
-    const result: Record<string, number> = {
-      BROKEN: 0,
-      NEEDS_SPECS: 0,
-      NEEDS_IMAGES: 0,
-      LIVE: 0,
-      PAUSED: 0
-    };
-
-    for (const c of counts) {
-      result[c.listing_status || 'NEEDS_IMAGES'] = c._count;
-    }
-
-    return result;
-  },
-
-  /**
-   * Get bulk upload history for a shop
-   */
-  async getUploadHistory(shopId: string, page: number = 1, limit: number = 10) {
-    const skip = (page - 1) * limit;
-    
-    const [uploads, totalCount] = await Promise.all([
+    const [uploads, total] = await Promise.all([
       prisma.bulk_uploads.findMany({
         where: { shop_id: shopId },
         orderBy: { created_at: 'desc' },
@@ -987,16 +597,24 @@ export const bulkUploadService = {
         where: { shop_id: shopId }
       })
     ]);
-    
+
     return {
-      uploads,
+      uploads: uploads.map(u => ({
+        id: u.id,
+        file_name: u.file_name,
+        total_rows: u.total_rows,
+        successful: u.successful,
+        failed: u.failed,
+        skipped: u.skipped,
+        status: u.status,
+        created_at: u.created_at,
+        completed_at: u.completed_at
+      })),
       pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalCount / limit),
-        totalCount,
+        total,
+        page,
         limit,
-        hasNextPage: page < Math.ceil(totalCount / limit),
-        hasPrevPage: page > 1
+        totalPages: Math.ceil(total / limit)
       }
     };
   },
@@ -1005,156 +623,54 @@ export const bulkUploadService = {
    * Send upload summary email to seller
    */
   async sendUploadSummaryEmail(
-    sellerEmail: string,
+    email: string,
     sellerName: string,
     result: UploadResult
-  ) {
-    const subject = `Bulk Upload Complete - ${result.successful} products added`;
-    let htmlSummary = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #1a237e;">📦 Bulk Upload Complete</h2>
-        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Upload Summary</h3>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px 0; border-bottom: 1px solid #ddd;">Total Rows:</td>
-              <td style="padding: 8px 0; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold;">${result.totalRows}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; border-bottom: 1px solid #ddd; color: #2e7d32;">✓ Successful:</td>
-              <td style="padding: 8px 0; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #2e7d32;">${result.successful}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; border-bottom: 1px solid #ddd; color: #f57c00;">⚠ Skipped:</td>
-              <td style="padding: 8px 0; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #f57c00;">${result.skipped}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; color: #c62828;">✗ Failed:</td>
-              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #c62828;">${result.failed}</td>
-            </tr>
-          </table>
-        </div>
-        <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 20px 0;">
-          <strong>⚠️ Next Step Required:</strong>
-          <p style="margin: 10px 0 0;">Your products have been created with <strong>\"Needs Images\"</strong> status. Please add images to each product to make them visible to buyers.</p>
-        </div>
+  ): Promise<void> {
+    // Build HTML summary
+    const htmlSummary = `
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <tr>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Total Rows</strong></td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;">${result.totalRows}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; color: #16a34a;"><strong>Successful</strong></td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;">${result.successful}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; color: #ca8a04;"><strong>Skipped</strong></td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;">${result.skipped}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; color: #dc2626;"><strong>Failed</strong></td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;">${result.failed}</td>
+        </tr>
+      </table>
+      ${result.errors.length > 0 ? `
+        <p style="margin-top: 16px; font-weight: 600;">Errors (showing first 10):</p>
+        <ul style="margin: 8px 0; padding-left: 20px;">
+          ${result.errors.slice(0, 10).map(e => `
+            <li style="color: #dc2626; margin: 4px 0;">Row ${e.row}: ${e.field} - ${e.message}</li>
+          `).join('')}
+        </ul>
+      ` : ''}
+      <p style="margin-top: 16px;">Products are created with "Needs Images" status. Add images to make them visible to buyers.</p>
     `;
-    if (result.errors.length > 0 && result.errors.length <= 10) {
-      htmlSummary += `
-        <div style="margin-top: 20px;">
-          <h3>Errors & Issues</h3>
-          <ul style="padding-left: 20px;">
-            ${result.errors.map(e => `<li>Row ${e.row}: ${e.message}</li>`).join('')}
-          </ul>
-        </div>
-      `;
-    } else if (result.errors.length > 10) {
-      htmlSummary += `
-        <div style="margin-top: 20px;">
-          <h3>Errors & Issues (showing first 10 of ${result.errors.length})</h3>
-          <ul style="padding-left: 20px;">
-            ${result.errors.slice(0, 10).map(e => `<li>Row ${e.row}: ${e.message}</li>`).join('')}
-          </ul>
-        </div>
-      `;
-    }
-    htmlSummary += `
-        <p style="margin-top: 30px; color: #666;">
-          Thank you for using Sankha!<br>
-          <a href="${process.env.FRONTEND_URL}/seller/products/needs-images" style="color: #1a237e;">
-            Add Images to Your Products →
-          </a>
-        </p>
-      </div>
-    `;
-    const textSummary = `Bulk Upload Complete\n\nTotal Rows: ${result.totalRows}\nSuccessful: ${result.successful}\nSkipped: ${result.skipped}\nFailed: ${result.failed}\nNeeds Specs: ${result.needsSpecs || 0}\nNeeds Images: ${result.needsImages || 0}\n\nNext Step: Complete any missing specs, then add images to make products live.`;
-    const email = bulkUploadSummaryTemplate({
+
+    const { subject, html, text } = bulkUploadSummaryTemplate({
       userName: sellerName,
-      subject,
+      subject: `Bulk Upload Complete - ${result.successful} products added`,
       htmlSummary,
-      textSummary,
-      ctaText: 'Complete Your Products',
-      ctaUrl: `${process.env.FRONTEND_URL}/seller/products/incomplete`
+      ctaText: 'View Your Products',
+      ctaUrl: `${process.env.FRONTEND_URL || 'https://sankha.shop'}/seller/products`
     });
+
     await emailService.send({
-      to: sellerEmail,
-      subject: email.subject,
-      html: email.html,
-      text: email.text
+      to: email,
+      subject,
+      html,
+      text
     });
-  },
-
-  /**
-   * Update product specs (for NEEDS_SPECS items)
-   */
-  async updateProductSpecs(
-    shopProductId: string,
-    specs: Record<string, string>
-  ): Promise<{ success: boolean; newStatus: string; missingSpecs?: string[] }> {
-    // Get shop product with category
-    const shopProduct = await prisma.shop_products.findUnique({
-      where: { id: shopProductId },
-      include: {
-        products: {
-          include: {
-            categories: true
-          }
-        }
-      }
-    });
-
-    if (!shopProduct) {
-      throw new Error('Shop product not found');
-    }
-
-    // Merge existing specs with new ones
-    const existingSpecs = (shopProduct.variant_values || {}) as Record<string, string>;
-    const mergedSpecs = { ...existingSpecs, ...specs };
-
-    // Validate updated specs
-    const specResult = await techSpecValidator.validateSpecs(
-      shopProduct.products.category_id,
-      shopProduct.products.categories?.name,
-      mergedSpecs
-    );
-
-    // Determine new status
-    let newStatus = shopProduct.listing_status;
-    if (specResult.isTechCategory) {
-      if (specResult.isValid) {
-        // Move to NEEDS_IMAGES if specs are now complete
-        newStatus = 'NEEDS_IMAGES';
-      } else {
-        // Stay in NEEDS_SPECS
-        newStatus = 'NEEDS_SPECS';
-      }
-    }
-
-    // Update shop product
-    await prisma.shop_products.update({
-      where: { id: shopProductId },
-      data: {
-        specs: specResult.normalizedValues,
-        variant_values: specResult.normalizedValues,
-        listing_status: newStatus
-      }
-    });
-
-    return {
-      success: true,
-      newStatus,
-      missingSpecs: specResult.missingRequired.length > 0 ? specResult.missingRequired : undefined
-    };
-  },
-
-  /**
-   * Get required specs for a category
-   */
-  async getRequiredSpecs(categoryName: string) {
-    return techSpecValidator.getRuleForCategory(categoryName);
   }
 };
-
-// Export types
-export type { ParsedRow, RowError, UploadResult, StagingUploadResult };
-export { TemplateType } from '../types/bulkUpload.types';

@@ -2,6 +2,8 @@
  * Seller Inventory Routes v4.0
  * =============================
  * Routes for seller dashboard "Needs Attention" features.
+ * 
+ * NOTE: Some v4.0 features require schema migration and return 501 Not Implemented.
  */
 
 import { Router } from 'express';
@@ -13,7 +15,7 @@ const router = Router();
 
 // All routes require authentication + seller role
 router.use(protect);
-router.use(authorize(['SELLER', 'ADMIN']));
+router.use(authorize('SELLER', 'ADMIN'));
 
 /**
  * @route   GET /api/seller/inventory/pending-actions
@@ -25,10 +27,8 @@ router.get('/pending-actions', sellerInventoryController.getPendingActions);
 
 /**
  * @route   GET /api/seller/inventory/needs-specs
- * @desc    Get products that need specifications
+ * @desc    Get products that need specifications (v4.0 - not implemented)
  * @access  Seller
- * @query   page - Page number (default: 1)
- * @query   limit - Items per page (default: 20)
  */
 router.get('/needs-specs', sellerInventoryController.getProductsNeedingSpecs);
 
@@ -43,35 +43,24 @@ router.get('/needs-images', sellerInventoryController.getProductsNeedingImages);
 
 /**
  * @route   GET /api/seller/uploads/:batchId/corrections
- * @desc    Download correction CSV/Excel for failed rows
- * @access  Seller (owner only)
- * @query   format - File format (xlsx/csv, default: xlsx)
- * @query   chichewa - Include Chichewa translations (default: true)
+ * @desc    Download correction file (v4.0 - not implemented)
+ * @access  Seller
  */
 router.get('/uploads/:batchId/corrections', sellerInventoryController.downloadCorrectionFile);
 
 /**
  * @route   GET /api/seller/uploads/:batchId/corrections/preview
- * @desc    Preview correction data before download
- * @access  Seller (owner only)
- * @query   page - Page number (default: 1)
- * @query   limit - Items per page (default: 20)
+ * @desc    Preview correction data (v4.0 - not implemented)
+ * @access  Seller
  */
-router.get('/uploads/:batchId/corrections/preview', sellerInventoryController.previewCorrections);
+router.get('/uploads/:batchId/corrections/preview', sellerInventoryController.previewCorrectionFile);
 
 /**
  * @route   PATCH /api/seller/products/:shopProductId/specs
- * @desc    Update specs for a product (NEEDS_SPECS -> NEEDS_IMAGES)
+ * @desc    Update specs for a product
  * @access  Seller (owner only)
  * @body    { specs: { ram: "8GB", storage: "256GB", ... } }
  */
 router.patch('/products/:shopProductId/specs', sellerInventoryController.updateProductSpecs);
-
-/**
- * @route   GET /api/seller/categories/:categoryName/required-specs
- * @desc    Get required specs for a category (UI helper)
- * @access  Seller
- */
-router.get('/categories/:categoryName/required-specs', sellerInventoryController.getRequiredSpecs);
 
 export default router;
