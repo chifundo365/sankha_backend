@@ -1,7 +1,8 @@
 import Fuse, { IFuseOptions } from "fuse.js";
 import prisma from "../prismaClient";
-import { product_status } from "../../generated/prisma";
+import { product_status, listing_status } from "../../generated/prisma";
 import { calculateDisplayPrice } from "../utils/constants";
+import { TECH_CATEGORIES, DEFAULT_SPEC_REQUIREMENTS, normalizeSpecKey } from "../types/bulkUpload.types";
 
 /**
  * Product Matching Service v4.0
@@ -326,6 +327,64 @@ export async function createPendingProduct(
 }
 
 /**
+ * Determine appropriate listing status based on product completeness
+ */
+function determineListingStatus(
+  product: any,
+  categoryName?: string | null,
+  specs?: Record<string, any> | null,
+  images?: any[]
+): listing_status {
+  // Check if product has images
+  const hasImages = images && images.length > 0;
+  
+  // Check if category requires tech specs
+  if (categoryName) {
+    const normalizedCategory = categoryName.toLowerCase().trim();
+    const isTechCategory = TECH_CATEGORIES.some(tc => 
+      normalizedCategory.includes(tc) || tc.includes(normalizedCategory)
+    );
+
+    if (isTechCategory) {
+      // Get required specs for this category
+      const requiredSpecs = DEFAULT_SPEC_REQUIREMENTS[normalizedCategory]?.required || [];
+      
+      if (requiredSpecs.length > 0 && specs) {
+        // Normalize spec keys
+        const normalizedSpecs: Record<string, any> = {};
+        for (const [key, value] of Object.entries(specs)) {
+          const normalizedKey = normalizeSpecKey(key);
+          normalizedSpecs[normalizedKey] = value;
+        }
+
+        // Check if all required specs are present
+        const missingSpecs = requiredSpecs.filter(req => {
+          const normalizedReq = normalizeSpecKey(req);
+          return !normalizedSpecs[normalizedReq] || 
+                 String(normalizedSpecs[normalizedReq]).trim() === '';
+        });
+
+        if (missingSpecs.length > 0) {
+          return 'NEEDS_SPECS';
+        }
+      } else if (requiredSpecs.length > 0) {
+        // Tech category but no specs provided
+        return 'NEEDS_SPECS';
+      }
+    }
+  }
+
+  // If we reach here, specs are OK (or not required)
+  // Check images
+  if (!hasImages) {
+    return 'NEEDS_IMAGES';
+  }
+
+  // Everything is complete
+  return 'LIVE';
+}
+
+/**
  * Approve a pending product and optionally add to seller's shop
  */
 export async function approveProduct(
@@ -396,7 +455,19 @@ export async function approveProduct(
         const basePrice = options?.shopListingDetails?.price || Number(product.base_price) || 0;
         const displayPrice = calculateDisplayPrice(basePrice);
 
-        // Create shop product listing with dual pricing
+        // Get specs from shop listing details or product
+        const specs = options?.shopListingDetails?.['specs' as keyof typeof options.shopListingDetails] || null;
+        const images = product.images || [];
+        
+        // Determine appropriate listing status based on completeness
+        const listingStatus = determineListingStatus(
+          product,
+          product.categories?.name,
+          specs as any,
+          images
+        );
+
+        // Create shop product listing with dual pricing and proper status
         shopProduct = await prisma.shop_products.create({
           data: {
             shop_id: sellerShop.id,
@@ -408,8 +479,10 @@ export async function approveProduct(
             condition: (options?.shopListingDetails?.condition as any) || "NEW",
             shop_description: options?.shopListingDetails?.shop_description || 
               `${product.name} - Now available at ${sellerShop.name}`,
-            images: product.images || [],
-            is_available: true
+            specs: specs as any,
+            images: images as any,
+            listing_status: listingStatus,
+            is_available: listingStatus === 'LIVE' ? true : false
           },
           include: {
             shops: {

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ipBlockerService } from '../middleware/ipBlocker.middleware';
 import { successResponse, errorResponse } from '../utils/response';
+import prisma from '../prismaClient';
 
 /**
  * Get all blocked IPs
@@ -179,5 +180,393 @@ export const getIPStats = async (_req: Request, res: Response) => {
   } catch (error) {
     console.error('Error getting IP stats:', error);
     return errorResponse(res, 'Failed to retrieve IP statistics', null, 500);
+  }
+};
+
+/**
+ * Toggle bulk upload permission for a shop
+ * PATCH /api/admin/shops/:shopId/bulk-upload-permission
+ */
+export const toggleBulkUploadPermission = async (req: Request, res: Response) => {
+  try {
+    const { shopId } = req.params;
+    const { can_bulk_upload, reason } = req.body;
+
+    // Check if shop exists
+    const shop = await prisma.shops.findUnique({
+      where: { id: shopId },
+      select: {
+        id: true,
+        name: true,
+        can_bulk_upload: true,
+        owner_id: true,
+        users: {
+          select: {
+            first_name: true,
+            last_name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    if (!shop) {
+      return errorResponse(res, 'Shop not found', null, 404);
+    }
+
+    // Update shop permission
+    const updatedShop = await prisma.shops.update({
+      where: { id: shopId },
+      data: { can_bulk_upload }
+    });
+
+    // Log the action (optional - could be enhanced with audit log table)
+    console.log(`[ADMIN ACTION] Bulk upload permission ${can_bulk_upload ? 'enabled' : 'disabled'} for shop ${shop.name} (${shopId})`, {
+      adminUser: req.user?.email,
+      reason: reason || 'No reason provided'
+    });
+
+    return successResponse(res, `Bulk upload ${can_bulk_upload ? 'enabled' : 'disabled'} for shop`, {
+      shop: {
+        id: updatedShop.id,
+        name: updatedShop.name,
+        can_bulk_upload: updatedShop.can_bulk_upload,
+        owner: shop.users ? `${shop.users.first_name} ${shop.users.last_name}` : 'Unknown'
+      },
+      reason: reason || 'No reason provided'
+    });
+  } catch (error) {
+    console.error('Error toggling bulk upload permission:', error);
+    return errorResponse(res, 'Failed to update bulk upload permission', null, 500);
+  }
+};
+
+/**
+ * Get all pending bulk uploads across platform
+ * GET /api/admin/bulk-uploads/pending
+ */
+export const getPendingBulkUploads = async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 20, shop_id } = req.query as any;
+
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      status: 'STAGING'
+    };
+
+    if (shop_id) {
+      where.shop_id = shop_id;
+    }
+
+    const [batches, total] = await Promise.all([
+      prisma.bulk_uploads.findMany({
+        where,
+        include: {
+          shops: {
+            select: {
+              id: true,
+              name: true,
+              owner_id: true,
+              users: {
+                select: {
+                  first_name: true,
+                  last_name: true,
+                  email: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.bulk_uploads.count({ where })
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return successResponse(res, 'Pending bulk uploads retrieved', {
+      batches: batches.map(batch => ({
+        id: batch.id,
+        batchId: batch.batch_id,
+        shopId: batch.shop_id,
+        shopName: batch.shops.name,
+        shopOwner: batch.shops.users ? {
+          name: `${batch.shops.users.first_name} ${batch.shops.users.last_name}`,
+          email: batch.shops.users.email
+        } : null,
+        totalRows: batch.total_rows,
+        validRows: batch.successful,
+        invalidRows: batch.failed,
+        skippedRows: batch.skipped,
+        status: batch.status,
+        createdAt: batch.created_at
+      })),
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages
+      }
+    });
+  } catch (error) {
+    console.error('Error getting pending bulk uploads:', error);
+    return errorResponse(res, 'Failed to retrieve pending bulk uploads', null, 500);
+  }
+};
+
+/**
+ * Force commit a staging batch as admin
+ * POST /api/admin/bulk-uploads/:batchId/force-commit
+ */
+export const forceCommitBatch = async (req: Request, res: Response) => {
+  try {
+    const { batchId } = req.params;
+    const { reason } = req.body;
+
+    // Find the batch
+    const batch = await prisma.bulk_uploads.findFirst({
+      where: { batch_id: batchId },
+      include: {
+        shops: {
+          select: { id: true, name: true }
+        }
+      }
+    });
+
+    if (!batch) {
+      return errorResponse(res, 'Batch not found', null, 404);
+    }
+
+    if (batch.status !== 'STAGING') {
+      return errorResponse(res, `Batch status is ${batch.status}, cannot commit`, null, 400);
+    }
+
+    // Log admin action
+    console.log(`[ADMIN FORCE COMMIT] Batch ${batchId} for shop ${batch.shops.name}`, {
+      adminUser: req.user?.email,
+      reason: reason || 'No reason provided',
+      validRows: batch.successful
+    });
+
+    // Use the bulk upload staging service to commit
+    const { bulkUploadStagingService } = await import('../services/bulkUploadStaging.service');
+    const result = await bulkUploadStagingService.commitBatch(batch.id, batch.shop_id);
+
+    return successResponse(res, 'Batch committed successfully by admin', {
+      batchId: batch.batch_id,
+      shopName: batch.shops.name,
+      productsCreated: result.newProductsCreated,
+      reason: reason || 'Admin force commit'
+    });
+  } catch (error) {
+    console.error('Error force committing batch:', error);
+    return errorResponse(res, 'Failed to commit batch', null, 500);
+  }
+};
+
+/**
+ * Force cancel a staging batch as admin
+ * DELETE /api/admin/bulk-uploads/:batchId/force-cancel
+ */
+export const forceCancelBatch = async (req: Request, res: Response) => {
+  try {
+    const { batchId } = req.params;
+    const { reason } = req.body;
+
+    // Find the batch
+    const batch = await prisma.bulk_uploads.findFirst({
+      where: { batch_id: batchId },
+      include: {
+        shops: {
+          select: { id: true, name: true }
+        }
+      }
+    });
+
+    if (!batch) {
+      return errorResponse(res, 'Batch not found', null, 404);
+    }
+
+    if (batch.status === 'COMPLETED' || batch.status === 'CANCELLED') {
+      return errorResponse(res, `Batch is already ${batch.status}`, null, 400);
+    }
+
+    // Log admin action
+    console.log(`[ADMIN FORCE CANCEL] Batch ${batchId} for shop ${batch.shops.name}`, {
+      adminUser: req.user?.email,
+      reason: reason || 'No reason provided'
+    });
+
+    // Cancel the batch
+    await prisma.$transaction([
+      // Delete staging rows
+      prisma.bulk_upload_staging.deleteMany({
+        where: { bulk_upload_id: batch.id }
+      }),
+      // Update batch status
+      prisma.bulk_uploads.update({
+        where: { id: batch.id },
+        data: {
+          status: 'CANCELLED'
+        }
+      })
+    ]);
+
+    return successResponse(res, 'Batch cancelled successfully by admin', {
+      batchId: batch.batch_id,
+      shopName: batch.shops.name,
+      reason: reason || 'Admin force cancel'
+    });
+  } catch (error) {
+    console.error('Error force canceling batch:', error);
+    return errorResponse(res, 'Failed to cancel batch', null, 500);
+  }
+};
+
+/**
+ * Get bulk upload statistics
+ * GET /api/admin/bulk-uploads/stats
+ */
+export const getBulkUploadStats = async (req: Request, res: Response) => {
+  try {
+    const { days = 30 } = req.query as any;
+
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    // Aggregate statistics
+    const [
+      totalUploads,
+      completedUploads,
+      stagingUploads,
+      cancelledUploads,
+      failedUploads,
+      recentUploads,
+      topShops,
+      totalProducts,
+      totalValidRows,
+      totalInvalidRows
+    ] = await Promise.all([
+      // Total uploads in period
+      prisma.bulk_uploads.count({
+        where: { created_at: { gte: since } }
+      }),
+      // Completed uploads
+      prisma.bulk_uploads.count({
+        where: {
+          status: 'COMPLETED',
+          created_at: { gte: since }
+        }
+      }),
+      // Staging (pending) uploads
+      prisma.bulk_uploads.count({
+        where: { status: 'STAGING' }
+      }),
+      // Cancelled uploads
+      prisma.bulk_uploads.count({
+        where: {
+          status: 'CANCELLED',
+          created_at: { gte: since }
+        }
+      }),
+      // Failed uploads
+      prisma.bulk_uploads.count({
+        where: {
+          status: 'FAILED',
+          created_at: { gte: since }
+        }
+      }),
+      // Recent uploads
+      prisma.bulk_uploads.findMany({
+        where: { created_at: { gte: since } },
+        include: {
+          shops: {
+            select: { name: true }
+          }
+        },
+        orderBy: { created_at: 'desc' },
+        take: 10
+      }),
+      // Top shops by upload count
+      prisma.bulk_uploads.groupBy({
+        by: ['shop_id'],
+        where: { created_at: { gte: since } },
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 5
+      }),
+      // Total products created
+      prisma.bulk_uploads.aggregate({
+        where: {
+          status: 'COMPLETED',
+          created_at: { gte: since }
+        },
+        _sum: { successful: true }
+      }),
+      // Total valid rows
+      prisma.bulk_uploads.aggregate({
+        where: { created_at: { gte: since } },
+        _sum: { successful: true }
+      }),
+      // Total invalid rows
+      prisma.bulk_uploads.aggregate({
+        where: { created_at: { gte: since } },
+        _sum: { failed: true }
+      })
+    ]);
+
+    // Get shop names for top shops
+    const shopIds = topShops.map(s => s.shop_id);
+    const shops = await prisma.shops.findMany({
+      where: { id: { in: shopIds } },
+      select: { id: true, name: true }
+    });
+
+    const shopMap = Object.fromEntries(shops.map(s => [s.id, s.name]));
+
+    return successResponse(res, 'Bulk upload statistics retrieved', {
+      period: {
+        days,
+        since: since.toISOString()
+      },
+      overview: {
+        totalUploads,
+        completedUploads,
+        stagingUploads,
+        cancelledUploads,
+        failedUploads,
+        successRate: totalUploads > 0 
+          ? ((completedUploads / totalUploads) * 100).toFixed(2) + '%'
+          : '0%'
+      },
+      products: {
+        totalCreated: totalProducts._sum?.successful || 0,
+        totalValidRows: totalValidRows._sum?.successful || 0,
+        totalInvalidRows: totalInvalidRows._sum?.failed || 0,
+        validationRate: ((totalValidRows._sum?.successful || 0) + (totalInvalidRows._sum?.failed || 0)) > 0
+          ? (((totalValidRows._sum?.successful || 0) / ((totalValidRows._sum?.successful || 0) + (totalInvalidRows._sum?.failed || 0))) * 100).toFixed(2) + '%'
+          : '0%'
+      },
+      topShops: topShops.map(shop => ({
+        shopId: shop.shop_id,
+        shopName: shopMap[shop.shop_id] || 'Unknown',
+        uploadCount: shop._count.id
+      })),
+      recentUploads: recentUploads.map(upload => ({
+        batchId: upload.batch_id,
+        shopName: upload.shops.name,
+        status: upload.status,
+        totalRows: upload.total_rows,
+        validRows: upload.successful,
+        invalidRows: upload.failed,
+        createdAt: upload.created_at
+      }))
+    });
+  } catch (error) {
+    console.error('Error getting bulk upload stats:', error);
+    return errorResponse(res, 'Failed to retrieve bulk upload statistics', null, 500);
   }
 };

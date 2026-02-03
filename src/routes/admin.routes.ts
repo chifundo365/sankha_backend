@@ -8,7 +8,12 @@ import {
   getIPViolationsSchema,
   clearIPViolationsSchema,
   getBlockedIPsSchema,
-  getIPStatsSchema
+  getIPStatsSchema,
+  toggleBulkUploadPermissionSchema,
+  getPendingBulkUploadsSchema,
+  forceCommitBatchSchema,
+  forceCancelBatchSchema,
+  getBulkUploadStatsSchema
 } from '../schemas/admin.schema';
 import {
   getBlockedIPs,
@@ -17,6 +22,11 @@ import {
   getIPViolations,
   clearIPViolations,
   getIPStats,
+  toggleBulkUploadPermission,
+  getPendingBulkUploads,
+  forceCommitBatch,
+  forceCancelBatch,
+  getBulkUploadStats
 } from '../controllers/admin.controller';
 
 const router = Router();
@@ -67,5 +77,69 @@ router.delete('/violations/:ip', validateResource(clearIPViolationsSchema), clea
  * @access  Admin only
  */
 router.get('/ip-stats', validateResource(getIPStatsSchema), getIPStats);
+
+/**
+ * Bulk Upload Governance Routes
+ */
+
+/**
+ * @route   PATCH /api/admin/shops/:shopId/bulk-upload-permission
+ * @desc    Toggle bulk upload permission for a shop
+ * @access  Admin only
+ * @body    { can_bulk_upload: boolean, reason?: string }
+ */
+router.patch(
+  '/shops/:shopId/bulk-upload-permission',
+  validateResource(toggleBulkUploadPermissionSchema),
+  toggleBulkUploadPermission
+);
+
+/**
+ * @route   GET /api/admin/bulk-uploads/pending
+ * @desc    Get all pending bulk uploads across platform
+ * @access  Admin only
+ * @query   { page?: number, limit?: number, shop_id?: string }
+ */
+router.get(
+  '/bulk-uploads/pending',
+  validateResource(getPendingBulkUploadsSchema),
+  getPendingBulkUploads
+);
+
+/**
+ * @route   GET /api/admin/bulk-uploads/stats
+ * @desc    Get bulk upload statistics
+ * @access  Admin only
+ * @query   { days?: number }
+ */
+router.get(
+  '/bulk-uploads/stats',
+  validateResource(getBulkUploadStatsSchema),
+  getBulkUploadStats
+);
+
+/**
+ * @route   POST /api/admin/bulk-uploads/:batchId/force-commit
+ * @desc    Force commit a staging batch as admin
+ * @access  Admin only
+ * @body    { reason?: string }
+ */
+router.post(
+  '/bulk-uploads/:batchId/force-commit',
+  validateResource(forceCommitBatchSchema),
+  forceCommitBatch
+);
+
+/**
+ * @route   DELETE /api/admin/bulk-uploads/:batchId/force-cancel
+ * @desc    Force cancel a staging batch as admin
+ * @access  Admin only
+ * @body    { reason?: string }
+ */
+router.delete(
+  '/bulk-uploads/:batchId/force-cancel',
+  validateResource(forceCancelBatchSchema),
+  forceCancelBatch
+);
 
 export default router;
