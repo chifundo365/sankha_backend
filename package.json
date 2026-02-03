@@ -24,6 +24,7 @@
   "dependencies": {
     "@prisma/client": "^6.17.1",
     "@types/multer": "^2.0.0",
+    "@types/node-cron": "^3.0.11",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.8.0",
@@ -33,6 +34,7 @@
     "fuse.js": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "redis": "^5.10.0",
     "resend": "^6.9.1",
     "uuid": "^13.0.0",

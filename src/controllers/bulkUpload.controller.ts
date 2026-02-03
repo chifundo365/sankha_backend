@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import prisma from '../prismaClient';
 import { errorResponse, successResponse } from '../utils/response';
 import { bulkUploadService } from '../services/bulkUpload.service';
+import { bulkUploadStagingService } from '../services/bulkUploadStaging.service';
+import { bulkUploadCorrectionService } from '../services/bulkUploadCorrection.service';
 import { CloudinaryService } from '../services/cloudinary.service';
 
 const MAX_UPLOAD_ROWS = 200;
@@ -364,5 +366,241 @@ export const bulkUploadController = {
       console.error('Get upload details error:', error);
       return errorResponse(res, 'Failed to retrieve upload details', null, 500);
     }
+  },
+
+  // ==========================================================================
+  // v4.0 STAGING PIPELINE ENDPOINTS
+  // ==========================================================================
+
+  /**
+   * Get preview of staging batch before commit
+   * GET /api/shops/:shopId/products/bulk/:batchId/preview
+   */
+  getStagingPreview: async (req: Request, res: Response) => {
+    try {
+      const { shopId, batchId } = req.params;
+      const { page = 1, showInvalid = 'false' } = req.query;
+
+      const hasAccess = await checkShopOwnership(shopId, req.user!.id, req.user!.role);
+      if (!hasAccess) {
+        return errorResponse(res, "You don't have permission to access this shop", null, 403);
+      }
+
+      const preview = await bulkUploadStagingService.getPreview(
+        shopId,
+        batchId,
+        Number(page),
+        showInvalid === 'true'
+      );
+
+      return successResponse(res, 'Staging preview retrieved', preview, 200);
+    } catch (error) {
+      console.error('Get staging preview error:', error);
+      return errorResponse(res, 'Failed to get preview', null, 500);
+    }
+  },
+
+  /**
+   * Commit a staging batch to production
+   * POST /api/shops/:shopId/products/bulk/:batchId/commit
+   */
+  commitStagingBatch: async (req: Request, res: Response) => {
+    try {
+      const { shopId, batchId } = req.params;
+
+      const hasAccess = await checkShopOwnership(shopId, req.user!.id, req.user!.role);
+      if (!hasAccess) {
+        return errorResponse(res, "You don't have permission to access this shop", null, 403);
+      }
+
+      const result = await bulkUploadStagingService.commitBatch(shopId, batchId);
+
+      // Build next steps
+      const nextSteps = [];
+      if (result.needsImages > 0) {
+        nextSteps.push({
+          action: 'Add images to products',
+          endpoint: `/api/shops/${shopId}/products/needs-images`,
+          count: result.needsImages
+        });
+      }
+      if (result.needsSpecs > 0) {
+        nextSteps.push({
+          action: 'Complete product specifications',
+          endpoint: `/api/shops/${shopId}/products/needs-specs`,
+          count: result.needsSpecs
+        });
+      }
+
+      return successResponse(
+        res,
+        `Batch committed: ${result.committed} products created`,
+        {
+          summary: result,
+          next_steps: nextSteps
+        },
+        201
+      );
+    } catch (error) {
+      console.error('Commit staging batch error:', error);
+      return errorResponse(res, 'Failed to commit batch', null, 500);
+    }
+  },
+
+  /**
+   * Cancel a staging batch
+   * DELETE /api/shops/:shopId/products/bulk/:batchId/cancel
+   */
+  cancelStagingBatch: async (req: Request, res: Response) => {
+    try {
+      const { shopId, batchId } = req.params;
+
+      const hasAccess = await checkShopOwnership(shopId, req.user!.id, req.user!.role);
+      if (!hasAccess) {
+        return errorResponse(res, "You don't have permission to access this shop", null, 403);
+      }
+
+      await bulkUploadStagingService.cancelBatch(shopId, batchId);
+
+      return successResponse(res, 'Batch cancelled successfully', null, 200);
+    } catch (error) {
+      console.error('Cancel staging batch error:', error);
+      return errorResponse(res, 'Failed to cancel batch', null, 500);
+    }
+  },
+
+  /**
+   * Download correction file for invalid rows
+   * GET /api/shops/:shopId/products/bulk/:batchId/corrections
+   */
+  downloadCorrections: async (req: Request, res: Response) => {
+    try {
+      const { shopId, batchId } = req.params;
+
+      const hasAccess = await checkShopOwnership(shopId, req.user!.id, req.user!.role);
+      if (!hasAccess) {
+        return errorResponse(res, "You don't have permission to access this shop", null, 403);
+      }
+
+      const { buffer, filename, summary } = await bulkUploadCorrectionService.generateCorrectionFile(
+        shopId,
+        batchId
+      );
+
+      // Mark as downloaded
+      await bulkUploadCorrectionService.markCorrectionDownloaded(shopId, batchId);
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', buffer.length);
+      res.setHeader('X-Correction-Summary', JSON.stringify(summary));
+
+      return res.send(buffer);
+    } catch (error: any) {
+      console.error('Download corrections error:', error);
+      if (error.message === 'No invalid rows found in this batch') {
+        return errorResponse(res, error.message, null, 404);
+      }
+      return errorResponse(res, 'Failed to generate correction file', null, 500);
+    }
+  },
+
+  /**
+   * Get preview of correction errors
+   * GET /api/shops/:shopId/products/bulk/:batchId/corrections/preview
+   */
+  getCorrectionPreview: async (req: Request, res: Response) => {
+    try {
+      const { shopId, batchId } = req.params;
+      const { limit = 10 } = req.query;
+
+      const hasAccess = await checkShopOwnership(shopId, req.user!.id, req.user!.role);
+      if (!hasAccess) {
+        return errorResponse(res, "You don't have permission to access this shop", null, 403);
+      }
+
+      const preview = await bulkUploadCorrectionService.getCorrectionPreview(
+        shopId,
+        batchId,
+        Number(limit)
+      );
+
+      return successResponse(res, 'Correction preview retrieved', preview, 200);
+    } catch (error) {
+      console.error('Get correction preview error:', error);
+      return errorResponse(res, 'Failed to get correction preview', null, 500);
+    }
+  },
+
+  /**
+   * Get products needing specs
+   * GET /api/shops/:shopId/products/needs-specs
+   */
+  getProductsNeedingSpecs: async (req: Request, res: Response) => {
+    try {
+      const { shopId } = req.params;
+      const { page = 1, limit = 20 } = req.query;
+
+      const hasAccess = await checkShopOwnership(shopId, req.user!.id, req.user!.role);
+      if (!hasAccess) {
+        return errorResponse(res, "You don't have permission to access this shop", null, 403);
+      }
+
+      const result = await bulkUploadCorrectionService.getProductsNeedingSpecs(
+        shopId,
+        Number(page),
+        Number(limit)
+      );
+
+      return successResponse(res, 'Products needing specs retrieved', result, 200);
+    } catch (error) {
+      console.error('Get products needing specs error:', error);
+      return errorResponse(res, 'Failed to retrieve products', null, 500);
+    }
+  },
+
+  /**
+   * Update specs for a product
+   * PATCH /api/shops/:shopId/products/:shopProductId/specs
+   */
+  updateProductSpecs: async (req: Request, res: Response) => {
+    try {
+      const { shopId, shopProductId } = req.params;
+      const { specs } = req.body;
+
+      if (!specs || typeof specs !== 'object') {
+        return errorResponse(res, 'Specs object is required', null, 400);
+      }
+
+      const hasAccess = await checkShopOwnership(shopId, req.user!.id, req.user!.role);
+      if (!hasAccess) {
+        return errorResponse(res, "You don't have permission to update this product", null, 403);
+      }
+
+      const result = await bulkUploadCorrectionService.updateProductSpecs(
+        shopProductId,
+        shopId,
+        specs
+      );
+
+      return successResponse(
+        res,
+        result.newStatus === 'NEEDS_IMAGES' 
+          ? 'Specs updated! Product now needs images.'
+          : 'Specs updated. Some required specs are still missing.',
+        {
+          new_status: result.newStatus,
+          specs_complete: result.newStatus === 'NEEDS_IMAGES'
+        },
+        200
+      );
+    } catch (error: any) {
+      console.error('Update product specs error:', error);
+      if (error.message === 'Product not found') {
+        return errorResponse(res, error.message, null, 404);
+      }
+      return errorResponse(res, 'Failed to update specs', null, 500);
+    }
   }
+};
 };

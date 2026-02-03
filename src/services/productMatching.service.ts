@@ -4,13 +4,34 @@ import { product_status } from "../../generated/prisma";
 import { calculateDisplayPrice } from "../utils/constants";
 
 /**
- * Product Matching Service
+ * Product Matching Service v4.0
  * 
- * Implements a hybrid approach for product catalog management:
- * 1. Fuzzy search using Fuse.js for quick local matching
- * 2. Scoring system to rank match confidence
- * 3. Admin queue for pending products
+ * Implements a multi-step hybrid approach for product catalog management:
+ * 1. Exact match on normalized name (highest priority)
+ * 2. pg_trgm similarity search (if available) or Fuse.js fallback
+ * 3. Brand + Category matching
+ * 4. Keyword/alias matching
+ * 
+ * IMPORTANT: Verified products (status = APPROVED) are always prioritized
  */
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+const CONFIG = {
+  // Minimum similarity score for fuzzy matching (0.0 - 1.0)
+  FUZZY_SIMILARITY_THRESHOLD: parseFloat(process.env.FUZZY_MATCH_THRESHOLD || '0.8'),
+  
+  // Maximum matches to consider per step
+  MAX_CANDIDATES_PER_STEP: 10,
+  
+  // Boost factors for scoring
+  VERIFIED_BOOST: 0.15,      // Add 15% to verified products
+  EXACT_MATCH_BOOST: 0.10,   // Add 10% for exact matches
+  BRAND_MATCH_BOOST: 0.05,   // Add 5% for brand matches
+  CATEGORY_MATCH_BOOST: 0.05 // Add 5% for category matches
+};
 
 export interface ProductMatchCandidate {
   id: string;
@@ -20,7 +41,9 @@ export interface ProductMatchCandidate {
   category: string | null;
   score: number;        // 0-1, lower is better match
   confidence: number;   // 0-100%, higher is better
-  matchType: "exact" | "fuzzy" | "brand_model" | "gtin";
+  matchType: "exact" | "fuzzy" | "brand_model" | "gtin" | "keyword" | "alias";
+  isVerified?: boolean; // v4.0: Whether product is APPROVED
+  finalScore?: number;  // v4.0: Score with boosts applied
 }
 
 export interface ProductMatchResult {
@@ -43,6 +66,26 @@ export interface CreateProductInput {
   mpn?: string;
   keywords?: string[];
   aliases?: string[];
+}
+
+// v4.0: Advanced matching input
+export interface AdvancedMatchInput {
+  productName: string;
+  normalizedName?: string;
+  brand?: string;
+  categoryName?: string;
+  model?: string;
+  keywords?: string[];
+}
+
+// v4.0: Advanced matching result
+export interface AdvancedMatchResult {
+  matched: boolean;
+  product: ProductMatchCandidate | null;
+  allCandidates: ProductMatchCandidate[];
+  matchType: string | null;
+  confidence: number;
+  explanation?: string;
 }
 
 // Fuse.js configuration for fuzzy matching
@@ -544,5 +587,380 @@ export const productMatchingService = {
   mergeProducts,
   getPendingProducts,
   findPotentialDuplicates,
-  updateNormalizedNames
+  updateNormalizedNames,
+  
+  // ============================================================================
+  // v4.0 ADVANCED MATCHING PIPELINE
+  // ============================================================================
+  
+  /**
+   * Calculate trigram similarity (Jaccard coefficient)
+   * Used as fallback when pg_trgm is not available
+   */
+  trigramSimilarity(str1: string, str2: string): number {
+    if (!str1 || !str2) return 0;
+    if (str1 === str2) return 1;
+    
+    const getTrigrams = (s: string): Set<string> => {
+      const padded = `  ${s.toLowerCase()} `;
+      const trigrams = new Set<string>();
+      for (let i = 0; i < padded.length - 2; i++) {
+        trigrams.add(padded.slice(i, i + 3));
+      }
+      return trigrams;
+    };
+    
+    const trigrams1 = getTrigrams(str1);
+    const trigrams2 = getTrigrams(str2);
+    
+    let intersection = 0;
+    for (const t of trigrams1) {
+      if (trigrams2.has(t)) intersection++;
+    }
+    
+    const union = trigrams1.size + trigrams2.size - intersection;
+    return union === 0 ? 0 : intersection / union;
+  },
+
+  /**
+   * Calculate final score with verification boost
+   */
+  calculateFinalScore(
+    similarity: number,
+    isVerified: boolean,
+    matchType: string,
+    brandMatches: boolean,
+    categoryMatches: boolean
+  ): number {
+    let score = similarity;
+    
+    if (isVerified) score += CONFIG.VERIFIED_BOOST;
+    if (matchType === 'exact') score += CONFIG.EXACT_MATCH_BOOST;
+    if (brandMatches) score += CONFIG.BRAND_MATCH_BOOST;
+    if (categoryMatches) score += CONFIG.CATEGORY_MATCH_BOOST;
+    
+    return Math.min(score, 1.0);
+  },
+
+  /**
+   * v4.0: Advanced multi-step matching pipeline
+   * 
+   * Steps:
+   * 1. Exact match on normalized name
+   * 2. Fuzzy match with pg_trgm (or local fallback) at 0.8 threshold
+   * 3. Brand + Category match
+   * 4. Keyword/alias match
+   * 
+   * IMPORTANT: Verified products (is_verified=true / status=APPROVED) are prioritized
+   */
+  async findMatchingProductAdvanced(input: AdvancedMatchInput): Promise<AdvancedMatchResult> {
+    const normalizedName = input.normalizedName || normalizeProductName(input.productName);
+    const inputBrand = input.brand || extractBrand(input.productName);
+    
+    const allCandidates: ProductMatchCandidate[] = [];
+
+    // =========================================================================
+    // STEP 1: Exact Match on Normalized Name
+    // =========================================================================
+    const exactMatches = await prisma.products.findMany({
+      where: {
+        OR: [
+          { normalized_name: normalizedName },
+          { normalized_name: { equals: normalizedName, mode: 'insensitive' } }
+        ],
+        status: { in: ['APPROVED', 'PENDING'] },
+        merged_into_id: null
+      },
+      include: { categories: true },
+      take: CONFIG.MAX_CANDIDATES_PER_STEP
+    });
+
+    for (const p of exactMatches) {
+      const isVerified = p.status === 'APPROVED';
+      const finalScore = this.calculateFinalScore(1.0, isVerified, 'exact', false, false);
+      
+      allCandidates.push({
+        id: p.id,
+        name: p.name,
+        brand: p.brand,
+        model: p.model,
+        category: p.categories?.name || null,
+        score: 0,
+        confidence: 100,
+        matchType: 'exact',
+        isVerified,
+        finalScore
+      });
+    }
+
+    // If we have a verified exact match, return immediately
+    const verifiedExact = allCandidates.find(c => c.isVerified && c.matchType === 'exact');
+    if (verifiedExact) {
+      return {
+        matched: true,
+        product: verifiedExact,
+        allCandidates,
+        matchType: 'exact',
+        confidence: verifiedExact.finalScore! * 100,
+        explanation: 'Exact match found on verified product'
+      };
+    }
+
+    // =========================================================================
+    // STEP 2: Fuzzy Match using pg_trgm or Local Fallback
+    // =========================================================================
+    let fuzzyMatches: ProductMatchCandidate[] = [];
+    
+    try {
+      // Try pg_trgm first
+      const pgResults = await prisma.$queryRaw<Array<{
+        id: string;
+        name: string;
+        brand: string | null;
+        model: string | null;
+        category_name: string | null;
+        status: string | null;
+        similarity: number;
+      }>>`
+        SELECT 
+          p.id, p.name, p.brand, p.model, c.name as category_name, p.status,
+          similarity(COALESCE(p.normalized_name, ''), ${normalizedName}) as similarity
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.id
+        WHERE p.merged_into_id IS NULL
+          AND p.status IN ('APPROVED', 'PENDING')
+          AND similarity(COALESCE(p.normalized_name, ''), ${normalizedName}) > ${CONFIG.FUZZY_SIMILARITY_THRESHOLD - 0.15}
+        ORDER BY 
+          CASE WHEN p.status = 'APPROVED' THEN 0 ELSE 1 END,
+          similarity DESC
+        LIMIT ${CONFIG.MAX_CANDIDATES_PER_STEP}
+      `;
+
+      for (const p of pgResults) {
+        const isVerified = p.status === 'APPROVED';
+        const brandMatches = inputBrand ? p.brand?.toLowerCase() === inputBrand.toLowerCase() : false;
+        const categoryMatches = input.categoryName 
+          ? p.category_name?.toLowerCase() === input.categoryName.toLowerCase() 
+          : false;
+        const finalScore = this.calculateFinalScore(p.similarity, isVerified, 'fuzzy', brandMatches, categoryMatches);
+        
+        fuzzyMatches.push({
+          id: p.id,
+          name: p.name,
+          brand: p.brand,
+          model: p.model,
+          category: p.category_name,
+          score: 1 - p.similarity,
+          confidence: p.similarity * 100,
+          matchType: 'fuzzy',
+          isVerified,
+          finalScore
+        });
+      }
+    } catch (error) {
+      // pg_trgm not available, use local fuzzy matching
+      console.log('[ProductMatching] pg_trgm not available, using local fuzzy');
+      
+      const keywords = normalizedName.split(' ').filter(w => w.length > 2);
+      if (keywords.length > 0) {
+        const candidates = await prisma.products.findMany({
+          where: {
+            OR: keywords.map(kw => ({ normalized_name: { contains: kw, mode: 'insensitive' } })),
+            status: { in: ['APPROVED', 'PENDING'] },
+            merged_into_id: null
+          },
+          include: { categories: true },
+          take: 50
+        });
+
+        for (const p of candidates) {
+          const similarity = this.trigramSimilarity(normalizedName, p.normalized_name || '');
+          
+          if (similarity >= CONFIG.FUZZY_SIMILARITY_THRESHOLD - 0.15) {
+            const isVerified = p.status === 'APPROVED';
+            const brandMatches = inputBrand ? p.brand?.toLowerCase() === inputBrand.toLowerCase() : false;
+            const categoryMatches = input.categoryName 
+              ? p.categories?.name?.toLowerCase() === input.categoryName.toLowerCase() 
+              : false;
+            const finalScore = this.calculateFinalScore(similarity, isVerified, 'fuzzy', brandMatches, categoryMatches);
+            
+            fuzzyMatches.push({
+              id: p.id,
+              name: p.name,
+              brand: p.brand,
+              model: p.model,
+              category: p.categories?.name || null,
+              score: 1 - similarity,
+              confidence: similarity * 100,
+              matchType: 'fuzzy',
+              isVerified,
+              finalScore
+            });
+          }
+        }
+      }
+    }
+
+    allCandidates.push(...fuzzyMatches);
+
+    // =========================================================================
+    // STEP 3: Brand + Category Match
+    // =========================================================================
+    if (inputBrand && input.categoryName) {
+      const brandCategoryMatches = await prisma.products.findMany({
+        where: {
+          brand: { equals: inputBrand, mode: 'insensitive' },
+          categories: { name: { equals: input.categoryName, mode: 'insensitive' } },
+          status: { in: ['APPROVED', 'PENDING'] },
+          merged_into_id: null
+        },
+        include: { categories: true },
+        take: CONFIG.MAX_CANDIDATES_PER_STEP
+      });
+
+      for (const p of brandCategoryMatches) {
+        // Skip if already in candidates
+        if (allCandidates.some(c => c.id === p.id)) continue;
+        
+        const similarity = this.trigramSimilarity(normalizedName, p.normalized_name || '');
+        const isVerified = p.status === 'APPROVED';
+        const finalScore = this.calculateFinalScore(similarity, isVerified, 'brand_model', true, true);
+        
+        allCandidates.push({
+          id: p.id,
+          name: p.name,
+          brand: p.brand,
+          model: p.model,
+          category: p.categories?.name || null,
+          score: 1 - similarity,
+          confidence: similarity * 100,
+          matchType: 'brand_model',
+          isVerified,
+          finalScore
+        });
+      }
+    }
+
+    // =========================================================================
+    // STEP 4: Keyword/Alias Match
+    // =========================================================================
+    const keywords = [
+      ...normalizedName.split(' ').filter(w => w.length > 3),
+      ...(input.keywords || [])
+    ];
+
+    if (keywords.length > 0) {
+      const keywordMatches = await prisma.products.findMany({
+        where: {
+          OR: [
+            { keywords: { hasSome: keywords } },
+            { aliases: { hasSome: keywords } }
+          ],
+          status: { in: ['APPROVED', 'PENDING'] },
+          merged_into_id: null
+        },
+        include: { categories: true },
+        take: CONFIG.MAX_CANDIDATES_PER_STEP
+      });
+
+      for (const p of keywordMatches) {
+        if (allCandidates.some(c => c.id === p.id)) continue;
+        
+        const similarity = this.trigramSimilarity(normalizedName, p.normalized_name || '');
+        const isVerified = p.status === 'APPROVED';
+        const finalScore = this.calculateFinalScore(similarity, isVerified, 'keyword', false, false);
+        
+        allCandidates.push({
+          id: p.id,
+          name: p.name,
+          brand: p.brand,
+          model: p.model,
+          category: p.categories?.name || null,
+          score: 1 - similarity,
+          confidence: similarity * 100,
+          matchType: 'keyword',
+          isVerified,
+          finalScore
+        });
+      }
+    }
+
+    // =========================================================================
+    // SELECT BEST MATCH
+    // =========================================================================
+    if (allCandidates.length === 0) {
+      return {
+        matched: false,
+        product: null,
+        allCandidates: [],
+        matchType: null,
+        confidence: 0,
+        explanation: 'No matching products found in catalog'
+      };
+    }
+
+    // Sort: finalScore DESC, then verified first
+    allCandidates.sort((a, b) => {
+      if ((b.finalScore || 0) !== (a.finalScore || 0)) {
+        return (b.finalScore || 0) - (a.finalScore || 0);
+      }
+      if (a.isVerified !== b.isVerified) {
+        return a.isVerified ? -1 : 1;
+      }
+      return 0;
+    });
+
+    // Deduplicate
+    const seen = new Set<string>();
+    const uniqueCandidates = allCandidates.filter(c => {
+      if (seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    });
+
+    const bestMatch = uniqueCandidates[0];
+    
+    // Check threshold
+    if ((bestMatch.finalScore || 0) < CONFIG.FUZZY_SIMILARITY_THRESHOLD && bestMatch.matchType !== 'exact') {
+      return {
+        matched: false,
+        product: null,
+        allCandidates: uniqueCandidates,
+        matchType: null,
+        confidence: (bestMatch.finalScore || 0) * 100,
+        explanation: `Best match "${bestMatch.name}" below threshold (${((bestMatch.finalScore || 0) * 100).toFixed(1)}% < ${CONFIG.FUZZY_SIMILARITY_THRESHOLD * 100}%)`
+      };
+    }
+
+    return {
+      matched: true,
+      product: bestMatch,
+      allCandidates: uniqueCandidates,
+      matchType: bestMatch.matchType,
+      confidence: (bestMatch.finalScore || 0) * 100,
+      explanation: `Matched via ${bestMatch.matchType}${bestMatch.isVerified ? ' (verified)' : ''} with ${((bestMatch.finalScore || 0) * 100).toFixed(1)}% confidence`
+    };
+  },
+
+  /**
+   * Quick check: Does an exact match exist?
+   */
+  async hasExactMatch(normalizedName: string): Promise<boolean> {
+    const count = await prisma.products.count({
+      where: {
+        normalized_name: { equals: normalizedName, mode: 'insensitive' },
+        merged_into_id: null
+      }
+    });
+    return count > 0;
+  },
+
+  /**
+   * Get match explanation for debugging/logging
+   */
+  explainMatch(result: AdvancedMatchResult): string {
+    return result.explanation || (result.matched 
+      ? `Matched: ${result.product?.name} (${result.matchType})`
+      : 'No match found');
+  }
 };

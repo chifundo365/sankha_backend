@@ -171,6 +171,7 @@ model shops {
   delivery_methods         String[]
   is_verified              Boolean?        @default(false)
   delivery_enabled         Boolean?        @default(true)
+  can_bulk_upload          Boolean         @default(true)  // v4.0: Governance flag
   created_at               DateTime?       @default(now()) @db.Timestamp(6)
   updated_at               DateTime?       @default(now()) @db.Timestamp(6)
   orders                   orders[]
@@ -178,6 +179,7 @@ model shops {
   transactions             transactions[]
   withdrawals              withdrawals[]
   bulk_uploads             bulk_uploads[]
+  staging_rows             bulk_upload_staging[]
   users                    users?          @relation(fields: [owner_id], references: [id], onUpdate: NoAction)
 }
 
@@ -223,13 +225,14 @@ model users {
 }
 
 model categories {
-  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String     @unique @db.VarChar(100)
-  description String?
-  is_active   Boolean?   @default(true)
-  created_at  DateTime?  @default(now()) @db.Timestamp(6)
-  updated_at  DateTime?  @default(now()) @db.Timestamp(6)
-  products    products[]
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String           @unique @db.VarChar(100)
+  description     String?
+  is_active       Boolean?         @default(true)
+  created_at      DateTime?        @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?        @default(now()) @db.Timestamp(6)
+  products        products[]
+  tech_spec_rules tech_spec_rules?  // v4.0: Tech spec rules for this category
 }
 
 model order_messages {
@@ -277,6 +280,7 @@ model shop_products {
   condition         product_condition?  @default(NEW)
   shop_description  String?
   specs             Json?
+  variant_values    Json?               @db.JsonB           // v4.0: Structured variant/spec values
   images            String[]
   is_available      Boolean?            @default(true)
   
@@ -403,10 +407,12 @@ enum product_status {
 // Listing status for shop_products (seller inventory)
 enum listing_status {
   NEEDS_IMAGES      // Bulk uploaded, waiting for images
+  NEEDS_SPECS       // v4.0: Missing required tech specs
   PENDING_REVIEW    // Has images, awaiting admin approval
   LIVE              // Approved and visible to buyers
   REJECTED          // Not approved by admin
   PAUSED            // Temporarily hidden by seller
+  BROKEN            // v4.0: Invalid data, cannot proceed
 }
 
 // ========== SANKHA MVP: Bulk Upload Tracking ==========
@@ -419,22 +425,121 @@ model bulk_uploads {
   successful      Int             @default(0)       // Successfully created
   failed          Int             @default(0)       // Failed rows
   skipped         Int             @default(0)       // Skipped (duplicates, etc.)
+  needs_specs     Int             @default(0)       // v4.0: Products needing specs
+  needs_images    Int             @default(0)       // v4.0: Products needing images
   errors          Json?           // Array of error details: [{row, field, message}]
   status          upload_status   @default(PROCESSING)
+  batch_id        String?         @db.VarChar(50)   // v4.0: Staging batch ID
+  template_type   template_type?                    // v4.0: Detected template type
   created_at      DateTime        @default(now()) @db.Timestamp(6)
   completed_at    DateTime?       @db.Timestamp(6)
   
   shops           shops           @relation(fields: [shop_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   shop_products   shop_products[]
+  staging_rows    bulk_upload_staging[]
   
   @@index([shop_id], map: "idx_bulk_uploads_shop_id")
   @@index([status], map: "idx_bulk_uploads_status")
+  @@index([batch_id], map: "idx_bulk_uploads_batch_id")
 }
 
 enum upload_status {
+  STAGING       // v4.0: In staging, not committed
   PROCESSING
   COMPLETED
   FAILED
+  CANCELLED     // v4.0: User cancelled
+}
+
+enum template_type {
+  ELECTRONICS   // Spec: prefixed columns
+  GENERAL       // Label_x/Value_x columns
+  AUTO          // Auto-detected
+}
+
+enum staging_validation_status {
+  PENDING       // Not yet validated
+  VALID         // Ready to commit
+  INVALID       // Has errors, needs correction
+  COMMITTED     // Already moved to shop_products
+  SKIPPED       // Skipped (duplicate, etc.)
+}
+
+// ========== SANKHA v4.0: Bulk Upload Staging ==========
+
+model bulk_upload_staging {
+  id                    String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  batch_id              String                    @db.VarChar(50)
+  bulk_upload_id        String?                   @db.Uuid
+  shop_id               String                    @db.Uuid
+  row_number            Int
+  
+  // Raw data (preserved exactly as uploaded)
+  raw_data              Json                      @db.JsonB
+  
+  // Parsed/normalized data
+  product_name          String?                   @db.VarChar(255)
+  normalized_name       String?                   @db.VarChar(255)
+  category_name         String?                   @db.VarChar(100)
+  brand                 String?                   @db.VarChar(100)
+  sku                   String?                   @db.VarChar(50)
+  base_price            Decimal?                  @db.Decimal(12, 2)
+  display_price         Decimal?                  @db.Decimal(12, 2)
+  stock_quantity        Int?
+  condition             String?                   @db.VarChar(20)
+  description           String?
+  
+  // Parsed variant values
+  variant_values        Json?                     @db.JsonB
+  
+  // Template & validation
+  template_type         template_type             @default(GENERAL)
+  validation_status     staging_validation_status @default(PENDING)
+  
+  // Product matching
+  matched_product_id    String?                   @db.Uuid
+  will_create_product   Boolean                   @default(false)
+  
+  // Spec validation results
+  missing_specs         Json?                     @db.JsonB
+  
+  // Error details
+  errors                Json?                     @db.JsonB
+  
+  // Determined listing status (if committed)
+  target_listing_status listing_status?
+  
+  // Timestamps
+  created_at            DateTime                  @default(now()) @db.Timestamp(6)
+  processed_at          DateTime?                 @db.Timestamp(6)
+  
+  // Relations
+  bulk_uploads          bulk_uploads?             @relation(fields: [bulk_upload_id], references: [id], onDelete: Cascade)
+  shops                 shops                     @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  
+  @@index([batch_id], map: "idx_staging_batch_id")
+  @@index([shop_id, batch_id], map: "idx_staging_shop_batch")
+  @@index([validation_status], map: "idx_staging_validation_status")
+  @@index([bulk_upload_id], map: "idx_staging_bulk_upload_id")
+}
+
+// ========== SANKHA v4.0: Tech Spec Rules ==========
+
+model tech_spec_rules {
+  id                String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  category_id       String?     @unique @db.Uuid
+  category_name     String      @db.VarChar(100)
+  required_specs    Json        @default("[]") @db.JsonB
+  optional_specs    Json        @default("[]") @db.JsonB
+  spec_labels       Json        @default("{}") @db.JsonB
+  spec_validations  Json?       @db.JsonB
+  is_active         Boolean     @default(true)
+  created_at        DateTime    @default(now()) @db.Timestamp(6)
+  updated_at        DateTime    @updatedAt @db.Timestamp(6)
+  
+  categories        categories? @relation(fields: [category_id], references: [id])
+  
+  @@index([category_name], map: "idx_tech_spec_rules_name")
 }
 
 // ========== SANKHA MVP: Wallet & Transactions ==========

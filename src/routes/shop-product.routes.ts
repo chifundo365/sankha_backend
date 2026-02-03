@@ -12,6 +12,11 @@ import {
 import { protect } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/authorize.middleware";
 import { uploadMultiple, uploadSingle, uploadExcel } from "../middleware/upload.middleware";
+import { 
+  canBulkUpload, 
+  verifyBatchOwnership, 
+  checkPendingBatchLimit 
+} from "../middleware/bulkUploadGovernance.middleware";
 
 // mergeParams: true allows access to :shopId from parent router
 const router = Router({ mergeParams: true });
@@ -31,6 +36,7 @@ router.get(
 /**
  * Bulk Upload routes - Seller, Admin, Super Admin
  * NOTE: These routes must come BEFORE /:shopProductId to avoid parameter conflict
+ * v4.0: Now includes governance middleware for permission checks
  */
 
 // Download bulk upload template
@@ -44,10 +50,13 @@ router.get(
 
 // Upload products via Excel
 // Route: POST /api/shops/:shopId/products/bulk
+// v4.0: Now checks can_bulk_upload permission and pending batch limit
 router.post(
   "/bulk",
   protect,
   authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  canBulkUpload,           // v4.0: Check shop has bulk upload permission
+  checkPendingBatchLimit,  // v4.0: Check pending batch limit
   uploadExcel,
   bulkUploadController.bulkUpload
 );
@@ -70,6 +79,61 @@ router.get(
   bulkUploadController.getUploadDetails
 );
 
+/**
+ * v4.0 Staging Pipeline Routes
+ * All batch-specific routes verify ownership
+ */
+
+// Get staging preview before commit
+// Route: GET /api/shops/:shopId/products/bulk/:batchId/preview
+router.get(
+  "/bulk/:batchId/preview",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  verifyBatchOwnership,    // v4.0: Verify user owns this batch
+  bulkUploadController.getStagingPreview
+);
+
+// Commit staging batch to production
+// Route: POST /api/shops/:shopId/products/bulk/:batchId/commit
+router.post(
+  "/bulk/:batchId/commit",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  verifyBatchOwnership,    // v4.0: Verify user owns this batch
+  bulkUploadController.commitStagingBatch
+);
+
+// Cancel staging batch
+// Route: DELETE /api/shops/:shopId/products/bulk/:batchId/cancel
+router.delete(
+  "/bulk/:batchId/cancel",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  verifyBatchOwnership,    // v4.0: Verify user owns this batch
+  bulkUploadController.cancelStagingBatch
+);
+
+// Download correction file for invalid rows
+// Route: GET /api/shops/:shopId/products/bulk/:batchId/corrections
+router.get(
+  "/bulk/:batchId/corrections",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  verifyBatchOwnership,    // v4.0: Verify user owns this batch
+  bulkUploadController.downloadCorrections
+);
+
+// Get preview of correction errors
+// Route: GET /api/shops/:shopId/products/bulk/:batchId/corrections/preview
+router.get(
+  "/bulk/:batchId/corrections/preview",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  verifyBatchOwnership,    // v4.0: Verify user owns this batch
+  bulkUploadController.getCorrectionPreview
+);
+
 // Get products needing images
 // Route: GET /api/shops/:shopId/products/needs-images
 router.get(
@@ -77,6 +141,15 @@ router.get(
   protect,
   authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
   bulkUploadController.getProductsNeedingImages
+);
+
+// Get products needing specs (v4.0)
+// Route: GET /api/shops/:shopId/products/needs-specs
+router.get(
+  "/needs-specs",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  bulkUploadController.getProductsNeedingSpecs
 );
 
 /**
@@ -120,6 +193,15 @@ router.patch(
   protect,
   authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
   shopProductController.updateStock
+);
+
+// Update product specs (v4.0 - for completing NEEDS_SPECS products)
+// Route: PATCH /api/shops/:shopId/products/:shopProductId/specs
+router.patch(
+  "/:shopProductId/specs",
+  protect,
+  authorize("SELLER", "ADMIN", "SUPER_ADMIN"),
+  bulkUploadController.updateProductSpecs
 );
 
 // Get stock change logs
