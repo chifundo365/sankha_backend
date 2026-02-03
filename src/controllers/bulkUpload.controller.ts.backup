@@ -5,8 +5,6 @@ import { bulkUploadService } from '../services/bulkUpload.service';
 import { bulkUploadStagingService } from '../services/bulkUploadStaging.service';
 import { bulkUploadCorrectionService } from '../services/bulkUploadCorrection.service';
 import { CloudinaryService } from '../services/cloudinary.service';
-import { calculateDisplayPrice } from '../utils/constants';
-import { TemplateType } from '../types/bulkUpload.types';
 
 const MAX_UPLOAD_ROWS = 200;
 
@@ -92,26 +90,8 @@ export const bulkUploadController = {
         return errorResponse(res, 'Shop not found', null, 404);
       }
 
-      // Parse the Excel file
-      const parseResult = bulkUploadService.parseExcelFile(file.buffer);
-
-      // Convert v3 format to v4 format (camelCase)
-      const rows = parseResult.rows.map(row => ({
-        rowNumber: row.rowNumber,
-        productName: row.product_name,
-        normalizedName: row.normalized_name,
-        categoryName: row.category_name,
-        brand: row.brand,
-        sku: row.sku,
-        basePrice: row.base_price,
-        displayPrice: calculateDisplayPrice(row.base_price),
-        stockQuantity: row.stock_quantity,
-        condition: row.condition,
-        description: row.shop_description,
-        variantValues: row.specs || {},
-        templateType: TemplateType.GENERAL
-      }));
-      const parseErrors = parseResult.errors;
+      // Parse the Excel file using v3 parser (compatible)
+      const { rows, errors: parseErrors } = bulkUploadService.parseExcelFile(file.buffer);
 
       // Check row limit
       if (rows.length > MAX_UPLOAD_ROWS) {
@@ -128,89 +108,22 @@ export const bulkUploadController = {
         return errorResponse(res, 'No valid product data found in the file', null, 400);
       }
 
-      // v4.0: Create staging batch with full tech spec validation
-      const batchId = bulkUploadStagingService.generateBatchId(shopId);
-      
-      // Create bulk upload record
-      const bulkUpload = await prisma.bulk_uploads.create({
-        data: {
-          shop_id: shopId,
-          file_name: file.originalname,
-          total_rows: rows.length + parseErrors.length,
-          batch_id: batchId,
-          status: 'PROCESSING'
-        }
-      });
-
-      // Insert staging rows
-      await bulkUploadStagingService.insertStagingRows(
-        shopId,
-        batchId,
-        bulkUpload.id,
-        rows,
-        parseErrors
-      );
-
-      // Validate batch (includes tech spec validation)
-      const stagingSummary = await bulkUploadStagingService.validateStagingBatch(shopId, batchId);
-
-      // Auto-commit if requested (backwards compatibility)
+      // v4.0: If autoCommit=true, use v3 direct upload (backwards compatibility)
       if (autoCommit) {
-        const commitResult = await bulkUploadStagingService.commitBatch(shopId, batchId);
-        
-        // Fetch errors from staging batch for email
-        const stagingRows = await prisma.bulk_upload_staging.findMany({
-          where: { 
-            batch_id: batchId,
-            shop_id: shopId,
-            validation_status: { in: ['INVALID', 'SKIPPED'] }
-          },
-          select: {
-            row_number: true,
-            product_name: true,
-            errors: true
-          },
-          orderBy: { row_number: 'asc' }
-        });
+        const result = await bulkUploadService.processBulkUpload(
+          shopId,
+          file.originalname,
+          rows,
+          parseErrors
+        );
 
-        const errors = stagingRows.flatMap(row => {
-          const rowErrors = row.errors as any;
-          if (Array.isArray(rowErrors)) {
-            return rowErrors.map((err: any) => ({
-              row: row.row_number,
-              field: err.field || 'Product',
-              message: err.message || (row.product_name ? `Skipped: ${row.product_name}` : 'Unknown error')
-            }));
-          }
-          // If no structured errors, create a generic message
-          if (row.product_name) {
-            return [{
-              row: row.row_number,
-              field: 'Product Name',
-              message: `Duplicate: You already have "${row.product_name}" in your shop`
-            }];
-          }
-          return [];
-        });
-        
         // Send summary email
         if (shop.users?.email) {
           try {
             await bulkUploadService.sendUploadSummaryEmail(
               shop.users.email,
               shop.users.first_name || 'Seller',
-              {
-                uploadId: bulkUpload.id,
-                batchId: batchId,
-                totalRows: stagingSummary.total,
-                successful: commitResult.committed,
-                skipped: commitResult.skipped,
-                failed: commitResult.failed,
-                needs_specs: commitResult.needsSpecs,
-                needs_images: commitResult.needsImages,
-                products: [],
-                errors: errors
-              }
+              result
             );
           } catch (emailError) {
             console.error('Failed to send upload summary email:', emailError);
@@ -219,46 +132,23 @@ export const bulkUploadController = {
 
         return successResponse(
           res,
-          `Bulk upload completed: ${commitResult.committed} created, ${commitResult.skipped} skipped, ${commitResult.failed} failed`,
+          `Bulk upload completed: ${result.successful} products created, ${result.skipped} skipped, ${result.failed} failed`,
           {
-            upload_id: bulkUpload.id,
-            batch_id: batchId,
+            upload_id: result.uploadId,
             summary: {
-              total: stagingSummary.total,
-              created: commitResult.committed,
-              skipped: commitResult.skipped,
-              failed: commitResult.failed,
-              needs_specs: commitResult.needsSpecs,
-              needs_images: commitResult.needsImages
+              total_rows: result.totalRows,
+              successful: result.successful,
+              skipped: result.skipped,
+              failed: result.failed
             },
-            next_steps: commitResult.committed > 0 ? {
-              message: 'Products created. Check listing status - products may need images or tech specs.',
-              needs_images_endpoint: `/api/shops/${shopId}/products/needs-images`,
-              needs_specs_endpoint: `/api/shops/${shopId}/products/needs-specs`
+            products: result.products,
+            errors: result.errors.length > 0 ? result.errors : undefined,
+            next_steps: result.successful > 0 ? {
+              message: 'Products created with "Needs Images" status. Add images to make them live.',
+              endpoint: `/api/shops/${shopId}/products/needs-images`
             } : undefined
           },
           201
-        );
-      }
-
-      // Return staging preview (default v4.0 behavior - get preview)
-      const preview = await bulkUploadStagingService.getPreview(shopId, batchId, 1, false);
-      
-      return successResponse(
-        res,
-        'File validated successfully. Review the preview and commit when ready.',
-        {
-          batch_id: batchId,
-          upload_id: bulkUpload.id,
-          summary: stagingSummary,
-          preview: preview,
-          next_steps: {
-            message: 'Review the preview and commit the batch when ready',
-            preview_endpoint: `/api/shops/${shopId}/products/bulk/${batchId}/preview`,
-            commit_endpoint: `/api/shops/${shopId}/products/bulk/${batchId}/commit`
-          }
-        },
-        200
       );
     } catch (error) {
       console.error('Bulk upload error:', error);

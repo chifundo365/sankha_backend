@@ -68,6 +68,8 @@ interface UploadResult {
   successful: number;
   failed: number;
   skipped: number;
+  needs_specs?: number;
+  needs_images?: number;
   errors: RowError[];
   products: Array<{
     id: string;
@@ -249,9 +251,12 @@ export const bulkUploadService = {
           continue;
         }
 
-        // Extract specs (Spec: columns or Label_x/Value_x pairs)
+        // Extract specs (Spec: columns, Label_x/Value_x pairs, or any non-standard column)
+        const standardColumns = Object.keys(COLUMN_MAPPING);
         const specs: Record<string, string> = {};
+        
         for (const key of Object.keys(rawRow)) {
+          // Method 1: Explicit "Spec: " prefix
           if (key.startsWith('Spec: ')) {
             const specName = key.replace('Spec: ', '').trim();
             const specValue = String(rawRow[key] || '').trim();
@@ -259,13 +264,22 @@ export const bulkUploadService = {
               specs[specName] = specValue;
             }
           }
-          if (key.startsWith('Label_')) {
+          // Method 2: Label_x/Value_x pairs
+          else if (key.startsWith('Label_')) {
             const num = key.replace('Label_', '');
             const valueKey = `Value_${num}`;
             const label = String(rawRow[key] || '').trim();
             const value = String(rawRow[valueKey] || '').trim();
             if (label && value) {
               specs[label] = value;
+            }
+          }
+          // Method 3: Any column not in standard mapping (e.g., RAM, Storage, Processor)
+          else if (!standardColumns.includes(key) && key.trim()) {
+            const specValue = String(rawRow[key] || '').trim();
+            // Only include if non-empty, let validator detect truly missing columns
+            if (specValue) {
+              specs[key] = specValue;
             }
           }
         }
@@ -655,7 +669,18 @@ export const bulkUploadService = {
           `).join('')}
         </ul>
       ` : ''}
-      <p style="margin-top: 16px;">Products are created with "Needs Images" status. Add images to make them visible to buyers.</p>
+      ${result.successful > 0 ? `
+        <div style="margin-top: 24px; padding: 16px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
+          <p style="margin: 0 0 12px; font-weight: 600; color: #92400e;">⚠️ Next Steps to Make Products Live:</p>
+          ${result.needs_specs && result.needs_specs > 0 ? `
+            <p style="margin: 8px 0; color: #92400e;">• <strong>${result.needs_specs} product${result.needs_specs > 1 ? 's' : ''}</strong> need${result.needs_specs === 1 ? 's' : ''} tech specs (RAM, Storage, Processor, etc.) added</p>
+          ` : ''}
+          ${result.needs_images && result.needs_images > 0 ? `
+            <p style="margin: 8px 0; color: #92400e;">• <strong>${result.needs_images} product${result.needs_images > 1 ? 's' : ''}</strong> need${result.needs_images === 1 ? 's' : ''} images uploaded</p>
+          ` : ''}
+          <p style="margin: 12px 0 0; color: #78350f; font-size: 14px;">Products won't be visible to buyers until all requirements are met.</p>
+        </div>
+      ` : ''}
     `;
 
     const { subject, html, text } = bulkUploadSummaryTemplate({
