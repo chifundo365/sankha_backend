@@ -105,3 +105,208 @@ export const passwordResetTemplate = (data: {
     text: `Reset your password: ${data.resetUrl}` 
   };
 };
+
+/**
+ * Welcome Email Template
+ */
+export const welcomeTemplate = (data: {
+  userName: string;
+  loginUrl: string;
+}) => {
+  const content = `
+    <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">Welcome to Sankha!</h2>
+    
+    <p style="font-size: 16px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
+      Hi <strong>${data.userName}</strong>, thank you for joining Malawi's premier price comparison marketplace!
+    </p>
+    
+    <p style="font-size: 15px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
+      You can now compare prices across multiple shops and find the best deals on electronics, 
+      gadgets, and more.
+    </p>
+    
+    <div style="margin: 35px 0;">
+      <a href="${data.loginUrl}" 
+         style="background-color: ${COLORS.secondary}; background: linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.secondaryDark} 100%); color: #ffffff; display: inline-block; padding: 18px 40px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 12px; text-align: center;">
+        Start Shopping
+      </a>
+    </div>
+    
+    <p style="font-size: 13px; color: ${COLORS.textMuted}; line-height: 1.6;">
+      Need help? Contact us at <a href="mailto:${emailConfig.app.supportEmail}" style="color: ${COLORS.secondary};">${emailConfig.app.supportEmail}</a>
+    </p>
+  `;
+
+  return { 
+    subject: `Welcome to Sankha, ${data.userName}!`, 
+    html: baseTemplate(content, `Welcome to Sankha marketplace`), 
+    text: `Welcome to Sankha, ${data.userName}! Start shopping at ${emailConfig.app.url}` 
+  };
+};
+
+/**
+ * Order Confirmation Template
+ */
+export const orderConfirmationTemplate = (data: {
+  userName: string;
+  orderNumber: string;
+  orderDate: string;
+  items: Array<{ name: string; quantity: number; price: number }>;
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
+  releaseCode?: string;
+  shopName: string;
+  deliveryAddress: string;
+}) => {
+  const itemRows = data.items.map(item => `
+    <tr>
+      <td style="padding: 12px 0; border-bottom: 1px solid ${COLORS.border}; color: ${COLORS.text};">${item.name}</td>
+      <td style="padding: 12px 0; border-bottom: 1px solid ${COLORS.border}; color: ${COLORS.textMuted}; text-align: center;">${item.quantity}</td>
+      <td style="padding: 12px 0; border-bottom: 1px solid ${COLORS.border}; color: ${COLORS.text}; text-align: right;">MWK ${item.price.toLocaleString()}</td>
+    </tr>
+  `).join('');
+
+  const releaseCodeSection = data.releaseCode ? `
+    <div style="background: linear-gradient(135deg, ${COLORS.primary}15 0%, ${COLORS.secondary}15 100%); border-radius: 12px; padding: 20px; margin: 25px 0; text-align: center;">
+      <p style="margin: 0 0 8px; font-size: 13px; color: ${COLORS.textMuted}; text-transform: uppercase;">Release Code</p>
+      <p style="margin: 0; font-size: 28px; font-weight: 700; color: ${COLORS.primary}; letter-spacing: 4px;">${data.releaseCode}</p>
+      <p style="margin: 10px 0 0; font-size: 12px; color: ${COLORS.textMuted};">Give this code to the seller only after receiving your order</p>
+    </div>
+  ` : '';
+
+  const content = `
+    <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">Order Confirmed!</h2>
+    
+    <p style="font-size: 16px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
+      Hi <strong>${data.userName}</strong>, your order <strong>#${data.orderNumber}</strong> has been confirmed.
+    </p>
+    
+    <div style="background-color: ${COLORS.background}; border-radius: 12px; padding: 20px; margin: 25px 0;">
+      <p style="margin: 0 0 8px; font-size: 13px; color: ${COLORS.textMuted};">Order Date: <strong style="color: ${COLORS.text};">${data.orderDate}</strong></p>
+      <p style="margin: 0 0 8px; font-size: 13px; color: ${COLORS.textMuted};">Shop: <strong style="color: ${COLORS.text};">${data.shopName}</strong></p>
+      <p style="margin: 0; font-size: 13px; color: ${COLORS.textMuted};">Delivery: <strong style="color: ${COLORS.text};">${data.deliveryAddress}</strong></p>
+    </div>
+    
+    ${releaseCodeSection}
+    
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 25px 0;">
+      <thead>
+        <tr>
+          <th style="padding: 12px 0; border-bottom: 2px solid ${COLORS.border}; text-align: left; color: ${COLORS.textMuted}; font-size: 12px; text-transform: uppercase;">Item</th>
+          <th style="padding: 12px 0; border-bottom: 2px solid ${COLORS.border}; text-align: center; color: ${COLORS.textMuted}; font-size: 12px; text-transform: uppercase;">Qty</th>
+          <th style="padding: 12px 0; border-bottom: 2px solid ${COLORS.border}; text-align: right; color: ${COLORS.textMuted}; font-size: 12px; text-transform: uppercase;">Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemRows}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2" style="padding: 8px 0; text-align: right; color: ${COLORS.textMuted};">Subtotal:</td>
+          <td style="padding: 8px 0; text-align: right; color: ${COLORS.text};">MWK ${data.subtotal.toLocaleString()}</td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding: 8px 0; text-align: right; color: ${COLORS.textMuted};">Delivery:</td>
+          <td style="padding: 8px 0; text-align: right; color: ${COLORS.text};">MWK ${data.deliveryFee.toLocaleString()}</td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding: 15px 0; text-align: right; font-weight: 700; color: ${COLORS.text};">Total:</td>
+          <td style="padding: 15px 0; text-align: right; font-weight: 700; color: ${COLORS.primary}; font-size: 18px;">MWK ${data.total.toLocaleString()}</td>
+        </tr>
+      </tfoot>
+    </table>
+    
+    <div style="margin: 35px 0;">
+      <a href="${emailConfig.app.url}/orders/${data.orderNumber}" 
+         style="background-color: ${COLORS.secondary}; background: linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.secondaryDark} 100%); color: #ffffff; display: inline-block; padding: 18px 40px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 12px; text-align: center;">
+        View Order
+      </a>
+    </div>
+  `;
+
+  return { 
+    subject: `Order Confirmed #${data.orderNumber}`, 
+    html: baseTemplate(content, `Your order #${data.orderNumber} has been confirmed`), 
+    text: `Order #${data.orderNumber} confirmed. Total: MWK ${data.total.toLocaleString()}` 
+  };
+};
+
+/**
+ * Generic Notification Template
+ */
+export const notificationTemplate = (data: {
+  userName: string;
+  title: string;
+  message: string;
+  ctaText?: string;
+  ctaUrl?: string;
+}) => {
+  const ctaButton = data.ctaText && data.ctaUrl ? `
+    <div style="margin: 35px 0;">
+      <a href="${data.ctaUrl}" 
+         style="background-color: ${COLORS.secondary}; background: linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.secondaryDark} 100%); color: #ffffff; display: inline-block; padding: 18px 40px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 12px; text-align: center;">
+        ${data.ctaText}
+      </a>
+    </div>
+  ` : '';
+
+  const content = `
+    <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">${data.title}</h2>
+    
+    <p style="font-size: 16px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
+      Hi <strong>${data.userName}</strong>,
+    </p>
+    
+    <p style="font-size: 15px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
+      ${data.message}
+    </p>
+    
+    ${ctaButton}
+  `;
+
+  return { 
+    subject: data.title, 
+    html: baseTemplate(content, data.message.substring(0, 100)), 
+    text: `${data.title}\n\n${data.message}` 
+  };
+};
+
+/**
+ * Bulk Upload Summary Template
+ */
+export const bulkUploadSummaryTemplate = (data: {
+  userName: string;
+  subject: string;
+  htmlSummary: string;
+  textSummary?: string;
+  ctaText: string;
+  ctaUrl: string;
+}) => {
+  const plainText = data.textSummary || data.subject;
+  
+  const content = `
+    <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">Bulk Upload Complete</h2>
+    
+    <p style="font-size: 16px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
+      Hi <strong>${data.userName}</strong>, your bulk upload has been processed.
+    </p>
+    
+    <div style="background-color: ${COLORS.background}; border-radius: 12px; padding: 20px; margin: 25px 0;">
+      ${data.htmlSummary}
+    </div>
+    
+    <div style="margin: 35px 0;">
+      <a href="${data.ctaUrl}" 
+         style="background-color: ${COLORS.secondary}; background: linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.secondaryDark} 100%); color: #ffffff; display: inline-block; padding: 18px 40px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 12px; text-align: center;">
+        ${data.ctaText}
+      </a>
+    </div>
+  `;
+
+  return { 
+    subject: data.subject, 
+    html: baseTemplate(content, plainText.substring(0, 100)), 
+    text: plainText 
+  };
+};
