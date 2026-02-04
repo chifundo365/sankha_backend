@@ -1,6 +1,6 @@
 /**
- * Sankha Email Templates (v4.1 - Visual Alignment)
- * Fixed to match the "Second Image" style: Dark Header + Minimalist Card
+ * Sankha Email Templates (v4.2 - Production Brand Alignment)
+ * Style: Dark Header + Minimalist Card + Social Footer
  */
 
 import { emailConfig } from '../config/email.config';
@@ -16,6 +16,9 @@ const COLORS = {
   border: '#E2E8F0',
 };
 
+/**
+ * Common Base Template used by all emails
+ */
 const baseTemplate = (content: string, preheader: string = ''): string => `
 <!DOCTYPE html>
 <html>
@@ -23,7 +26,7 @@ const baseTemplate = (content: string, preheader: string = ''): string => `
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; background-color: ${COLORS.background}; font-family: 'Inter', Helvetica, Arial, sans-serif;">
+<body style="margin: 0; padding: 0; background-color: ${COLORS.background}; font-family: 'Inter', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
   <div style="display: none; max-height: 0; overflow: hidden;">${preheader}</div>
   
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: ${COLORS.background};">
@@ -53,9 +56,36 @@ const baseTemplate = (content: string, preheader: string = ''): string => `
           </tr>
           
           <tr>
-            <td align="center" style="padding: 30px 0; color: ${COLORS.textMuted}; font-size: 12px;">
-              <p style="margin: 0; opacity: 0.8;">© ${new Date().getFullYear()} Sankha Marketplace • Lilongwe, Malawi</p>
-              <p style="margin: 8px 0 0;"><a href="${emailConfig.app.url}" style="color: ${COLORS.primary}; text-decoration: none;">Visit Shop</a> | <a href="mailto:${emailConfig.app.supportEmail}" style="color: ${COLORS.primary}; text-decoration: none;">Support</a></p>
+            <td align="center" style="padding: 35px 0;">
+              
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 20px;">
+                <tr>
+                  <td style="padding: 0 12px;">
+                    <a href="${emailConfig.social.facebook}" target="_blank" style="text-decoration: none;">
+                      <img src="https://cdn-icons-png.flaticon.com/32/733/733547.png" width="24" height="24" alt="Facebook" style="display: block; border: 0;">
+                    </a>
+                  </td>
+                  <td style="padding: 0 12px;">
+                    <a href="${emailConfig.social.instagram}" target="_blank" style="text-decoration: none;">
+                      <img src="https://cdn-icons-png.flaticon.com/32/733/733558.png" width="24" height="24" alt="Instagram" style="display: block; border: 0;">
+                    </a>
+                  </td>
+                  <td style="padding: 0 12px;">
+                    <a href="${emailConfig.social.twitter}" target="_blank" style="text-decoration: none;">
+                      <img src="https://cdn-icons-png.flaticon.com/32/733/733579.png" width="24" height="24" alt="Twitter" style="display: block; border: 0;">
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin: 0; color: ${COLORS.textMuted}; font-size: 12px; font-weight: 500;">
+                © ${new Date().getFullYear()} Sankha Marketplace • Lilongwe, Malawi
+              </p>
+              
+              <p style="margin: 10px 0 0; color: ${COLORS.textMuted}; font-size: 12px;">
+                Have questions? <a href="mailto:${emailConfig.app.supportEmail}" style="color: ${COLORS.primary}; text-decoration: none; font-weight: 700;">Contact Support</a>
+              </p>
+              
             </td>
           </tr>
         </table>
@@ -66,6 +96,9 @@ const baseTemplate = (content: string, preheader: string = ''): string => `
 </html>
 `;
 
+/**
+ * Password Reset Template
+ */
 export const passwordResetTemplate = (data: {
   userName: string;
   resetUrl: string;
@@ -121,8 +154,7 @@ export const welcomeTemplate = (data: {
     </p>
     
     <p style="font-size: 15px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
-      You can now compare prices across multiple shops and find the best deals on electronics, 
-      gadgets, and more.
+      Find the best deals on electronics and gadgets across multiple shops in Malawi.
     </p>
     
     <div style="margin: 35px 0;">
@@ -131,16 +163,12 @@ export const welcomeTemplate = (data: {
         Start Shopping
       </a>
     </div>
-    
-    <p style="font-size: 13px; color: ${COLORS.textMuted}; line-height: 1.6;">
-      Need help? Contact us at <a href="mailto:${emailConfig.app.supportEmail}" style="color: ${COLORS.secondary};">${emailConfig.app.supportEmail}</a>
-    </p>
   `;
 
   return { 
     subject: `Welcome to Sankha, ${data.userName}!`, 
     html: baseTemplate(content, `Welcome to Sankha marketplace`), 
-    text: `Welcome to Sankha, ${data.userName}! Start shopping at ${emailConfig.app.url}` 
+    text: `Welcome to Sankha, ${data.userName}!` 
   };
 };
 
@@ -179,7 +207,7 @@ export const orderConfirmationTemplate = (data: {
     <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">Order Confirmed!</h2>
     
     <p style="font-size: 16px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
-      Hi <strong>${data.userName}</strong>, your order <strong>#${data.orderNumber}</strong> has been confirmed.
+      Hi <strong>${data.userName}</strong>, your order <strong>#${data.orderNumber}</strong> is being processed.
     </p>
     
     <div style="background-color: ${COLORS.background}; border-radius: 12px; padding: 20px; margin: 25px 0;">
@@ -220,7 +248,7 @@ export const orderConfirmationTemplate = (data: {
     <div style="margin: 35px 0;">
       <a href="${emailConfig.app.url}/orders/${data.orderNumber}" 
          style="background-color: ${COLORS.secondary}; background: linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.secondaryDark} 100%); color: #ffffff; display: inline-block; padding: 18px 40px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 12px; text-align: center;">
-        View Order
+        View Order Detail
       </a>
     </div>
   `;
@@ -229,46 +257,6 @@ export const orderConfirmationTemplate = (data: {
     subject: `Order Confirmed #${data.orderNumber}`, 
     html: baseTemplate(content, `Your order #${data.orderNumber} has been confirmed`), 
     text: `Order #${data.orderNumber} confirmed. Total: MWK ${data.total.toLocaleString()}` 
-  };
-};
-
-/**
- * Generic Notification Template
- */
-export const notificationTemplate = (data: {
-  userName: string;
-  title: string;
-  message: string;
-  ctaText?: string;
-  ctaUrl?: string;
-}) => {
-  const ctaButton = data.ctaText && data.ctaUrl ? `
-    <div style="margin: 35px 0;">
-      <a href="${data.ctaUrl}" 
-         style="background-color: ${COLORS.secondary}; background: linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.secondaryDark} 100%); color: #ffffff; display: inline-block; padding: 18px 40px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 12px; text-align: center;">
-        ${data.ctaText}
-      </a>
-    </div>
-  ` : '';
-
-  const content = `
-    <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">${data.title}</h2>
-    
-    <p style="font-size: 16px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
-      Hi <strong>${data.userName}</strong>,
-    </p>
-    
-    <p style="font-size: 15px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
-      ${data.message}
-    </p>
-    
-    ${ctaButton}
-  `;
-
-  return { 
-    subject: data.title, 
-    html: baseTemplate(content, data.message.substring(0, 100)), 
-    text: `${data.title}\n\n${data.message}` 
   };
 };
 
@@ -283,13 +271,11 @@ export const bulkUploadSummaryTemplate = (data: {
   ctaText: string;
   ctaUrl: string;
 }) => {
-  const plainText = data.textSummary || data.subject;
-  
   const content = `
-    <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">Bulk Upload Complete</h2>
+    <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">Bulk Upload Results</h2>
     
     <p style="font-size: 16px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
-      Hi <strong>${data.userName}</strong>, your bulk upload has been processed.
+      Hi <strong>${data.userName}</strong>, your recent product upload has finished processing.
     </p>
     
     <div style="background-color: ${COLORS.background}; border-radius: 12px; padding: 20px; margin: 25px 0;">
@@ -306,7 +292,60 @@ export const bulkUploadSummaryTemplate = (data: {
 
   return { 
     subject: data.subject, 
-    html: baseTemplate(content, plainText.substring(0, 100)), 
-    text: plainText 
+    html: baseTemplate(content, data.subject), 
+    text: data.textSummary || data.subject 
+  };
+};
+
+/**
+ * Generic notification email template
+ */
+export const notificationTemplate = (data: {
+  userName: string;
+  title: string;
+  message: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  type?: 'info' | 'success' | 'warning' | 'error';
+}) => {
+  const typeColors = {
+    info: '#3b82f6',
+    success: '#22c55e',
+    warning: '#f59e0b',
+    error: '#ef4444',
+  };
+  
+  const color = typeColors[data.type || 'info'];
+  
+  const ctaButton = data.ctaText && data.ctaUrl
+    ? `<a href="${data.ctaUrl}" style="display: inline-block; padding: 12px 24px; background-color: ${color}; color: white; text-decoration: none; border-radius: 6px; margin-top: 20px;">${data.ctaText}</a>`
+    : '';
+
+  return {
+    subject: data.title,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="border-left: 4px solid ${color}; padding-left: 20px;">
+          <h2 style="color: ${color}; margin-top: 0;">${data.title}</h2>
+          <p>Hi ${data.userName},</p>
+          <div style="margin: 20px 0;">
+            ${data.message}
+          </div>
+          ${ctaButton}
+        </div>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+        <p style="color: #666; font-size: 12px;">
+          This is an automated message. Please do not reply directly to this email.
+        </p>
+      </body>
+      </html>
+    `,
+    text: `${data.title}\n\nHi ${data.userName},\n\n${data.message.replace(/<[^>]*>/g, '')}\n\n${data.ctaUrl ? `${data.ctaText}: ${data.ctaUrl}` : ''}`,
   };
 };

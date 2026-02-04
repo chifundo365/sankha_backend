@@ -54,7 +54,7 @@ export const bulkUploadController = {
     try {
       const { shopId } = req.params;
       const file = req.file;
-      const autoCommit = req.body.autoCommit === 'true' || req.body.autoCommit === true;
+      const autoCommit = req.body?.autoCommit === 'true' || req.body?.autoCommit === true;
 
       // Check file was uploaded
       if (!file) {

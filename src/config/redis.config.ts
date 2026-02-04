@@ -43,14 +43,23 @@ class RedisClient {
       // Configure TLS options for rediss:// URLs
       const socketOptions: any = {
         reconnectStrategy: (retries: number) => {
-          if (retries > 10) {
+          if (retries > 20) {
             console.error('Redis: Max reconnection attempts reached');
             return new Error('Max reconnection attempts reached');
           }
-          const delay = Math.min(retries * 100, 3000);
-          console.log(`Redis: Reconnecting in ${delay}ms (attempt ${retries})`);
+          // Exponential backoff with jitter: 100ms, 200ms, 400ms... max 5s
+          const baseDelay = Math.min(Math.pow(2, retries) * 100, 5000);
+          const jitter = Math.random() * 100;
+          const delay = baseDelay + jitter;
+          // Only log every 3rd attempt to reduce noise
+          if (retries % 3 === 0 || retries === 1) {
+            console.log(`Redis: Reconnecting in ${Math.round(delay)}ms (attempt ${retries})`);
+          }
           return delay;
         },
+        // Keep connection alive with ping
+        keepAlive: 30000, // 30 seconds
+        connectTimeout: 10000, // 10 seconds
       };
 
       // Add TLS configuration if using rediss://
@@ -62,11 +71,18 @@ class RedisClient {
       this.client = createClient({
         url: redisUrl,
         socket: socketOptions,
+        // Disable offline queue to fail fast when disconnected
+        disableOfflineQueue: false,
       });
 
-      // Event handlers
+      // Event handlers - reduce noise for expected reconnection events
       this.client.on('error', (err) => {
-        console.error('Redis Client Error:', err);
+        // ECONNRESET is expected from cloud Redis idle timeouts, don't spam logs
+        if (err.code === 'ECONNRESET') {
+          console.log('Redis: Connection reset (idle timeout), will reconnect...');
+        } else {
+          console.error('Redis Client Error:', err);
+        }
       });
 
       this.client.on('connect', () => {
@@ -78,7 +94,7 @@ class RedisClient {
       });
 
       this.client.on('reconnecting', () => {
-        console.log('Redis: Reconnecting...');
+        // Logged in reconnectStrategy, skip here to reduce noise
       });
 
       this.client.on('end', () => {
