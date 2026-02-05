@@ -154,6 +154,12 @@ export const bulkUploadController = {
       // Validate batch (includes tech spec validation)
       const stagingSummary = await bulkUploadStagingService.validateStagingBatch(shopId, batchId);
 
+      // Update status to STAGING after successful validation
+      await prisma.bulk_uploads.update({
+        where: { id: bulkUpload.id },
+        data: { status: 'STAGING' }
+      });
+
       // Auto-commit if requested (backwards compatibility)
       if (autoCommit) {
         const commitResult = await bulkUploadStagingService.commitBatch(shopId, batchId);

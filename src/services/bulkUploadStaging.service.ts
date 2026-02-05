@@ -7,6 +7,8 @@
 import prisma from '../prismaClient';
 import { Prisma, listing_status, upload_status, template_type, staging_validation_status } from '../../generated/prisma';
 import { calculateDisplayPrice } from '../utils/constants';
+import { emailService } from './email.service';
+import { bulkUploadSummaryTemplate } from '../templates/email.templates';
 import {
   normalizeProductName,
   normalizeSpecKey,
@@ -668,6 +670,64 @@ export const bulkUploadStagingService = {
         completed_at: new Date()
       }
     });
+
+    // Send email notification to seller
+    try {
+      const shopWithUser = await prisma.shops.findUnique({
+        where: { id: shopId },
+        include: {
+          users: {
+            select: { email: true, first_name: true }
+          }
+        }
+      });
+
+      if (shopWithUser?.users?.email) {
+        const email = shopWithUser.users.email;
+        const sellerName = shopWithUser.users.first_name || 'Seller';
+
+        // Build HTML summary
+        let htmlSummary = `
+          <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p style="margin: 0; color: #374151; font-size: 16px;"><strong>Total Processed:</strong> ${committed + skipped + failed} products</p>
+            <p style="margin: 8px 0 0; color: #059669; font-size: 16px;"><strong>✅ Successfully Added:</strong> ${committed} products</p>
+            ${skipped > 0 ? `<p style="margin: 8px 0 0; color: #f59e0b; font-size: 16px;"><strong>⏭️ Skipped (Duplicates):</strong> ${skipped} products</p>` : ''}
+            ${failed > 0 ? `<p style="margin: 8px 0 0; color: #dc2626; font-size: 16px;"><strong>❌ Failed (Invalid Data):</strong> ${failed} products</p>` : ''}
+            ${newProductsCreated > 0 ? `<p style="margin: 8px 0 0; color: #2563eb; font-size: 16px;"><strong>🆕 New Products Created:</strong> ${newProductsCreated}</p>` : ''}
+          </div>
+        `;
+
+        // Add status breakdown
+        if (needsImages > 0 || needsSpecs > 0) {
+          htmlSummary += `
+            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin: 16px 0;">
+              <p style="margin: 0; color: #92400e; font-size: 16px;"><strong>⚠️ Action Required:</strong></p>
+              ${needsImages > 0 ? `<p style="margin: 8px 0 0; color: #78350f; font-size: 14px;">• ${needsImages} product(s) need images to go live</p>` : ''}
+              ${needsSpecs > 0 ? `<p style="margin: 8px 0 0; color: #78350f; font-size: 14px;">• ${needsSpecs} product(s) need specifications to go live</p>` : ''}
+              <p style="margin: 12px 0 0; color: #78350f; font-size: 14px;">Products won't be visible to buyers until all requirements are met.</p>
+            </div>
+          `;
+        }
+
+        const { subject, html, text } = bulkUploadSummaryTemplate({
+          userName: sellerName,
+          subject: `Bulk Upload Complete - ${committed} products added`,
+          htmlSummary,
+          ctaText: 'View Your Products',
+          ctaUrl: `${process.env.FRONTEND_URL || 'https://sankha.shop'}/seller/products`
+        });
+
+        await emailService.send({
+          to: email,
+          subject,
+          html,
+          text
+        });
+      }
+    } catch (emailError) {
+      console.error('Failed to send bulk upload email:', emailError);
+      // Don't fail the commit if email fails
+    }
 
     return {
       batchId,
