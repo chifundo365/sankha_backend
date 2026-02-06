@@ -162,66 +162,8 @@ export const bulkUploadController = {
 
       // Auto-commit if requested (backwards compatibility)
       if (autoCommit) {
+        // commitBatch() already sends the enhanced email with batch ID, filename, duplicates, and errors
         const commitResult = await bulkUploadStagingService.commitBatch(shopId, batchId);
-        
-        // Fetch errors from staging batch for email
-        const stagingRows = await prisma.bulk_upload_staging.findMany({
-          where: { 
-            batch_id: batchId,
-            shop_id: shopId,
-            validation_status: { in: ['INVALID', 'SKIPPED'] }
-          },
-          select: {
-            row_number: true,
-            product_name: true,
-            errors: true
-          },
-          orderBy: { row_number: 'asc' }
-        });
-
-        const errors = stagingRows.flatMap(row => {
-          const rowErrors = row.errors as any;
-          if (Array.isArray(rowErrors)) {
-            return rowErrors.map((err: any) => ({
-              row: row.row_number,
-              field: err.field || 'Product',
-              message: err.message || (row.product_name ? `Skipped: ${row.product_name}` : 'Unknown error')
-            }));
-          }
-          // If no structured errors, create a generic message
-          if (row.product_name) {
-            return [{
-              row: row.row_number,
-              field: 'Product Name',
-              message: `Duplicate: You already have "${row.product_name}" in your shop`
-            }];
-          }
-          return [];
-        });
-        
-        // Send summary email
-        if (shop.users?.email) {
-          try {
-            await bulkUploadService.sendUploadSummaryEmail(
-              shop.users.email,
-              shop.users.first_name || 'Seller',
-              {
-                uploadId: bulkUpload.id,
-                batchId: batchId,
-                totalRows: stagingSummary.total,
-                successful: commitResult.committed,
-                skipped: commitResult.skipped,
-                failed: commitResult.failed,
-                needs_specs: commitResult.needsSpecs,
-                needs_images: commitResult.needsImages,
-                products: [],
-                errors: errors
-              }
-            );
-          } catch (emailError) {
-            console.error('Failed to send upload summary email:', emailError);
-          }
-        }
 
         return successResponse(
           res,
@@ -558,9 +500,9 @@ export const bulkUploadController = {
         },
         201
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Commit staging batch error:', error);
-      return errorResponse(res, 'Failed to commit batch', null, 500);
+      return errorResponse(res, error.message || 'Failed to commit batch', null, 400);
     }
   },
 

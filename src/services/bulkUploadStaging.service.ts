@@ -514,6 +514,28 @@ export const bulkUploadStagingService = {
    * Commit a staging batch to production
    */
   async commitBatch(shopId: string, batchId: string): Promise<CommitSummary> {
+    // Get bulk upload record
+    const bulkUpload = await prisma.bulk_uploads.findFirst({
+      where: { batch_id: batchId, shop_id: shopId }
+    });
+
+    if (!bulkUpload) {
+      throw new Error('Bulk upload record not found');
+    }
+
+    // Check if batch is in valid state for commit
+    if (bulkUpload.status === 'CANCELLED') {
+      throw new Error('Cannot commit: Batch has been cancelled');
+    }
+
+    if (bulkUpload.status === 'COMPLETED') {
+      throw new Error('Cannot commit: Batch has already been committed');
+    }
+
+    if (bulkUpload.status !== 'STAGING') {
+      throw new Error(`Cannot commit: Batch is in ${bulkUpload.status} status. Only STAGING batches can be committed.`);
+    }
+
     // Get all valid staging rows
     const validRows = await prisma.bulk_upload_staging.findMany({
       where: {
@@ -523,15 +545,6 @@ export const bulkUploadStagingService = {
       },
       orderBy: { row_number: 'asc' }
     });
-
-    // Get bulk upload record
-    const bulkUpload = await prisma.bulk_uploads.findFirst({
-      where: { batch_id: batchId, shop_id: shopId }
-    });
-
-    if (!bulkUpload) {
-      throw new Error('Bulk upload record not found');
-    }
 
     // Get shop for SKU generation
     const shop = await prisma.shops.findUnique({
@@ -686,25 +699,130 @@ export const bulkUploadStagingService = {
         const email = shopWithUser.users.email;
         const sellerName = shopWithUser.users.first_name || 'Seller';
 
-        // Build HTML summary
+        // Fetch error details from staging
+        const invalidRows = await prisma.bulk_upload_staging.findMany({
+          where: {
+            batch_id: batchId,
+            shop_id: shopId,
+            validation_status: 'INVALID'
+          },
+          select: {
+            row_number: true,
+            product_name: true,
+            errors: true
+          },
+          orderBy: { row_number: 'asc' },
+          take: 20 // Limit to first 20 errors
+        });
+
+        const skippedRows = await prisma.bulk_upload_staging.findMany({
+          where: {
+            batch_id: batchId,
+            shop_id: shopId,
+            validation_status: 'SKIPPED'
+          },
+          select: {
+            row_number: true,
+            product_name: true,
+            errors: true
+          },
+          orderBy: { row_number: 'asc' },
+          take: 20 // Limit to first 20 duplicates
+        });
+
+        // Build HTML summary with batch info
         let htmlSummary = `
-          <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
-            <p style="margin: 0; color: #374151; font-size: 16px;"><strong>Total Processed:</strong> ${committed + skipped + failed} products</p>
-            <p style="margin: 8px 0 0; color: #059669; font-size: 16px;"><strong>✅ Successfully Added:</strong> ${committed} products</p>
-            ${skipped > 0 ? `<p style="margin: 8px 0 0; color: #f59e0b; font-size: 16px;"><strong>⏭️ Skipped (Duplicates):</strong> ${skipped} products</p>` : ''}
-            ${failed > 0 ? `<p style="margin: 8px 0 0; color: #dc2626; font-size: 16px;"><strong>❌ Failed (Invalid Data):</strong> ${failed} products</p>` : ''}
-            ${newProductsCreated > 0 ? `<p style="margin: 8px 0 0; color: #2563eb; font-size: 16px;"><strong>🆕 New Products Created:</strong> ${newProductsCreated}</p>` : ''}
+          <div style="background: #e0e7ff; padding: 12px 16px; border-radius: 6px; margin: 0 0 16px 0; border-left: 4px solid #6366f1;">
+            <p style="margin: 0; color: #4338ca; font-size: 13px;"><strong>Batch ID:</strong> ${batchId}</p>
+            <p style="margin: 4px 0 0; color: #4338ca; font-size: 13px;"><strong>File:</strong> ${bulkUpload.file_name || 'Unknown'}</p>
           </div>
+          <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+            <tr>
+              <td style="padding: 10px; border: 1px solid #e5e7eb; background: #f9fafb;"><strong>Total Processed</strong></td>
+              <td style="padding: 10px; border: 1px solid #e5e7eb;">${committed + skipped + failed}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #e5e7eb; background: #f9fafb; color: #059669;"><strong>Successfully Added</strong></td>
+              <td style="padding: 10px; border: 1px solid #e5e7eb;">${committed}</td>
+            </tr>
+            ${skipped > 0 ? `<tr>
+              <td style="padding: 10px; border: 1px solid #e5e7eb; background: #f9fafb; color: #f59e0b;"><strong>Skipped (Duplicates)</strong></td>
+              <td style="padding: 10px; border: 1px solid #e5e7eb;">${skipped}</td>
+            </tr>` : ''}
+            ${failed > 0 ? `<tr>
+              <td style="padding: 10px; border: 1px solid #e5e7eb; background: #f9fafb; color: #dc2626;"><strong>Failed (Invalid Data)</strong></td>
+              <td style="padding: 10px; border: 1px solid #e5e7eb;">${failed}</td>
+            </tr>` : ''}
+            ${newProductsCreated > 0 ? `<tr>
+              <td style="padding: 10px; border: 1px solid #e5e7eb; background: #f9fafb; color: #2563eb;"><strong>New Products Created</strong></td>
+              <td style="padding: 10px; border: 1px solid #e5e7eb;">${newProductsCreated}</td>
+            </tr>` : ''}
+          </table>
         `;
+
+        // Add duplicate/skipped details
+        if (skippedRows.length > 0) {
+          htmlSummary += `
+            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin: 16px 0;">
+              <p style="margin: 0 0 12px; color: #92400e; font-size: 16px; font-weight: 600;">Skipped Products (Duplicates)</p>
+              <ul style="margin: 0; padding-left: 20px; color: #78350f; font-size: 14px;">
+          `;
+          skippedRows.slice(0, 20).forEach(row => {
+            const productName = row.product_name || 'Unknown Product';
+            htmlSummary += `<li style="margin: 6px 0;">Row ${row.row_number}: ${productName} (already exists in your shop)</li>`;
+          });
+          if (skipped > 20) {
+            htmlSummary += `<li style="margin: 6px 0;"><em>...and ${skipped - 20} more duplicates</em></li>`;
+          }
+          htmlSummary += `</ul></div>`;
+        }
+
+        // Add invalid rows details
+        if (invalidRows.length > 0) {
+          htmlSummary += `
+            <div style="background: #fee2e2; border-left: 4px solid #dc2626; padding: 16px; border-radius: 4px; margin: 16px 0;">
+              <p style="margin: 0 0 12px; color: #991b1b; font-size: 16px; font-weight: 600;">Invalid Products</p>
+              <ul style="margin: 0; padding-left: 20px; color: #7f1d1d; font-size: 14px;">
+          `;
+          invalidRows.slice(0, 20).forEach(row => {
+            const productName = row.product_name || `Row ${row.row_number}`;
+            const errors = row.errors as any;
+            let errorMessages = '';
+            
+            if (Array.isArray(errors) && errors.length > 0) {
+              errorMessages = errors.map((err: any) => err.message || err.field || 'Unknown error').join(', ');
+            } else {
+              errorMessages = 'Invalid data';
+            }
+            
+            htmlSummary += `<li style="margin: 6px 0;"><strong>${productName}:</strong> ${errorMessages}</li>`;
+          });
+          if (failed > 20) {
+            htmlSummary += `<li style="margin: 6px 0;"><em>...and ${failed - 20} more invalid rows</em></li>`;
+          }
+          htmlSummary += `</ul></div>`;
+        }
 
         // Add status breakdown
         if (needsImages > 0 || needsSpecs > 0) {
           htmlSummary += `
-            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin: 16px 0;">
-              <p style="margin: 0; color: #92400e; font-size: 16px;"><strong>⚠️ Action Required:</strong></p>
-              ${needsImages > 0 ? `<p style="margin: 8px 0 0; color: #78350f; font-size: 14px;">• ${needsImages} product(s) need images to go live</p>` : ''}
-              ${needsSpecs > 0 ? `<p style="margin: 8px 0 0; color: #78350f; font-size: 14px;">• ${needsSpecs} product(s) need specifications to go live</p>` : ''}
-              <p style="margin: 12px 0 0; color: #78350f; font-size: 14px;">Products won't be visible to buyers until all requirements are met.</p>
+            <div style="background: #dbeafe; border-left: 4px solid #2563eb; padding: 16px; border-radius: 4px; margin: 16px 0;">
+              <p style="margin: 0 0 12px; color: #1e3a8a; font-size: 16px; font-weight: 600;">Action Required</p>
+              ${needsImages > 0 ? `<p style="margin: 8px 0 0; color: #1e40af; font-size: 14px;">• ${needsImages} product(s) need images to go live<br>
+                <a href="${process.env.FRONTEND_URL || 'https://sankha.shop'}/seller/products?batch=${batchId}&action=add-images" style="color: #2563eb; text-decoration: underline; font-size: 13px;">Add Images Now</a></p>` : ''}
+              ${needsSpecs > 0 ? `<p style="margin: 8px 0 0; color: #1e40af; font-size: 14px;">• ${needsSpecs} product(s) need specifications to go live<br>
+                <a href="${process.env.FRONTEND_URL || 'https://sankha.shop'}/seller/products?batch=${batchId}&action=add-specs" style="color: #2563eb; text-decoration: underline; font-size: 13px;">Complete Specs Now</a></p>` : ''}
+              <p style="margin: 12px 0 0; color: #1e40af; font-size: 14px;">Products won't be visible to buyers until all requirements are met.</p>
+            </div>
+          `;
+        }
+
+        // Add correction file download link if there are failed/skipped rows
+        if (failed > 0 || skipped > 0) {
+          htmlSummary += `
+            <div style="background: #f3f4f6; border-left: 4px solid #6366f1; padding: 16px; border-radius: 4px; margin: 16px 0;">
+              <p style="margin: 0 0 8px; color: #3730a3; font-size: 15px; font-weight: 600;">Download Correction File</p>
+              <a href="${process.env.FRONTEND_URL || 'https://sankha.shop'}/api/shops/${shopId}/products/bulk/${batchId}/corrections" style="color: #6366f1; text-decoration: underline; font-size: 13px;">Download .xlsx with errors/skipped rows</a>
             </div>
           `;
         }
@@ -804,10 +922,15 @@ export const bulkUploadStagingService = {
   ): Promise<{ isTechCategory: boolean; missingRequired: string[]; normalizedValues: Record<string, string> }> {
     const normalizedCategory = categoryName.toLowerCase().trim();
     
-    // Check if tech category
-    const isTechCategory = TECH_CATEGORIES.some(tc => 
-      normalizedCategory.includes(tc) || tc.includes(normalizedCategory)
-    );
+    // Check if tech category and find matching tech keyword
+    let matchedTechCategory: string | null = null;
+    const isTechCategory = TECH_CATEGORIES.some(tc => {
+      if (normalizedCategory.includes(tc) || tc.includes(normalizedCategory)) {
+        matchedTechCategory = tc;
+        return true;
+      }
+      return false;
+    });
 
     if (!isTechCategory) {
       return { isTechCategory: false, missingRequired: [], normalizedValues: specs };
@@ -821,9 +944,10 @@ export const bulkUploadStagingService = {
       }
     });
 
+    // Use matched tech category keyword to lookup requirements
     const requiredSpecs = specRule 
       ? (specRule.required_specs as string[])
-      : DEFAULT_SPEC_REQUIREMENTS[normalizedCategory]?.required || [];
+      : DEFAULT_SPEC_REQUIREMENTS[matchedTechCategory!]?.required || [];
 
     // Normalize spec keys
     const normalizedSpecs: Record<string, string> = {};

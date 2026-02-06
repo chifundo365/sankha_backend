@@ -7,7 +7,8 @@
  * 3. Batches with products created but status not updated → Mark as COMPLETED
  */
 
-const prisma = require('../src/prismaClient').default;
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 async function cleanupStuckBatches() {
   console.log('🔍 Scanning for stuck bulk upload batches...\n');
@@ -121,6 +122,8 @@ async function cleanupStuckBatches() {
 
   } catch (error) {
     console.error('❌ Cleanup failed:', error);
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
