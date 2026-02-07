@@ -17,6 +17,9 @@ import {
 // Initialize Resend client
 let resend: Resend | null = null;
 
+import fs from 'fs';
+import path from 'path';
+
 const getResendClient = (): Resend | null => {
   if (!isEmailConfigured()) {
     console.warn('Email service not configured: RESEND_API_KEY is missing');
@@ -63,6 +66,31 @@ export const sendEmail = async (options: SendEmailOptions): Promise<EmailResult>
   }
 
   try {
+    // Debug: log whether HTML contains known CTA markers to help diagnose missing button issues
+    try {
+      const hasViewProducts = options.html && options.html.includes('View Your Products');
+      const hasReviewUpload = options.html && options.html.includes('Review Upload');
+      console.log(`📧 [Email Debug] to=${Array.isArray(options.to) ? options.to.join(',') : options.to} subject=${options.subject} hasViewProducts=${hasViewProducts} hasReviewUpload=${hasReviewUpload}`);
+        // Save full HTML to generated/email-debug for inspection (development only)
+        try {
+          if (process.env.NODE_ENV !== 'production') {
+            const debugDir = path.join(process.cwd(), 'generated', 'email-debug');
+            fs.mkdirSync(debugDir, { recursive: true });
+            const safeSubject = (options.subject || 'email').replace(/[^a-z0-9-_]/gi, '_').slice(0, 50);
+            const filePath = path.join(debugDir, `${Date.now()}-${safeSubject}.html`);
+            try {
+              fs.writeFileSync(filePath, options.html || '', 'utf8');
+              console.log(`📧 [Email Debug] HTML written to ${filePath}`);
+            } catch (writeErr) {
+              console.error('📧 [Email Debug] failed to write HTML file', writeErr);
+            }
+          }
+        } catch (err) {
+          // ignore file write errors
+        }
+    } catch (err) {
+      // ignore debug logging errors
+    }
     const { data, error } = await client.emails.send({
       from: getFromAddress(),
       to: Array.isArray(options.to) ? options.to : [options.to],

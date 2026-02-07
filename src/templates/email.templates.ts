@@ -1,17 +1,18 @@
 /**
- * Sankha Email Templates (v4.2 - Production Brand Alignment)
- * Style: Dark Header + Minimalist Card + Social Footer
+ * Sankha Email Templates (v4.0 - Sentinel Brand Alignment)
+ * Style: Midnight Navy Header + Sankha Teal Actions + Minimalist Card
  */
 
 import { emailConfig } from '../config/email.config';
 
 const COLORS = {
-  primary: '#1E3A8A',      // Cosmic Blue (Header Background)
-  secondary: '#0D9488',    // Electric Teal (Buttons/Accents)
-  secondaryDark: '#0F766E',
-  background: '#F8FAFC',   // Very light gray/blue background
+  primary: '#002147',      // Midnight Navy (Brand Authority)
+  secondary: '#2EC71',     // Sankha Teal (Primary Action)
+  secondaryDark: '#1B9A57', // Darker Teal for hover-states/gradients
+  accent: '#FF8C00',       // Blaze Orange (Urgency/Alerts)
+  background: '#F8FAFC',   // Milk White (Neutral background)
   cardBg: '#ffffff',
-  text: '#1E293B',         // Slate 800
+  text: '#0F172A',         // Slate 900 (High contrast text)
   textMuted: '#64748B',    
   border: '#E2E8F0',
 };
@@ -42,7 +43,7 @@ const baseTemplate = (content: string, preheader: string = ''): string => `
                     <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">Sankha</h1>
                   </td>
                   <td align="right">
-                    <span style="color: rgba(255,255,255,0.7); font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">${emailConfig.app.tagline}</span>
+                    <span style="color: rgba(255,255,255,0.7); font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">MALAWIS TRUSTED MARKETPLACE</span>
                   </td>
                 </tr>
               </table>
@@ -57,7 +58,6 @@ const baseTemplate = (content: string, preheader: string = ''): string => `
           
           <tr>
             <td align="center" style="padding: 35px 0;">
-              
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 20px;">
                 <tr>
                   <td style="padding: 0 12px;">
@@ -79,13 +79,12 @@ const baseTemplate = (content: string, preheader: string = ''): string => `
               </table>
 
               <p style="margin: 0; color: ${COLORS.textMuted}; font-size: 12px; font-weight: 500;">
-                © ${new Date().getFullYear()} Sankha Marketplace • Lilongwe, Malawi
+                © ${new Date().getFullYear()} Sankha • Lilongwe, Malawi
               </p>
               
               <p style="margin: 10px 0 0; color: ${COLORS.textMuted}; font-size: 12px;">
-                Have questions? <a href="mailto:${emailConfig.app.supportEmail}" style="color: ${COLORS.primary}; text-decoration: none; font-weight: 700;">Contact Support</a>
+                Secure. Trusted. Community. <a href="mailto:${emailConfig.app.supportEmail}" style="color: ${COLORS.secondary}; text-decoration: none; font-weight: 700;">Support</a>
               </p>
-              
             </td>
           </tr>
         </table>
@@ -105,7 +104,7 @@ export const passwordResetTemplate = (data: {
   expiresInMinutes: number;
 }) => {
   const content = `
-    <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">Password Reset</h2>
+    <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">Reset Your Password</h2>
     
     <p style="font-size: 16px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
       Hi <strong>${data.userName}</strong>, we received a request to change your password. 
@@ -115,60 +114,19 @@ export const passwordResetTemplate = (data: {
     <div style="margin: 35px 0;">
       <a href="${data.resetUrl}" 
          style="background-color: ${COLORS.secondary}; background: linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.secondaryDark} 100%); color: #ffffff; display: inline-block; padding: 18px 40px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 12px; text-align: center;">
-        Secure My Account
+        Reset Password
       </a>
     </div>
     
     <p style="font-size: 13px; color: ${COLORS.textMuted}; line-height: 1.6;">
-      This link is only valid for ${data.expiresInMinutes} minutes. If you didn't request this, 
-      please ignore this email or contact our security team.
-    </p>
-    
-    <hr style="border: 0; border-top: 1px solid ${COLORS.border}; margin: 30px 0;">
-    
-    <p style="font-size: 12px; color: ${COLORS.textMuted};">
-      If the button above doesn't work, copy this link: <br>
-      <span style="color: ${COLORS.secondary}; word-break: break-all;">${data.resetUrl}</span>
+      This link is valid for ${data.expiresInMinutes} minutes.
     </p>
   `;
 
   return { 
-    subject: `[Action Required] Reset your Sankha password`, 
+    subject: `[Sankha] Reset your password`, 
     html: baseTemplate(content, `Password reset for ${data.userName}`), 
     text: `Reset your password: ${data.resetUrl}` 
-  };
-};
-
-/**
- * Welcome Email Template
- */
-export const welcomeTemplate = (data: {
-  userName: string;
-  loginUrl: string;
-}) => {
-  const content = `
-    <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">Welcome to Sankha!</h2>
-    
-    <p style="font-size: 16px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
-      Hi <strong>${data.userName}</strong>, thank you for joining Malawi's premier price comparison marketplace!
-    </p>
-    
-    <p style="font-size: 15px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
-      Find the best deals on electronics and gadgets across multiple shops in Malawi.
-    </p>
-    
-    <div style="margin: 35px 0;">
-      <a href="${data.loginUrl}" 
-         style="background-color: ${COLORS.secondary}; background: linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.secondaryDark} 100%); color: #ffffff; display: inline-block; padding: 18px 40px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 12px; text-align: center;">
-        Start Shopping
-      </a>
-    </div>
-  `;
-
-  return { 
-    subject: `Welcome to Sankha, ${data.userName}!`, 
-    html: baseTemplate(content, `Welcome to Sankha marketplace`), 
-    text: `Welcome to Sankha, ${data.userName}!` 
   };
 };
 
@@ -191,15 +149,15 @@ export const orderConfirmationTemplate = (data: {
     <tr>
       <td style="padding: 12px 0; border-bottom: 1px solid ${COLORS.border}; color: ${COLORS.text};">${item.name}</td>
       <td style="padding: 12px 0; border-bottom: 1px solid ${COLORS.border}; color: ${COLORS.textMuted}; text-align: center;">${item.quantity}</td>
-      <td style="padding: 12px 0; border-bottom: 1px solid ${COLORS.border}; color: ${COLORS.text}; text-align: right;">MWK ${item.price.toLocaleString()}</td>
+      <td style="padding: 12px 0; border-bottom: 1px solid ${COLORS.border}; color: ${COLORS.text}; text-align: right;">MK ${item.price.toLocaleString()}</td>
     </tr>
   `).join('');
 
   const releaseCodeSection = data.releaseCode ? `
-    <div style="background: linear-gradient(135deg, ${COLORS.primary}15 0%, ${COLORS.secondary}15 100%); border-radius: 12px; padding: 20px; margin: 25px 0; text-align: center;">
-      <p style="margin: 0 0 8px; font-size: 13px; color: ${COLORS.textMuted}; text-transform: uppercase;">Release Code</p>
-      <p style="margin: 0; font-size: 28px; font-weight: 700; color: ${COLORS.primary}; letter-spacing: 4px;">${data.releaseCode}</p>
-      <p style="margin: 10px 0 0; font-size: 12px; color: ${COLORS.textMuted};">Give this code to the seller only after receiving your order</p>
+    <div style="background-color: #FFF7ED; border: 1px dashed ${COLORS.accent}; border-radius: 12px; padding: 20px; margin: 25px 0; text-align: center;">
+      <p style="margin: 0 0 8px; font-size: 13px; color: ${COLORS.textMuted}; text-transform: uppercase;">SECURE RELEASE CODE</p>
+      <p style="margin: 0; font-size: 28px; font-weight: 700; color: ${COLORS.accent}; letter-spacing: 4px;">${data.releaseCode}</p>
+      <p style="margin: 10px 0 0; font-size: 12px; color: ${COLORS.textMuted}; font-style: italic;">Only provide this to the courier once you have your items.</p>
     </div>
   ` : '';
 
@@ -207,11 +165,10 @@ export const orderConfirmationTemplate = (data: {
     <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">Order Confirmed!</h2>
     
     <p style="font-size: 16px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
-      Hi <strong>${data.userName}</strong>, your order <strong>#${data.orderNumber}</strong> is being processed.
+      Hi <strong>${data.userName}</strong>, order <strong>#${data.orderNumber}</strong> is officially placed.
     </p>
     
     <div style="background-color: ${COLORS.background}; border-radius: 12px; padding: 20px; margin: 25px 0;">
-      <p style="margin: 0 0 8px; font-size: 13px; color: ${COLORS.textMuted};">Order Date: <strong style="color: ${COLORS.text};">${data.orderDate}</strong></p>
       <p style="margin: 0 0 8px; font-size: 13px; color: ${COLORS.textMuted};">Shop: <strong style="color: ${COLORS.text};">${data.shopName}</strong></p>
       <p style="margin: 0; font-size: 13px; color: ${COLORS.textMuted};">Delivery: <strong style="color: ${COLORS.text};">${data.deliveryAddress}</strong></p>
     </div>
@@ -231,16 +188,8 @@ export const orderConfirmationTemplate = (data: {
       </tbody>
       <tfoot>
         <tr>
-          <td colspan="2" style="padding: 8px 0; text-align: right; color: ${COLORS.textMuted};">Subtotal:</td>
-          <td style="padding: 8px 0; text-align: right; color: ${COLORS.text};">MWK ${data.subtotal.toLocaleString()}</td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding: 8px 0; text-align: right; color: ${COLORS.textMuted};">Delivery:</td>
-          <td style="padding: 8px 0; text-align: right; color: ${COLORS.text};">MWK ${data.deliveryFee.toLocaleString()}</td>
-        </tr>
-        <tr>
           <td colspan="2" style="padding: 15px 0; text-align: right; font-weight: 700; color: ${COLORS.text};">Total:</td>
-          <td style="padding: 15px 0; text-align: right; font-weight: 700; color: ${COLORS.primary}; font-size: 18px;">MWK ${data.total.toLocaleString()}</td>
+          <td style="padding: 15px 0; text-align: right; font-weight: 700; color: ${COLORS.secondary}; font-size: 18px;">MK ${data.total.toLocaleString()}</td>
         </tr>
       </tfoot>
     </table>
@@ -248,7 +197,7 @@ export const orderConfirmationTemplate = (data: {
     <div style="margin: 35px 0;">
       <a href="${emailConfig.app.url}/orders/${data.orderNumber}" 
          style="background-color: ${COLORS.secondary}; background: linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.secondaryDark} 100%); color: #ffffff; display: inline-block; padding: 18px 40px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 12px; text-align: center;">
-        View Order Detail
+        Track My Order
       </a>
     </div>
   `;
@@ -256,7 +205,7 @@ export const orderConfirmationTemplate = (data: {
   return { 
     subject: `Order Confirmed #${data.orderNumber}`, 
     html: baseTemplate(content, `Your order #${data.orderNumber} has been confirmed`), 
-    text: `Order #${data.orderNumber} confirmed. Total: MWK ${data.total.toLocaleString()}` 
+    text: `Order #${data.orderNumber} confirmed.` 
   };
 };
 
@@ -268,10 +217,10 @@ export const bulkUploadSummaryTemplate = (data: {
   subject: string;
   htmlSummary: string;
   textSummary?: string;
-  ctaText: string;
-  ctaUrl: string;
+  ctaText?: string;
+  ctaUrl?: string;
 }) => {
-  const content = `
+  let content = `
     <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">Bulk Upload Results</h2>
     
     <p style="font-size: 16px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
@@ -281,14 +230,25 @@ export const bulkUploadSummaryTemplate = (data: {
     <div style="background-color: ${COLORS.background}; border-radius: 12px; padding: 20px; margin: 25px 0;">
       ${data.htmlSummary}
     </div>
-    
-    <div style="margin: 35px 0;">
-      <a href="${data.ctaUrl}" 
-         style="background-color: ${COLORS.secondary}; background: linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.secondaryDark} 100%); color: #ffffff; display: inline-block; padding: 18px 40px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 12px; text-align: center;">
-        ${data.ctaText}
-      </a>
-    </div>
   `;
+
+  if (data.ctaText && data.ctaUrl) {
+    // Table-based button for maximum email-client compatibility (uses brand colors)
+    content += `
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 35px auto;">
+        <tr>
+          <td align="center" bgcolor="${COLORS.secondary}" style="border-radius: 12px;">
+            <a href="${data.ctaUrl}" target="_blank" style="display: inline-block; padding: 14px 30px; font-size: 15px; font-weight: 700; color: #ffffff; text-decoration: none; background: linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.secondaryDark} 100%); border-radius: 12px;">
+              ${data.ctaText}
+            </a>
+          </td>
+        </tr>
+      </table>
+    `;
+
+    // No inline fallback here — a plain link is added next to the correction file
+    // in the summary block to avoid duplicate CTA text.
+  }
 
   return { 
     subject: data.subject, 

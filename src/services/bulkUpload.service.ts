@@ -18,7 +18,7 @@ import { normalizeProductName } from '../types/bulkUpload.types';
 // ============================================================================
 
 const CONFIG = {
-  MAX_ROWS_PER_UPLOAD: 500,
+  MAX_ROWS_PER_UPLOAD: Number(process.env.BULK_UPLOAD_MAX_ROWS) || 1000,
   MAX_FILE_SIZE_MB: 10
 };
 
@@ -34,7 +34,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'Description': 'shop_description'
 };
 
-const REQUIRED_COLUMNS = ['Product Name', 'Base Price (MWK)', 'Stock Quantity'];
+const REQUIRED_COLUMNS = ['Product Name', 'Base Price (MWK)', 'Stock Quantity', 'Brand', 'Description', 'Condition'];
 const VALID_CONDITIONS: product_condition[] = ['NEW', 'REFURBISHED', 'USED_LIKE_NEW', 'USED_GOOD', 'USED_FAIR'];
 
 // ============================================================================
@@ -52,12 +52,12 @@ interface ParsedRow {
   product_name: string;
   normalized_name: string;
   category_name?: string;
-  brand?: string;
+  brand: string;
   sku?: string;
   base_price: number;
   stock_quantity: number;
   condition: product_condition;
-  shop_description?: string;
+  shop_description: string;
   specs?: Record<string, string>;
 }
 
@@ -127,7 +127,7 @@ export const bulkUploadService = {
       {
         'Product Name': 'Generic Office Chair',
         'Category': 'Furniture',
-        'Brand': '',
+        'Brand': 'Acme',
         'SKU': 'CHAIR-001',
         'Base Price (MWK)': 45000,
         'Stock Quantity': 10,
@@ -145,6 +145,8 @@ export const bulkUploadService = {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
 
     // Add instructions sheet
+    const maxRows = process.env.BULK_UPLOAD_MAX_ROWS || '1000';
+
     const instructionData = [
       ['Sankha Bulk Upload Template - Instructions'],
       [''],
@@ -152,13 +154,13 @@ export const bulkUploadService = {
       ['• Product Name - Name of the product'],
       ['• Base Price (MWK) - Your selling price (platform fee will be added)'],
       ['• Stock Quantity - Number of items in stock'],
+      ['• Brand - Brand name (e.g., Samsung, Apple)'],
+      ['• Condition - NEW, REFURBISHED, USED_LIKE_NEW, USED_GOOD, USED_FAIR'],
+      ['• Description - Product description'],
       [''],
       ['OPTIONAL COLUMNS:'],
       ['• Category - Product category (e.g., Smartphones, Laptops)'],
-      ['• Brand - Brand name (e.g., Samsung, Apple)'],
       ['• SKU - Your product code (auto-generated if empty)'],
-      ['• Condition - NEW, REFURBISHED, USED_LIKE_NEW, USED_GOOD, USED_FAIR'],
-      ['• Description - Product description'],
       [''],
       ['FOR ELECTRONICS (Tech specs):'],
       ['• Use "Spec: [Name]" columns (e.g., "Spec: Storage", "Spec: RAM")'],
@@ -170,7 +172,7 @@ export const bulkUploadService = {
       ['NOTES:'],
       ['• Products start with "Needs Images" status'],
       ['• Add images to make products visible to buyers'],
-      ['• Maximum 200 products per upload']
+      ['• Maximum ' + maxRows + ' products per upload']
     ];
 
     const instructionSheet = XLSX.utils.aoa_to_sheet(instructionData);
@@ -232,17 +234,31 @@ export const bulkUploadService = {
           rowErrors.push({ row: rowNumber, field: 'Stock Quantity', message: 'Valid stock quantity is required' });
         }
 
-        // Validate condition
+        // Validate condition (required and must be in allowed list)
         let condition: product_condition = 'NEW';
-        const rawCondition = String(rawRow['Condition'] || 'NEW').toUpperCase().trim();
-        if (rawCondition && !VALID_CONDITIONS.includes(rawCondition as product_condition)) {
+        const rawCondition = String(rawRow['Condition'] || '').toUpperCase().trim();
+        if (!rawCondition) {
+          rowErrors.push({ row: rowNumber, field: 'Condition', message: 'Condition is required' });
+        } else if (!VALID_CONDITIONS.includes(rawCondition as product_condition)) {
           rowErrors.push({
             row: rowNumber,
             field: 'Condition',
             message: `Invalid condition. Must be one of: ${VALID_CONDITIONS.join(', ')}`
           });
         } else {
-          condition = (rawCondition || 'NEW') as product_condition;
+          condition = rawCondition as product_condition;
+        }
+
+        // Brand is required
+        const brandVal = String(rawRow['Brand'] || '').trim();
+        if (!brandVal) {
+          rowErrors.push({ row: rowNumber, field: 'Brand', message: 'Brand is required' });
+        }
+
+        // Description is required
+        const descriptionVal = String(rawRow['Description'] || '').trim();
+        if (!descriptionVal) {
+          rowErrors.push({ row: rowNumber, field: 'Description', message: 'Description is required' });
         }
 
         // If row has errors, skip it
@@ -290,12 +306,12 @@ export const bulkUploadService = {
           product_name: productName,
           normalized_name: normalizeProductName(productName),
           category_name: String(rawRow['Category'] || '').trim() || undefined,
-          brand: String(rawRow['Brand'] || '').trim() || undefined,
+          brand: brandVal,
           sku: String(rawRow['SKU'] || '').trim() || undefined,
           base_price: basePrice,
           stock_quantity: stockQty,
           condition,
-          shop_description: String(rawRow['Description'] || '').trim() || undefined,
+          shop_description: descriptionVal,
           specs: Object.keys(specs).length > 0 ? specs : undefined
         };
 
@@ -543,7 +559,12 @@ export const bulkUploadService = {
       prisma.shop_products.findMany({
         where: {
           shop_id: shopId,
-          listing_status: 'NEEDS_IMAGES' as listing_status
+          // Include products explicitly marked NEEDS_IMAGES plus products
+          // marked NEEDS_SPECS (tech items) that still have no images.
+          OR: [
+            { listing_status: 'NEEDS_IMAGES' as listing_status },
+            { listing_status: 'NEEDS_SPECS' as listing_status }
+          ]
         },
         include: {
           products: {
@@ -561,7 +582,10 @@ export const bulkUploadService = {
       prisma.shop_products.count({
         where: {
           shop_id: shopId,
-          listing_status: 'NEEDS_IMAGES' as listing_status
+          OR: [
+            { listing_status: 'NEEDS_IMAGES' as listing_status },
+            { listing_status: 'NEEDS_SPECS' as listing_status }
+          ]
         }
       })
     ]);
@@ -683,12 +707,24 @@ export const bulkUploadService = {
       ` : ''}
     `;
 
+    // Choose CTA depending on upload results
+    let ctaText: string | undefined;
+    let ctaUrl: string | undefined;
+
+    if (result.successful > 0) {
+      ctaText = 'View Your Products';
+      ctaUrl = `${process.env.FRONTEND_URL || 'https://sankha.shop'}/seller/products`;
+    } else if (result.failed > 0 || result.skipped > 0) {
+      ctaText = 'Review Upload';
+      ctaUrl = `${process.env.FRONTEND_URL || 'https://sankha.shop'}/seller/products?batch=${result.batchId}`;
+    }
+
     const { subject, html, text } = bulkUploadSummaryTemplate({
       userName: sellerName,
       subject: `Bulk Upload Complete - ${result.successful} products added`,
       htmlSummary,
-      ctaText: 'View Your Products',
-      ctaUrl: `${process.env.FRONTEND_URL || 'https://sankha.shop'}/seller/products`
+      ctaText,
+      ctaUrl
     });
 
     await emailService.send({

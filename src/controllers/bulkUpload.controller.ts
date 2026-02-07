@@ -8,7 +8,7 @@ import { CloudinaryService } from '../services/cloudinary.service';
 import { calculateDisplayPrice } from '../utils/constants';
 import { TemplateType } from '../types/bulkUpload.types';
 
-const MAX_UPLOAD_ROWS = 200;
+const MAX_UPLOAD_ROWS = Number(process.env.BULK_UPLOAD_MAX_ROWS) || 1000;
 
 /**
  * Helper function to check if user owns the shop
@@ -165,6 +165,11 @@ export const bulkUploadController = {
         // commitBatch() already sends the enhanced email with batch ID, filename, duplicates, and errors
         const commitResult = await bulkUploadStagingService.commitBatch(shopId, batchId);
 
+        // Use the stored bulk upload total_rows so the summary "total" matches
+        // the full upload count (parsed rows + parse errors) and aligns with
+        // committed/skipped/failed counts returned by the commit step.
+        const totalRows = bulkUpload.total_rows ?? (stagingSummary.total || 0);
+
         return successResponse(
           res,
           `Bulk upload completed: ${commitResult.committed} created, ${commitResult.skipped} skipped, ${commitResult.failed} failed`,
@@ -172,7 +177,7 @@ export const bulkUploadController = {
             upload_id: bulkUpload.id,
             batch_id: batchId,
             summary: {
-              total: stagingSummary.total,
+              total: totalRows,
               created: commitResult.committed,
               skipped: commitResult.skipped,
               failed: commitResult.failed,

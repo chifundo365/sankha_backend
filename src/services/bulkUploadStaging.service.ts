@@ -5,7 +5,7 @@
  * Upload → Parse → Stage → Validate → Preview → Commit
  */
 import prisma from '../prismaClient';
-import { Prisma, listing_status, upload_status, template_type, staging_validation_status } from '../../generated/prisma';
+import { Prisma, listing_status, upload_status, template_type, staging_validation_status, product_condition } from '../../generated/prisma';
 import { calculateDisplayPrice } from '../utils/constants';
 import { emailService } from './email.service';
 import { bulkUploadSummaryTemplate } from '../templates/email.templates';
@@ -33,11 +33,13 @@ import {
 // ============================================================================
 
 const CONFIG = {
-  MAX_ROWS_PER_UPLOAD: 500,
+  MAX_ROWS_PER_UPLOAD: Number(process.env.BULK_UPLOAD_MAX_ROWS) || 1000,
   MAX_PENDING_BATCHES_PER_SHOP: 3,
   STAGING_RETENTION_DAYS: 7,
   PREVIEW_PAGE_SIZE: 50
 };
+
+const VALID_CONDITIONS: product_condition[] = ['NEW', 'REFURBISHED', 'USED_LIKE_NEW', 'USED_GOOD', 'USED_FAIR'];
 
 // ============================================================================
 // TYPES
@@ -306,6 +308,26 @@ export const bulkUploadStagingService = {
         duplicates++;
       }
 
+      // Required fields: Brand, Description, Condition (validate only when not skipped)
+      if (validationStatus !== 'SKIPPED') {
+        const brandVal = String(row.brand || '').trim();
+        if (!brandVal) {
+          errors.push({ row: row.row_number, field: 'Brand', message: 'Brand is required' });
+        }
+
+        const descriptionVal = String(row.description || '').trim();
+        if (!descriptionVal) {
+          errors.push({ row: row.row_number, field: 'Description', message: 'Description is required' });
+        }
+
+        const rawCondition = String(row.condition || '').toUpperCase().trim();
+        if (!rawCondition) {
+          errors.push({ row: row.row_number, field: 'Condition', message: 'Condition is required' });
+        } else if (!VALID_CONDITIONS.includes(rawCondition as product_condition)) {
+          errors.push({ row: row.row_number, field: 'Condition', message: `Invalid condition. Must be one of: ${VALID_CONDITIONS.join(', ')}` });
+        }
+      }
+
       // Find matching base product
       if (validationStatus !== 'SKIPPED' && row.normalized_name) {
         const matchedProduct = await prisma.products.findFirst({
@@ -343,9 +365,11 @@ export const bulkUploadStagingService = {
         invalid++;
       } else if (validationStatus === 'VALID') {
         valid++;
-        if (targetStatus === 'NEEDS_IMAGES') {
-          willNeedImages++;
-        }
+        // Images are not processed from the sheet by design; any committed product
+        // will start without images and therefore will need images to go live.
+        willNeedImages++;
+        // If tech specs are missing, targetStatus was set to NEEDS_SPECS earlier
+        // and willNeedSpecs was already incremented there. We keep that behavior.
       }
 
       // Update staging row
@@ -628,11 +652,13 @@ export const bulkUploadStagingService = {
 
         committed++;
         
+        // Count specs requirement separately from images. A row may need both.
         if (row.target_listing_status === 'NEEDS_SPECS') {
           needsSpecs++;
-        } else {
-          needsImages++;
         }
+        // Images are not imported from the sheet; any newly committed product will
+        // start without images and therefore needs images to go live.
+        needsImages++;
 
         committedProducts.push({
           id: shopProduct.id,
@@ -827,12 +853,24 @@ export const bulkUploadStagingService = {
           `;
         }
 
+        // Determine sensible CTA based on results
+        let ctaText: string | undefined;
+        let ctaUrl: string | undefined;
+
+        if (committed > 0) {
+          ctaText = 'View Your Products';
+          ctaUrl = `${process.env.FRONTEND_URL || 'https://sankha.shop'}/seller/products`;
+        } else if (failed > 0 || skipped > 0) {
+          ctaText = 'Review Upload';
+          ctaUrl = `${process.env.FRONTEND_URL || 'https://sankha.shop'}/seller/products?batch=${batchId}`;
+        }
+
         const { subject, html, text } = bulkUploadSummaryTemplate({
           userName: sellerName,
           subject: `Bulk Upload Complete - ${committed} products added`,
           htmlSummary,
-          ctaText: 'View Your Products',
-          ctaUrl: `${process.env.FRONTEND_URL || 'https://sankha.shop'}/seller/products`
+          ctaText,
+          ctaUrl
         });
 
         await emailService.send({
