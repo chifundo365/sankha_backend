@@ -62,7 +62,7 @@ export interface RateLimiterOptions {
 
   /**
    * Redis key prefix
-   * @default 'shoptech:ratelimit'
+   * @default 'sankha:ratelimit'
    */
   keyPrefix?: string;
 }
@@ -82,7 +82,7 @@ export function rateLimiter(options: RateLimiterOptions = {}) {
     handler,
     skip,
     whitelist = [],
-    keyPrefix = 'shoptech:ratelimit',
+    keyPrefix = 'sankha:ratelimit',
   } = options;
 
   return async (req: Request, res: Response, next: NextFunction) => {

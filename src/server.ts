@@ -19,7 +19,7 @@ app.use(cookieParser()); // Parse cookies for httpOnly refresh token
 app.get('/', (_req: Request, res: Response) => {
   res.json({ 
     status: 'ok',
-    message: 'ShopTech API is running',
+    message: 'Sankha v.4 API is running',
     timestamp: new Date().toISOString()
   });
 });

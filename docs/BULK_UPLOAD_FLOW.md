@@ -1,6 +1,6 @@
 # Bulk Upload System Documentation
 
-> **Purpose**: This document explains the bulk product upload functionality for the ShopTech/Sankha e-commerce platform. It is written to be understood by both humans and AI systems.
+> **Purpose**: This document explains the bulk product upload functionality for the Sankha v.4 e-commerce platform. It is written to be understood by both humans and AI systems.
 
 ---
 

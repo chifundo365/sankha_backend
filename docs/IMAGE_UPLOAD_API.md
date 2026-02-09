@@ -345,7 +345,7 @@ curl -X POST http://localhost:3000/api/products/PRODUCT_ID/images \
 ## Folder Structure in Cloudinary
 
 ```
-shoptech/
+sankha/
 ├── users/
 │   └── profiles/
 │       ├── user_abc123.jpg

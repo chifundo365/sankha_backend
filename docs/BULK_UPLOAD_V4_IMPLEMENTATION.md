@@ -1,7 +1,7 @@
-# Shop-Tech Bulk Upload System v4.0
+# Sankha v.4 Bulk Upload System v4.0
 ## Complete Implementation Reference
 
-> **Purpose**: This document serves as the authoritative reference for the Shop-Tech bulk upload system. It is designed for both AI models (for code generation and understanding) and human developers (for implementation and maintenance).
+> **Purpose**: This document serves as the authoritative reference for the Sankha v.4 bulk upload system. It is designed for both AI models (for code generation and understanding) and human developers (for implementation and maintenance).
 
 ---
 
@@ -30,7 +30,7 @@
 
 ## What is the Bulk Upload System?
 
-The Bulk Upload System enables Shop-Tech sellers to upload multiple products simultaneously via Excel files instead of creating them individually through the UI. This dramatically improves seller onboarding and inventory management efficiency.
+The Bulk Upload System enables Sankha v.4 sellers to upload multiple products simultaneously via Excel files instead of creating them individually through the UI. This dramatically improves seller onboarding and inventory management efficiency.
 
 ## Version History
 
@@ -1722,4 +1722,4 @@ npx prisma db execute --file - <<< "DELETE FROM bulk_upload_staging WHERE batch_
 
 *Document Version: 4.0.0*  
 *Last Updated: February 2026*  
-*Shop-Tech Backend*
+*Sankha v.4 Backend*

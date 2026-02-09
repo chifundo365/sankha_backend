@@ -1,6 +1,6 @@
-# What is ShopTech?
+# What is Sankha v.4?
 
-ShopTech is a **price-comparison marketplace** designed specifically for Malawi's retail landscape. Think of it as the local version of PriceCheck or Google Shopping — but built from the ground up to handle the unique challenges of Malawian commerce.
+Sankha v.4 is a **price-comparison marketplace** designed specifically for Malawi's retail landscape. Think of it as the local version of PriceCheck or Google Shopping — but built from the ground up to handle the unique challenges of Malawian commerce.
 
 ## The Problem We Solve
 
@@ -12,7 +12,7 @@ In traditional e-commerce platforms, each shop operates like an island. If you w
 
 **This is exhausting.** Most buyers either give up or settle for the first decent option they find.
 
-## How ShopTech Works
+## How Sankha v.4 Works
 
 We flip the model. Instead of visiting multiple shops, buyers visit **one platform** where they can:
 
@@ -102,10 +102,10 @@ Sellers manage their inventory through their shop dashboard:
 - **Shop verification** — Approve business registrations
 - **Platform monitoring** — Order stats, payment tracking, IP blocking
 
-## What Makes ShopTech Different
+## What Makes Sankha v.4 Different
 
 ### 1. Price Transparency
-Unlike traditional marketplaces where you see one seller at a time, ShopTech shows you **everyone's prices at once**. This creates healthy competition and helps buyers save money.
+Unlike traditional marketplaces where you see one seller at a time, Sankha v.4 shows you **everyone's prices at once**. This creates healthy competition and helps buyers save money.
 
 ### 2. Localized for Malawi
 - Payment integration with PayChangu (local payment gateway)
@@ -124,7 +124,7 @@ All shops selling a product get equal visibility in search results. Success depe
 
 ## Business Model
 
-ShopTech can monetize through:
+Sankha v.4 can monetize through:
 - **Commission on sales** — Small percentage of each transaction
 - **Premium shop features** — Enhanced analytics, promoted listings, priority support
 - **Advertising** — Banner ads, sponsored search results
@@ -178,7 +178,7 @@ ShopTech can monetize through:
 
 ### Use Cases
 
-**Urban shoppers:** "I need a laptop. Let me check ShopTech to see which Lilongwe shops have the best price."
+**Urban shoppers:** "I need a laptop. Let me check Sankha v.4 to see which Lilongwe shops have the best price."
 
 **Rural buyers:** "I'm in Mzuzu. Which nearby shops have Samsung phones in stock?"
 
@@ -196,7 +196,7 @@ ShopTech can monetize through:
 
 ## Vision
 
-ShopTech aims to become **the default starting point** for anyone in Malawi looking to buy electronics or gadgets. Before making a purchase, people will naturally check ShopTech first to see who has the best deal.
+Sankha v.4 aims to become **the default starting point** for anyone in Malawi looking to buy electronics or gadgets. Before making a purchase, people will naturally check Sankha v.4 first to see who has the best deal.
 
 Ultimately, we want to:
 - Increase price transparency in Malawian retail
@@ -207,4 +207,4 @@ Ultimately, we want to:
 
 ---
 
-**In one sentence:** ShopTech is the platform where Malawian buyers find the best price, and sellers compete on value rather than visibility.
+**In one sentence:** Sankha v.4 is the platform where Malawian buyers find the best price, and sellers compete on value rather than visibility.

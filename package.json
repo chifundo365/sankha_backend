@@ -1,7 +1,7 @@
 {
-  "name": "shop-tech_backend",
+  "name": "sankha_backend",
   "version": "1.0.0",
-  "description": "backend for the shoptech app",
+  "description": "backend for the Sankha v.4 app",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
@@ -13,14 +13,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chifundo365/shop-tech_backend.git"
+    "url": "git+https://github.com/chifundo365/sankha_backend.git"
   },
   "author": "chifundo biziweck",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/chifundo365/shop-tech_backend/issues"
+    "url": "https://github.com/chifundo365/sankha_backend/issues"
   },
-  "homepage": "https://github.com/chifundo365/shop-tech_backend#readme",
+  "homepage": "https://github.com/chifundo365/sankha_backend#readme",
   "dependencies": {
     "@prisma/client": "^6.17.1",
     "@types/multer": "^2.0.0",

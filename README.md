@@ -1,6 +1,6 @@
-# ShopTech Backend
+# Sankha v.4 Backend
 
-Backend API for ShopTech, a **price-comparison marketplace** built for Malawi. Unlike traditional e-commerce platforms where each shop operates in isolation, ShopTech lets buyers compare prices for the same product across multiple shops — helping them find the best deal while giving sellers fair visibility.
+Backend API for Sankha v.4, a **price-comparison marketplace** built for Malawi. Unlike traditional e-commerce platforms where each shop operates in isolation, Sankha v.4 lets buyers compare prices for the same product across multiple shops — helping them find the best deal while giving sellers fair visibility.
 
 ## How It Works
 
@@ -9,7 +9,7 @@ Backend API for ShopTech, a **price-comparison marketplace** built for Malawi. U
 3. **Shop-Specific Listings** — Each shop sets their own price, stock quantity, condition (new/refurbished/used), and can add shop-specific descriptions.
 4. **Single Checkout** — Buyers can purchase from any shop through a unified cart and checkout experience.
 
-This architecture makes ShopTech a **"find the best price"** platform rather than just another online store.
+This architecture makes Sankha v.4 a **"find the best price"** platform rather than just another online store.
 
 ## Tech Stack
 
@@ -34,8 +34,8 @@ This architecture makes ShopTech a **"find the best price"** platform rather tha
 ### 1. Clone and install dependencies
 
 ```bash
-git clone https://github.com/chifundo365/shop-tech_backend.git
-cd shop-tech_backend
+git clone https://github.com/chifundo365/sankha_backend.git
+cd sankha_backend
 npm install
 ```
 
@@ -49,7 +49,7 @@ PORT=3000
 NODE_ENV=development
 
 # Database
-DATABASE_URL="postgresql://user:password@localhost:5432/shoptech?schema=public"
+DATABASE_URL="postgresql://user:password@localhost:5432/sankha?schema=public"
 
 # Redis
 REDIS_URL="redis://localhost:6379"

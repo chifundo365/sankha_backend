@@ -1,6 +1,6 @@
 # Bulk Upload System v4.0 - Complete Implementation Guide
 
-> **Document Purpose**: This document provides a comprehensive explanation of the Shop-Tech bulk upload system for both AI models and human developers. It covers architecture, data flow, API contracts, database schema, and implementation details.
+> **Document Purpose**: This document provides a comprehensive explanation of the Sankha v.4 bulk upload system for both AI models and human developers. It covers architecture, data flow, API contracts, database schema, and implementation details.
 
 ---
 
@@ -898,5 +898,5 @@ STRICT_CATEGORY_MATCHING=false
 
 ---
 
-*Document generated for Sankha/ formery shop-tech Backend v4.0*
+*Document generated for Sankha v.4 (formerly shop-tech) Backend v4.0*
 *Last updated: February 2026*

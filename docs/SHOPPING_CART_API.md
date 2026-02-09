@@ -1,7 +1,7 @@
 # Shopping Cart API Documentation
 
 ## Overview
-The Shopping Cart API provides endpoints for managing user shopping carts in the ShopTech e-commerce platform. Carts are implemented as orders with `CART` status, allowing seamless conversion to confirmed orders during checkout.
+The Shopping Cart API provides endpoints for managing user shopping carts in the Sankha v.4 e-commerce platform. Carts are implemented as orders with `CART` status, allowing seamless conversion to confirmed orders during checkout.
 
 ## Architecture
 - **Cart Model**: Uses the `orders` table with `status: "CART"`

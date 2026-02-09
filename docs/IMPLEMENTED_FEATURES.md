@@ -1,4 +1,4 @@
-# ShopTech Backend - Implemented Features
+# Sankha v.4 Backend - Implemented Features
 
 Complete documentation of all implemented functionality, API endpoints, and business logic flows.
 

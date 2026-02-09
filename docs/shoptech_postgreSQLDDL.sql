@@ -1,5 +1,5 @@
 -- =============================
--- SHOPTECH DATABASE SCHEMA (Production Ready)
+-- SANKHA DATABASE SCHEMA (Production Ready)
 -- Author: Chifundo Biziweck (Moca)
 -- =============================
 

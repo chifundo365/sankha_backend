@@ -120,8 +120,8 @@ class PaymentService {
           callback_url: paychanguConfig.callbackUrl,
           return_url: paychanguConfig.returnUrl,
           customization: {
-            title: 'ShopTech Payment',
-            description: 'Payment for products purchased on ShopTech',
+            title: 'Sankha Payment',
+            description: 'Payment for products purchased on Sankha v.4',
           },
           metadata: data.metadata,
         },

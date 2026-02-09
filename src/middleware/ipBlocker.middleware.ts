@@ -40,7 +40,7 @@ export interface IPBlockerOptions {
 
   /**
    * Redis key prefix
-   * @default 'shoptech:ipblock'
+   * @default 'sankha:ipblock'
    */
   keyPrefix?: string;
 
@@ -68,8 +68,8 @@ interface ViolationInfo {
  */
 class IPBlockerService {
   private static instance: IPBlockerService;
-  private keyPrefix: string = 'shoptech:ipblock';
-  private violationPrefix: string = 'shoptech:violations';
+  private keyPrefix: string = 'sankha:ipblock';
+  private violationPrefix: string = 'sankha:violations';
 
   private constructor() {}
 
