@@ -17,9 +17,16 @@ import { normalizeProductName } from '../types/bulkUpload.types';
 // CONFIGURATION
 // ============================================================================
 
-const CONFIG = {
+type BulkConfig = {
+  MAX_ROWS_PER_UPLOAD: number;
+  MAX_FILE_SIZE_MB: number;
+  CATEGORY_FUZZY_THRESHOLD: number;
+};
+
+const CONFIG: BulkConfig = {
   MAX_ROWS_PER_UPLOAD: Number(process.env.BULK_UPLOAD_MAX_ROWS) || 1000,
-  MAX_FILE_SIZE_MB: 10
+  MAX_FILE_SIZE_MB: 10,
+  CATEGORY_FUZZY_THRESHOLD: parseFloat(process.env.CATEGORY_FUZZY_THRESHOLD || '0.6')
 };
 
 // Column mapping for the Excel template
@@ -34,7 +41,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'Description': 'shop_description'
 };
 
-const REQUIRED_COLUMNS = ['Product Name', 'Base Price (MWK)', 'Stock Quantity', 'Brand', 'Description', 'Condition'];
+const REQUIRED_COLUMNS = ['Product Name', 'Category', 'Base Price (MWK)', 'Stock Quantity', 'Brand', 'Description', 'Condition'];
 const VALID_CONDITIONS: product_condition[] = ['NEW', 'REFURBISHED', 'USED_LIKE_NEW', 'USED_GOOD', 'USED_FAIR'];
 
 // ============================================================================
@@ -152,6 +159,7 @@ export const bulkUploadService = {
       [''],
       ['REQUIRED COLUMNS (must have data):'],
       ['• Product Name - Name of the product'],
+      ['• Category - Product category (e.g., Smartphones, Laptops)'],
       ['• Base Price (MWK) - Your selling price (platform fee will be added)'],
       ['• Stock Quantity - Number of items in stock'],
       ['• Brand - Brand name (e.g., Samsung, Apple)'],
@@ -159,7 +167,6 @@ export const bulkUploadService = {
       ['• Description - Product description'],
       [''],
       ['OPTIONAL COLUMNS:'],
-      ['• Category - Product category (e.g., Smartphones, Laptops)'],
       ['• SKU - Your product code (auto-generated if empty)'],
       [''],
       ['FOR ELECTRONICS (Tech specs):'],
@@ -247,6 +254,12 @@ export const bulkUploadService = {
           });
         } else {
           condition = rawCondition as product_condition;
+        }
+
+        // Category is required
+        const categoryVal = String(rawRow['Category'] || '').trim();
+        if (!categoryVal) {
+          rowErrors.push({ row: rowNumber, field: 'Category', message: 'Category is required' });
         }
 
         // Brand is required
@@ -418,15 +431,63 @@ export const bulkUploadService = {
           }
         });
 
-        // Get category ID if provided
+        // Get category ID (category is required and must exist)
         let categoryId: string | null = null;
         if (row.category_name) {
+          // Try exact case-insensitive match first
           const category = await prisma.categories.findFirst({
             where: {
               name: { equals: row.category_name, mode: 'insensitive' }
             }
           });
           categoryId = category?.id || null;
+
+          // If not found, try fuzzy matching (pg_trgm) with configured threshold
+          if (!categoryId) {
+            try {
+              const threshold = Number(CONFIG.CATEGORY_FUZZY_THRESHOLD) || 0.6;
+              // Use similarity() from pg_trgm; if pg_trgm not available this will fail and be caught
+              const fuzzyRes: Array<{ id: string; name: string; sim: number }> = await prisma.$queryRaw`
+                SELECT id, name, similarity(name, ${row.category_name}) as sim
+                FROM categories
+                WHERE similarity(name, ${row.category_name}) > ${threshold}
+                ORDER BY sim DESC
+                LIMIT 1
+              ` as any;
+
+              if (fuzzyRes && fuzzyRes.length > 0) {
+                categoryId = fuzzyRes[0].id;
+                // Inform in errors/warnings that fuzzy match was used
+                errors.push({
+                  row: row.rowNumber,
+                  field: 'Category',
+                  message: `Category "${row.category_name}" matched to "${fuzzyRes[0].name}" (fuzzy)`
+                });
+              }
+            } catch (e) {
+              // pg_trgm not available or query failed — fall through to local fallback
+            }
+          }
+
+          // If still not found, create an auto-created category marked for review (not public)
+          if (!categoryId) {
+            const newCat = await prisma.categories.create({
+              data: {
+                name: row.category_name,
+                description: 'Auto-created from bulk upload',
+                is_active: false,
+                auto_created: true,
+                needs_review: true,
+                created_by: null
+              }
+            });
+            categoryId = newCat.id;
+            errors.push({
+              row: row.rowNumber,
+              field: 'Category',
+              message: `Category "${row.category_name}" was not found — auto-created as "${newCat.name}" and flagged for review.`
+            });
+          }
         }
 
         if (!product) {

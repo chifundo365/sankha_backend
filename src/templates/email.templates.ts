@@ -309,3 +309,27 @@ export const notificationTemplate = (data: {
     text: `${data.title}\n\nHi ${data.userName},\n\n${data.message.replace(/<[^>]*>/g, '')}\n\n${data.ctaUrl ? `${data.ctaText}: ${data.ctaUrl}` : ''}`,
   };
 };
+
+/**
+ * Welcome Template
+ */
+export const welcomeTemplate = (data: { userName: string; loginUrl: string }) => {
+  const content = `
+    <h2 style="margin: 0 0 20px; font-size: 22px; font-weight: 700; color: ${COLORS.primary};">Welcome to Sankha!</h2>
+    <p style="font-size: 16px; color: ${COLORS.text}; line-height: 1.6; margin-bottom: 25px;">
+      Hi <strong>${data.userName}</strong>, welcome to Sankha — Malawi's trusted marketplace.
+    </p>
+    <div style="margin: 35px 0;">
+      <a href="${data.loginUrl}" style="background-color: ${COLORS.secondary}; background: linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.secondaryDark} 100%); color: #ffffff; display: inline-block; padding: 18px 40px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 12px; text-align: center;">
+        Log In to Your Account
+      </a>
+    </div>
+    <p style="font-size: 13px; color: ${COLORS.textMuted}; line-height: 1.6;">If you did not sign up for this account, please contact support.</p>
+  `;
+
+  return {
+    subject: `[Sankha] Welcome to Sankha`,
+    html: baseTemplate(content, `Welcome ${data.userName}`),
+    text: `Welcome ${data.userName} — Log in: ${data.loginUrl}`
+  };
+};

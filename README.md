@@ -205,3 +205,33 @@ npm run seed     # Seed the database
 ## License
 
 ISC
+
+## Bulk Upload System (v4)
+
+Overview:
+- Allows sellers to add many products at once using an Excel (.xlsx) template.
+- Uploads are parsed, validated, staged for preview, and then committed to create `shop_products` records.
+- Tech/electronics uploads support `Spec: ...` columns; general products support `Label_n`/`Value_n` pairs.
+
+Flow (high level):
+1. Download template / prepare Excel (columns: Product Name, Base Price (MWK), Stock Quantity, Brand, Description, Condition, optional Category, SKU, and `Spec:` or `Label_n` columns).
+2. POST upload file → server parses rows and returns errors + a staging batch.
+3. Preview staging results (valid / invalid counts, per-row errors).
+4. Commit batch → creates/links master `products` and creates `shop_products` with `listing_status: NEEDS_IMAGES`.
+5. Upload images and add any missing specs to make products visible.
+
+Common endpoints:
+- `GET /api/bulk-upload/template`  — download Excel template
+- `POST /api/bulk-upload/upload`  — upload Excel file (returns staging/batch id and parse errors)
+- `GET /api/bulk-upload/preview/:batchId` — preview parsed/staged rows
+- `POST /api/bulk-upload/commit/:batchId` — commit staged rows to create products
+- `POST /api/bulk-upload/cancel/:batchId` — cancel/discard a batch
+- `GET /api/bulk-upload/history` — list previous uploads and statuses
+- `GET /api/bulk-upload/needs-images` — list created products that require images/specs
+
+Notes & configuration:
+- Max rows per upload is controlled by `BULK_UPLOAD_MAX_ROWS` (default 1000).
+- Required columns: `Product Name`, `Base Price (MWK)`, `Stock Quantity`, `Brand`, `Description`, `Condition`.
+- Products created by bulk upload start with `listing_status: NEEDS_IMAGES` and are not visible to buyers until images/specs are added.
+- Upload summary emails are sent to sellers after processing with counts and first errors.
+ - Category handling: the uploader will first try an exact category match. If none is found it will attempt a fuzzy match; if still no confident match the system will auto-create a category record marked `auto_created` and `needs_review` (not active) and surface this in the staging preview for seller/admin review.
