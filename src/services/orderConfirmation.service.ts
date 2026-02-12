@@ -1,4 +1,158 @@
 import prisma from '../prismaClient';
+import { sendReleaseCodeSms } from './notification.service';
+
+/**
+ * Order Confirmation / Release Code Service
+ *
+ * Responsibilities:
+ * - Generate a short release code and persist it on the order
+ * - Verify a provided release code (mark order code as verified)
+ * - Credit the shop wallet and create a transaction record when verified
+ *
+ * This implementation is intentionally small and well-documented so it can
+ * be extended later (fees, payouts, webhooks, notifications).
+ */
+
+const CODE_LENGTH = 6;
+const EXPIRY_DAYS = Number(process.env.RELEASE_CODE_EXPIRY_DAYS) || 14;
+
+function generateRandomCode(length = CODE_LENGTH) {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // omit ambiguous chars
+  let code = '';
+  for (let i = 0; i < length; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+export const orderConfirmationService = {
+  /**
+   * Generate and persist a release code for an order.
+   * Returns { success, code, expiresAt } on success, or { success:false, error }
+   */
+  async generateReleaseCode(orderId: string) {
+    const order = await prisma.orders.findUnique({ where: { id: orderId } });
+
+    if (!order) {
+      return { success: false, error: 'Order not found' };
+    }
+
+    const code = generateRandomCode();
+    const expiresAt = new Date(Date.now() + EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+
+    await prisma.orders.update({
+      where: { id: orderId },
+      data: {
+        release_code: code,
+        release_code_status: 'PENDING',
+        release_code_expires_at: expiresAt,
+        release_code_verified_at: null
+      }
+    });
+
+    return { success: true, code, expiresAt };
+  },
+
+  /**
+   * Verify a release code. If valid, mark verified and credit the shop wallet.
+   * Returns an object describing the result and updated balances.
+   */
+  async verifyReleaseCode(orderId: string, code: string, shopId?: string) {
+    // Load order, items and shop wallet
+    const order = await prisma.orders.findUnique({
+      where: { id: orderId },
+      include: {
+        order_items: true,
+        shops: true
+      }
+    });
+
+    if (!order) return { success: false, error: 'Order not found' };
+
+    if (!order.release_code) return { success: false, errorCode: 'NO_CODE', error: 'No release code generated' };
+
+    if (order.release_code_status === 'VERIFIED') {
+      return { success: false, errorCode: 'ALREADY_VERIFIED', error: 'Release code already verified' };
+    }
+
+    if (shopId && order.shop_id !== shopId) {
+      return { success: false, errorCode: 'WRONG_SHOP', error: 'This order does not belong to the provided shop' };
+    }
+
+    if (String(code).trim().toUpperCase() !== String(order.release_code).trim().toUpperCase()) {
+      return { success: false, errorCode: 'INVALID_CODE', error: 'Invalid release code' };
+    }
+
+    if (order.release_code_expires_at && new Date() > order.release_code_expires_at) {
+      return { success: false, errorCode: 'EXPIRED', error: 'Release code has expired' };
+    }
+
+    // Compute seller payout: prefer base_price when available, fall back to unit_price
+    let sellerPayout = 0;
+    for (const item of order.order_items) {
+      const unit = (item as any).base_price ?? (item as any).unit_price ?? 0;
+      sellerPayout += Number(unit) * Number((item as any).quantity || 0);
+    }
+
+    // Default to order.total_amount if calculation yields zero
+    if (!sellerPayout || sellerPayout === 0) {
+      sellerPayout = Number(order.total_amount || 0);
+    }
+
+    // Update shop wallet and create transaction atomically
+    const now = new Date();
+
+    const result = await prisma.$transaction(async (tx) => {
+      const shop = await tx.shops.findUnique({ where: { id: order.shop_id } });
+      if (!shop) throw new Error('Shop not found');
+
+      const balanceBefore = Number(shop.wallet_balance || 0);
+      const balanceAfter = Number((balanceBefore || 0) + sellerPayout);
+
+      // Update shop balance
+      await tx.shops.update({
+        where: { id: shop.id },
+        data: { wallet_balance: balanceAfter }
+      });
+
+      // Create transaction ledger entry
+      await tx.transactions.create({
+        data: {
+          shop_id: shop.id,
+          type: 'ORDER_CREDIT',
+          amount: sellerPayout,
+          balance_before: balanceBefore,
+          balance_after: balanceAfter,
+          status: 'COMPLETED',
+          order_id: order.id,
+          description: `Order ${order.order_number} - release code verified`,
+          created_at: now
+        }
+      });
+
+      // Mark release code verified on order
+      const updatedOrder = await tx.orders.update({
+        where: { id: order.id },
+        data: {
+          release_code_status: 'VERIFIED',
+          release_code_verified_at: now
+        }
+      });
+
+      return { shop, updatedOrder, balanceBefore, balanceAfter };
+    });
+
+    return {
+      success: true,
+      sellerPayout,
+      newWalletBalance: result.balanceAfter,
+      order: result.updatedOrder
+    };
+  }
+};
+
+export default orderConfirmationService;
+import prisma from '../prismaClient';
 import { Decimal } from '../../generated/prisma/runtime/library';
 import { generateReleaseCode, getReleaseCodeExpiry, isReleaseCodeExpired } from '../utils/releaseCode';
 
@@ -79,15 +233,35 @@ class OrderConfirmationService {
       }
 
       // Update order with release code
-      await prisma.orders.update({
+      const updated = await prisma.orders.update({
         where: { id: orderId },
         data: {
           release_code: code,
           release_code_status: 'PENDING',
           release_code_expires_at: expiresAt,
           updated_at: new Date(),
+        },
+        include: {
+          users: {
+            select: {
+              phone_number: true,
+              email: true
+            }
+          }
         }
       });
+
+      // Send release code SMS in background (sandbox-safe). Don't fail generation if SMS fails.
+      (async () => {
+        try {
+          const phone = updated.users?.phone_number;
+          if (phone) {
+            await sendReleaseCodeSms(phone, code, expiresAt);
+          }
+        } catch (err) {
+          console.error('Failed to send release code SMS (sandbox):', err);
+        }
+      })();
 
       return {
         success: true,
