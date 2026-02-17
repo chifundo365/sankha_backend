@@ -475,10 +475,7 @@ export const bulkUploadService = {
               data: {
                 name: row.category_name,
                 description: 'Auto-created from bulk upload',
-                is_active: false,
-                auto_created: true,
-                needs_review: true,
-                created_by: null
+                is_active: false
               }
             });
             categoryId = newCat.id;

@@ -22,7 +22,18 @@ async function sendSms(to: string | string[], message: string) {
     throw new Error('Africa\'s Talking credentials not configured (AFRICASTALKING_API_KEY/USERNAME)');
   }
 
-  const recipients = Array.isArray(to) ? to.join(',') : to;
+  // Normalize recipient numbers: ensure +countrycode prefix when missing
+  const rawRecipients = Array.isArray(to) ? to : String(to).split(',');
+  const normalizeNumber = (n: string) => {
+    const s = String(n || '').trim();
+    if (!s) return '';
+    if (s.startsWith('+')) return s;
+    // keep only digits and prefix with +
+    const digits = s.replace(/\D/g, '');
+    return digits ? `+${digits}` : s;
+  };
+
+  const recipients = rawRecipients.map(normalizeNumber).filter(Boolean).join(',');
 
   const payload = querystring.stringify({
     username: AT_USERNAME,

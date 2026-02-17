@@ -12,6 +12,11 @@ import {
   welcomeTemplate,
   orderConfirmationTemplate,
   notificationTemplate,
+  releaseCodeTemplate,
+  verificationCodeTemplate,
+  ReleaseCodeData,
+  VerificationCodeData,
+  OrderItem,
 } from '../templates/email.templates';
 
 // Initialize Resend client
@@ -48,12 +53,9 @@ export interface EmailResult {
   error?: string;
 }
 
-/**
- * Send an email via Resend
- */
 export const sendEmail = async (options: SendEmailOptions): Promise<EmailResult> => {
   const client = getResendClient();
-  
+
   if (!client) {
     // In development, log instead of failing
     if (process.env.NODE_ENV !== 'production') {
@@ -71,26 +73,34 @@ export const sendEmail = async (options: SendEmailOptions): Promise<EmailResult>
       const hasViewProducts = options.html && options.html.includes('View Your Products');
       const hasReviewUpload = options.html && options.html.includes('Review Upload');
       console.log(`📧 [Email Debug] to=${Array.isArray(options.to) ? options.to.join(',') : options.to} subject=${options.subject} hasViewProducts=${hasViewProducts} hasReviewUpload=${hasReviewUpload}`);
-        // Save full HTML to generated/email-debug for inspection (development only)
-        try {
-          if (process.env.NODE_ENV !== 'production') {
-            const debugDir = path.join(process.cwd(), 'generated', 'email-debug');
-            fs.mkdirSync(debugDir, { recursive: true });
-            const safeSubject = (options.subject || 'email').replace(/[^a-z0-9-_]/gi, '_').slice(0, 50);
-            const filePath = path.join(debugDir, `${Date.now()}-${safeSubject}.html`);
-            try {
-              fs.writeFileSync(filePath, options.html || '', 'utf8');
-              console.log(`📧 [Email Debug] HTML written to ${filePath}`);
-            } catch (writeErr) {
-              console.error('📧 [Email Debug] failed to write HTML file', writeErr);
-            }
+      // Save full HTML to generated/email-debug for inspection (development only)
+      try {
+        if (process.env.NODE_ENV !== 'production') {
+          const debugDir = path.join(process.cwd(), 'generated', 'email-debug');
+          fs.mkdirSync(debugDir, { recursive: true });
+          const safeSubject = (options.subject || 'email').replace(/[^a-z0-9-_]/gi, '_').slice(0, 50);
+          const filePath = path.join(debugDir, `${Date.now()}-${safeSubject}.html`);
+          try {
+            fs.writeFileSync(filePath, options.html || '', 'utf8');
+            console.log(`📧 [Email Debug] HTML written to ${filePath}`);
+          } catch (writeErr) {
+            console.error('📧 [Email Debug] failed to write HTML file', writeErr);
           }
-        } catch (err) {
-          // ignore file write errors
         }
+      } catch (err) {
+        // ignore file write errors
+      }
     } catch (err) {
       // ignore debug logging errors
     }
+
+    // Log the effective From address to help diagnose Resend validation errors
+    try {
+      console.log(`📧 [Email Debug] from=${getFromAddress()}`);
+    } catch (err) {
+      // ignore logging errors
+    }
+
     const { data, error } = await client.emails.send({
       from: getFromAddress(),
       to: Array.isArray(options.to) ? options.to : [options.to],
@@ -161,10 +171,6 @@ export const sendWelcomeEmail = async (
     tags: [{ name: 'category', value: 'welcome' }],
   });
 };
-
-/**
- * Send order confirmation email
- */
 export const sendOrderConfirmationEmail = async (
   email: string,
   data: {
@@ -229,21 +235,32 @@ export const sendReleaseCodeEmail = async (
     orderNumber: string;
     releaseCode: string;
     shopName: string;
+    items?: OrderItem[];
+    subtotal?: number;
+    deliveryFee?: number;
+    total?: number;
   }
 ): Promise<EmailResult> => {
-  return sendNotificationEmail(email, {
+  const template = releaseCodeTemplate({
     userName: data.userName,
-    title: `Your Release Code for Order #${data.orderNumber}`,
-    message: `
-      Your order from <strong>${data.shopName}</strong> has been confirmed!<br><br>
-      Your release code is: <strong style="font-size: 24px; letter-spacing: 2px;">${data.releaseCode}</strong><br><br>
-      Share this code with the seller upon delivery to release the payment from escrow.
-      <br><br>
-      <em>Keep this code safe and only share it when you've received your order.</em>
-    `,
-    ctaText: 'View Order',
-    ctaUrl: `${emailConfig.app.url}/orders`,
-    type: 'info',
+    orderNumber: data.orderNumber,
+    releaseCode: data.releaseCode,
+    shopName: data.shopName,
+    items: data.items || [],
+    subtotal: data.subtotal || 0,
+    deliveryFee: data.deliveryFee || 0,
+    total: data.total || 0,
+  });
+
+  return sendEmail({
+    to: email,
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+    tags: [
+      { name: 'category', value: 'release-code' },
+      { name: 'order_number', value: data.orderNumber },
+    ],
   });
 };
 
@@ -304,6 +321,24 @@ export const sendWithdrawalCompletedEmail = async (
   });
 };
 
+/**
+ * Send verification code (signup / MFA)
+ */
+export const sendVerificationCodeEmail = async (
+  email: string,
+  data: VerificationCodeData
+): Promise<EmailResult> => {
+  const template = verificationCodeTemplate(data);
+
+  return sendEmail({
+    to: email,
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+    tags: [{ name: 'category', value: 'verification-code' }],
+  });
+};
+
 // Export email service object for convenience
 export const emailService = {
   send: sendEmail,
@@ -314,5 +349,6 @@ export const emailService = {
   sendReleaseCode: sendReleaseCodeEmail,
   sendWalletCredited: sendWalletCreditedEmail,
   sendWithdrawalCompleted: sendWithdrawalCompletedEmail,
+  sendVerificationCode: sendVerificationCodeEmail,
   isConfigured: isEmailConfigured,
 };

@@ -9,7 +9,7 @@ export const checkoutSchema = z.object({
       .string({ message: "Delivery address ID is required" })
       .uuid("Invalid delivery address ID format"),
     payment_method: z
-      .enum(["paychangu"], { message: "Payment method must be paychangu" }),
+      .enum(["paychangu", "cod", "bank_transfer"], { message: "Payment method must be paychangu, cod, or bank_transfer" }),
     customer_email: z
       .string({ message: "Customer email is required" })
       .email("Invalid email format"),
