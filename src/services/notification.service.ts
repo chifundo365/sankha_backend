@@ -35,12 +35,18 @@ async function sendSms(to: string | string[], message: string) {
 
   const recipients = rawRecipients.map(normalizeNumber).filter(Boolean).join(',');
 
-  const payload = querystring.stringify({
+  // Build payload conditionally: do not send `from` when using sandbox
+  const payloadObj: any = {
     username: AT_USERNAME,
     to: recipients,
     message,
-    from: AT_FROM
-  });
+  };
+
+  if (!AT_SANDBOX && AT_FROM) {
+    payloadObj.from = AT_FROM;
+  }
+
+  const payload = querystring.stringify(payloadObj);
 
   try {
     console.log('[notification] Sending SMS', { to: recipients, sandbox: AT_SANDBOX });

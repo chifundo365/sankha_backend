@@ -1,7 +1,7 @@
 import prisma from '../prismaClient';
 import { Decimal } from '../../generated/prisma/runtime/library';
 import { generateReleaseCode, getReleaseCodeExpiry, isReleaseCodeExpired } from '../utils/releaseCode';
-import { sendReleaseCodeSms } from './notification.service';
+import { sendReleaseCodeSms } from './sms.service';
 import { emailService } from './email.service';
 
 /**
@@ -109,53 +109,12 @@ class OrderConfirmationService {
         }
       });
 
-      // Send release code SMS in background (sandbox-safe). Don't fail generation if SMS fails.
+      // Centralized: delegate email+SMS notification to emailService
       (async () => {
         try {
-          const phone = updated.users?.phone_number;
-          console.log('[orderConfirmation] buyer phone for SMS:', updated.users?.phone_number);
-          if (phone) {
-            console.log('[orderConfirmation] triggering sendReleaseCodeSms', { phone, code });
-            await sendReleaseCodeSms(phone, code, expiresAt);
-            console.log('[orderConfirmation] sendReleaseCodeSms completed');
-          } else {
-            console.log('[orderConfirmation] no buyer phone found; SMS not sent');
-          }
+          await emailService.sendReleaseCodeForOrder(orderId).catch((e) => console.error('sendReleaseCodeForOrder error:', e));
         } catch (err) {
-          console.error('Failed to send release code SMS (sandbox):', err);
-        }
-      })();
-
-      // Send release code email (non-blocking). Only attempt if Resend configured.
-      (async () => {
-        try {
-          const email = updated.users?.email;
-          if (email) {
-            const userName = `${updated.users?.first_name || ''} ${updated.users?.last_name || ''}`.trim() || 'Customer';
-            // Prepare item list and amounts for the release code email
-            const items = (updated.order_items || []).map((it: any) => ({
-              name: it.product_name,
-              quantity: it.quantity,
-              price: Number(it.base_price ?? it.unit_price ?? 0),
-            }));
-
-            const subtotal = items.reduce((s: number, it: any) => s + (it.price * it.quantity), 0);
-            const deliveryFee = Number((updated as any).delivery_fee ?? 0);
-            const total = Number((updated as any).total_amount ?? subtotal + deliveryFee);
-
-            await emailService.sendReleaseCode(email, {
-              userName,
-              orderNumber: (updated as any).order_number || orderId,
-              releaseCode: code,
-              shopName: updated.shops?.name || '',
-              items,
-              subtotal,
-              deliveryFee,
-              total,
-            });
-          }
-        } catch (err) {
-          console.error('Failed to send release code email (sandbox):', err);
+          console.error('Failed to send release code notifications (sandbox):', err);
         }
       })();
 
