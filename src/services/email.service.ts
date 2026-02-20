@@ -55,7 +55,6 @@ export interface EmailResult {
   messageId?: string;
   error?: string;
 }
-
 export const sendEmail = async (options: SendEmailOptions): Promise<EmailResult> => {
   const client = getResendClient();
 
@@ -252,7 +251,7 @@ export const sendReleaseCodeEmail = async (
     orderNumber: string;
     releaseCode: string;
     frontendUrl?: string;
-    shopName: string;
+    shopName?: string;
     sellerPhone?: string;
     buyerPhone?: string;
     sellerLocation?: string;
@@ -260,11 +259,15 @@ export const sendReleaseCodeEmail = async (
     subtotal?: number;
     deliveryFee?: number;
     total?: number;
+    // allow nested ReleaseCodeData shape as well
+    seller?: any;
   }
 ): Promise<EmailResult> => {
   // Compose data for the unified order confirmation/release template
   const frontend = data.frontendUrl || emailConfig.app.url;
-  const seller: SellerInfo = { shopName: data.shopName, phoneNumber: data.sellerPhone, location: data.sellerLocation };
+  // Support both flat and nested data shapes
+  const sellerInfo = data.seller ? data.seller : { shopName: data.shopName, phoneNumber: data.sellerPhone, location: data.sellerLocation };
+  const seller: SellerInfo = { shopName: sellerInfo.shopName, phoneNumber: sellerInfo.phoneNumber, location: sellerInfo.location };
   const orderIdValue = data.orderId || data.orderNumber || '';
 
   const payload: ReleaseCodeData = {
@@ -277,21 +280,110 @@ export const sendReleaseCodeEmail = async (
     subtotal: data.subtotal || 0,
     deliveryFee: data.deliveryFee || 0,
     total: data.total || 0,
-    seller,
+    seller: { shopName: seller.shopName, phoneNumber: seller.phoneNumber, location: seller.location, lat: (data as any).seller?.lat ?? undefined, lng: (data as any).seller?.lng ?? undefined },
+    // include buyer delivery info when provided so templates can render address/phone/maps
+    buyerLocation: (data as any).buyerLocation ?? null,
+    buyerPhone: data.buyerPhone || undefined,
+    buyerAddress: (data as any).buyerAddress || undefined,
   };
 
-  const template = orderConfirmationTemplate(payload);
+  // Build a buyer-facing email with clear Release Code Action Zone
+  const mapsLink = payload.buyerLocation?.lat && payload.buyerLocation?.lng ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${payload.buyerLocation.lat},${payload.buyerLocation.lng}`)}` : '';
 
+  const html = `
+  <div style="font-family: Arial, sans-serif; color:#111;">
+    <div style="background:#002147;padding:18px;color:#fff;text-align:left;">
+      <h1 style="margin:0;font-size:20px">Sankha</h1>
+    </div>
+    <div style="padding:20px; background:#fff; border:1px solid #eaeaea;">
+      <p style="font-size:16px;margin:0 0 12px 0">Hi ${payload.userName || 'Customer'},</p>
+      <p style="font-size:16px;margin:0 0 12px 0">Your order <strong>#${payload.orderNumber}</strong> is secured. Share the Release Code only after the recipient confirms they have the goods.</p>
+
+      <div style="background:#FFD700;padding:16px;border-radius:6px;margin:18px 0;text-align:center">
+        <div style="font-size:24px;font-weight:700;letter-spacing:4px">${payload.releaseCode || ''}</div>
+        <div style="margin-top:8px;font-size:14px;font-weight:700">Inspection Warning: Do NOT share this code until recipient inspects the items.</div>
+      </div>
+
+      ${mapsLink ? `<p style="font-size:16px;margin:0 0 12px 0">Delivery anchor: <a href="${mapsLink}">${payload.buyerAddress || 'View map'}</a></p>` : ''}
+
+      <p style="font-size:16px;margin:0">Seller: <strong>${payload.seller?.shopName || ''}</strong> — Call: <a href="tel:${payload.seller?.phoneNumber || ''}">${payload.seller?.phoneNumber || 'Not available'}</a></p>
+
+      <p style="font-size:14px;color:#666;margin-top:18px">This code releases escrow. Only provide it to the delivery person once the recipient confirms receipt of goods.</p>
+    </div>
+  </div>
+  `;
 
   return sendEmail({
     to: email,
-    subject: template.subject,
-    html: template.html,
-    text: template.text,
+    subject: `Your Release Code — Order #${payload.orderNumber}`,
+    html,
     tags: [
       { name: 'category', value: 'release-code' },
       { name: 'order_number', value: data.orderNumber },
     ],
+  });
+};
+
+/**
+ * Send the seller-facing Dispatch Command Center email when order is ready or updated
+ */
+export const sendSellerDispatchEmail = async (
+  email: string,
+  data: {
+    orderId: string;
+    orderNumber: string;
+    shopName: string;
+    buyerName: string;
+    recipientName: string;
+    recipientPhone?: string;
+    deliveryLat?: number | null;
+    deliveryLng?: number | null;
+    deliveryDirections?: string;
+    depotName?: string | null;
+    depotLat?: number | null;
+    depotLng?: number | null;
+    preferredCarrierDetails?: string;
+    packageLabelText?: string;
+    items?: OrderItem[];
+  }
+): Promise<EmailResult> => {
+  const mapsLink = data.deliveryLat && data.deliveryLng ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${data.deliveryLat},${data.deliveryLng}`)}` : (data.depotLat && data.depotLng ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${data.depotLat},${data.depotLng}`)}` : '');
+
+  const itemsHtml = (data.items || []).map(i => `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${i.name}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center">${i.quantity}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">MWK ${i.price.toLocaleString()}</td></tr>`).join('');
+
+  const html = `
+  <div style="font-family: Arial, sans-serif; color:#111;">
+    <div style="background:#002147;padding:18px;color:#fff;text-align:left;">
+      <h1 style="margin:0;font-size:20px">Dispatch Command Center</h1>
+    </div>
+    <div style="padding:20px; background:#fff; border:1px solid #eaeaea;">
+      <p style="font-size:16px;margin:0 0 12px 0">Order <strong>#${data.orderNumber}</strong> — Please prepare for pickup/delivery.</p>
+      <p style="font-size:16px;margin:0 0 12px 0">Recipient: <strong>${data.recipientName}</strong><br/>Phone: <strong>${data.recipientPhone || 'Not available'}</strong></p>
+      ${data.depotName ? `<p style="font-size:16px;margin:6px 0 12px 0"><strong>Drop-off at:</strong> ${data.depotName}</p>` : ''}
+      ${mapsLink ? `<p style="margin:12px 0"><a href="${mapsLink}" style="display:inline-block;background:#2EC4B6;color:#002147;padding:12px 16px;border-radius:6px;text-decoration:none;font-weight:600">📍 Navigate to Recipient</a></p>` : ''}
+
+      ${data.deliveryDirections ? `<div style="margin-top:12px;padding:12px;border:1px solid #ddd;background:#f9f9f9"><strong>Driver Notes:</strong><div style="margin-top:6px">${data.deliveryDirections}</div></div>` : ''}
+      ${data.preferredCarrierDetails ? `<div style="margin-top:12px;padding:12px;border:1px solid #ddd;background:#f9f9f9"><strong>Carrier Instructions:</strong><div style="margin-top:6px">${data.preferredCarrierDetails}</div></div>` : ''}
+
+      ${data.packageLabelText ? `<div style="margin-top:16px;padding:14px;border-radius:6px;background:#fff6e5;border:1px solid #ffdca3;text-align:center;font-size:18px;font-weight:700">📦 WRITE ON BOX: ${data.packageLabelText}</div>` : ''}
+
+      <p style="margin-top:12px"><a href="${emailConfig.app.url}/seller/orders/${data.orderId}/upload-waybill" style="display:inline-block;background:#2EC4B6;color:#002147;padding:12px 16px;border-radius:6px;text-decoration:none;font-weight:600">Upload Waybill / Bus Receipt</a></p>
+
+      <table style="width:100%;border-collapse:collapse;margin-top:16px">
+        <thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:2px solid #ddd">Item</th><th style="text-align:center;padding:6px 8px;border-bottom:2px solid #ddd">Qty</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd">Price</th></tr></thead>
+        <tbody>${itemsHtml}</tbody>
+      </table>
+
+      <p style="margin-top:18px;font-size:14px;color:#666">Manage this order in your dashboard: <a href="${emailConfig.app.url}/seller/orders/${data.orderId}">${emailConfig.app.url}/seller/orders/${data.orderId}</a></p>
+    </div>
+  </div>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: `Dispatch: Order #${data.orderNumber}`,
+    html,
+    tags: [{ name: 'category', value: 'dispatch' }, { name: 'order_number', value: data.orderNumber }],
   });
 };
 
@@ -305,12 +397,43 @@ export const sendReleaseCodeForOrder = async (orderId: string): Promise<EmailRes
       where: { id: orderId },
       include: {
         users: true,
-        shops: true,
+        shops: {
+          include: {
+            users: true, // include shop owner user record if present
+          }
+        },
         order_items: true,
+        user_addresses: true,
       },
     });
 
     if (!order) return { success: false, error: 'Order not found' };
+
+    // DEBUG: dump key order relations and phone fields to help diagnose missing phone values
+    try {
+      console.log('sendReleaseCodeForOrder DEBUG - order snapshot:', JSON.stringify({
+        id: order.id,
+        order_number: (order as any).order_number || null,
+        users: order.users || null,
+        shops: order.shops || null,
+        user_addresses: (order as any).user_addresses || null,
+        order_items: (order as any).order_items || null,
+      }, null, 2));
+
+      const debugPhones = {
+        buyer_phone_user_phone_number: (order.users as any)?.phone_number || null,
+        buyer_phone_user_phone: (order.users as any)?.phone || null,
+        shop_phone_phone_number: (order.shops as any)?.phone_number || null,
+        shop_phone_phone: (order.shops as any)?.phone || null,
+        shop_user_phone_number: (order.shops as any)?.users?.phone_number || null,
+        shop_user_phone: (order.shops as any)?.users?.phone || null,
+        order_seller_phone: (order as any)?.seller_phone || null,
+        order_sellerPhone: (order as any)?.sellerPhone || null,
+      };
+      console.log('sendReleaseCodeForOrder DEBUG - phone candidates:', JSON.stringify(debugPhones, null, 2));
+    } catch (dbgErr) {
+      console.warn('sendReleaseCodeForOrder DEBUG failed to stringify order:', dbgErr);
+    }
 
     const buyerEmail = order.users?.email;
     if (!buyerEmail) return { success: false, error: 'Buyer email not available' };
@@ -319,8 +442,22 @@ export const sendReleaseCodeForOrder = async (orderId: string): Promise<EmailRes
 
     const releaseCode = order.release_code || '';
 
-    const buyerPhone = (order.users as any)?.phone_number || '';
+    // Prefer delivery address phone (user_addresses) over user record, normalize '+' for display
+    const delivery = Array.isArray((order as any).user_addresses) ? (order as any).user_addresses[0] : (order as any).user_addresses || null;
+    let buyerPhoneRaw = delivery?.phone_number || delivery?.phone || (order.users as any)?.phone_number || (order.users as any)?.phone || '';
+    const normalizeDisplayPhone = (p: any) => {
+      if (!p) return '';
+      const s = String(p).trim();
+      if (s.startsWith('+')) return s;
+      // if it looks numeric, prefix '+'
+      if (/^\d+$/.test(s)) return `+${s}`;
+      return s;
+    };
+    const buyerPhone = normalizeDisplayPhone(buyerPhoneRaw);
 
+    // Determine recipient snapshot values (order-level snapshot fields take precedence)
+    const recipientName = (order as any)?.recipient_name || delivery?.contact_name || `${order.users?.first_name || ''} ${order.users?.last_name || ''}`.trim();
+    const recipientPhoneRaw = (order as any)?.recipient_phone || delivery?.phone_number || delivery?.phone || '';
     const data = {
       userName: `${order.users?.first_name || ''} ${order.users?.last_name || ''}`.trim() || 'Customer',
       orderId: order.id,
@@ -328,9 +465,11 @@ export const sendReleaseCodeForOrder = async (orderId: string): Promise<EmailRes
       releaseCode,
       frontendUrl: emailConfig.app.url,
       shopName: order.shops?.name || 'Seller',
-      sellerPhone: (order.shops as any)?.phone_number || '',
+      // Resolve seller phone from multiple possible fields (shop.phone_number, shop.phone, shop.users.phone, order fallback)
+      sellerPhone: (order.shops as any)?.phone_number || (order.shops as any)?.phone || (order.shops as any)?.users?.phone_number || (order.shops as any)?.users?.phone || (order as any)?.seller_phone || (order as any)?.sellerPhone || '',
       sellerLocation: (order.shops as any)?.city || '',
       buyerPhone,
+      recipientName,
       items,
       subtotal: Number(order.total_amount ?? items.reduce((s,i)=>s + i.price*i.quantity,0)),
       deliveryFee: Number((order as any).delivery_fee ?? (order as any).deliveryFee ?? 0),
@@ -340,8 +479,13 @@ export const sendReleaseCodeForOrder = async (orderId: string): Promise<EmailRes
     // Extract lat/lng if present on shop or order (tolerant to field names)
     const shopLat = (order.shops as any)?.lat ?? (order.shops as any)?.latitude ?? null;
     const shopLng = (order.shops as any)?.lng ?? (order.shops as any)?.longitude ?? null;
-    const buyerLat = (order as any)?.delivery_lat ?? (order as any)?.buyer_lat ?? null;
-    const buyerLng = (order as any)?.delivery_lng ?? (order as any)?.buyer_lng ?? null;
+    // delivery address is stored on user_addresses relation (array)
+    // (reuse earlier `delivery` variable declared above)
+    const buyerLat = delivery?.latitude ?? delivery?.lat ?? (order as any)?.delivery_lat ?? (order as any)?.buyer_lat ?? null;
+    const buyerLng = delivery?.longitude ?? delivery?.lng ?? (order as any)?.delivery_lng ?? (order as any)?.buyer_lng ?? null;
+    const buyerAddressString = delivery
+      ? `${delivery?.address_line1 || delivery?.address_line || delivery?.address || ''}${delivery?.city ? ', ' + delivery?.city : ''}`
+      : ((order as any)?.delivery_address || (order as any)?.deliveryAddress || '');
 
     // Build buyer payload and send buyer email
     const buyerPayload: ReleaseCodeData = {
@@ -356,6 +500,9 @@ export const sendReleaseCodeForOrder = async (orderId: string): Promise<EmailRes
       total: data.total,
       seller: { shopName: data.shopName, phoneNumber: data.sellerPhone, location: data.sellerLocation, lat: shopLat, lng: shopLng },
       buyerLocation: { lat: buyerLat, lng: buyerLng },
+      buyerAddress: buyerAddressString,
+      buyerPhone: buyerPhone,
+      recipientName: recipientName,
     };
 
     const buyerEmailResult = await sendReleaseCodeEmail(buyerEmail, buyerPayload as any);
@@ -363,14 +510,18 @@ export const sendReleaseCodeForOrder = async (orderId: string): Promise<EmailRes
     // Send buyer SMS (if phone exists)
     try {
       if (data.buyerPhone) {
-        const smsBuyer = await smsService.sendBuyerSms(
-          data.buyerPhone,
-          data.total || 0,
-          data.shopName,
-          data.releaseCode,
-          data.sellerPhone || '',
-          data.orderId
-        );
+        const logisticsPath = (order as any)?.depot_name ? 'DEPOT' : 'HOME';
+        const driverHintLink = `${emailConfig.app.url}/orders/${order.id}`;
+        const smsBuyer = await smsService.sendBuyerDeliverySms(data.buyerPhone, {
+          logisticsPath: logisticsPath as any,
+          driverHintLink: driverHintLink,
+          code: data.releaseCode,
+          sellerPhone: data.sellerPhone || '',
+          carrierName: (order as any)?.preferred_carrier_details || data.shopName,
+          waybillNumber: (order as any)?.waybill_number || undefined,
+          depotName: (order as any)?.depot_name || undefined,
+          labelText: (order as any)?.package_label_text || undefined,
+        });
         console.log('sendReleaseCodeForOrder buyer SMS:', smsBuyer);
       }
     } catch (smsErr) {
@@ -379,35 +530,52 @@ export const sendReleaseCodeForOrder = async (orderId: string): Promise<EmailRes
 
     // Send seller email & SMS (if seller contact exists)
     try {
-      const sellerEmail = (order.shops as any)?.email || (order as any)?.seller_email || '';
-      if (sellerEmail) {
-        const sellerTemplate = sellerPayoutTemplate({
-          sellerName: (order.shops as any)?.name || '',
-          amount: Number(data.total || 0),
-          orderNumber: data.orderNumber,
-          buyerName: data.userName,
-          buyerPhone: data.buyerPhone,
-          buyerAddress: (order as any)?.delivery_address || (order as any)?.deliveryAddress || '',
-          buyerLat,
-          buyerLng,
-          dashboardUrl: `${emailConfig.app.url}/seller/orders/${data.orderId}`,
-        });
-
-        const sellerEmailRes = await sendEmail({
-          to: sellerEmail,
-          subject: sellerTemplate.subject,
-          html: sellerTemplate.html,
-          text: sellerTemplate.text,
-          tags: [{ name: 'category', value: 'seller-payout' }, { name: 'order_number', value: data.orderNumber }],
-        });
-
-        console.log('sendReleaseCodeForOrder seller email:', sellerEmailRes);
+      // Resolve seller email from multiple possible fields (shop.email or shop.users.email)
+      const shopObj = (order.shops as any) || {};
+      const sellerEmail = shopObj.email || shopObj.users?.email || (order as any)?.seller_email || '';
+      console.log('sendReleaseCodeForOrder resolved sellerEmail=', sellerEmail);
+      // If sellerPhone is empty, log the shop object to help debugging missing fields
+      if (!data.sellerPhone) {
+        console.warn('sendReleaseCodeForOrder: sellerPhone not found on order. shop object:', JSON.stringify(shopObj));
       }
-
-      const sellerPhone = data.sellerPhone || (order.shops as any)?.phone_number || '';
+      if (sellerEmail) {
+        console.log(`Sending seller dispatch email for order ${data.orderNumber} to ${sellerEmail}`);
+        try {
+          const dispatchRes = await sendSellerDispatchEmail(sellerEmail, {
+            orderId: data.orderId,
+            orderNumber: data.orderNumber,
+            shopName: (order.shops as any)?.name || '',
+            buyerName: recipientName || data.userName,
+            recipientName: recipientName || data.userName,
+            recipientPhone: data.buyerPhone,
+            deliveryLat: buyerLat,
+            deliveryLng: buyerLng,
+            deliveryDirections: (order as any)?.delivery_directions || '',
+            depotName: (order as any)?.depot_name || undefined,
+            depotLat: (order as any)?.depot_lat ?? undefined,
+            depotLng: (order as any)?.depot_lng ?? undefined,
+            preferredCarrierDetails: (order as any)?.preferred_carrier_details || undefined,
+            packageLabelText: (order as any)?.package_label_text || undefined,
+            items,
+          });
+          console.log('sendReleaseCodeForOrder seller dispatch email result:', dispatchRes);
+        } catch (e) {
+          console.error('Failed to send seller dispatch email', e);
+        }
+      }
+      const sellerPhone = data.sellerPhone || (order.shops as any)?.phone_number || (order.shops as any)?.phone || (order.shops as any)?.users?.phone_number || (order.shops as any)?.users?.phone || (order as any)?.seller_phone || '';
+      console.log('sendReleaseCodeForOrder resolved sellerPhone=', sellerPhone);
       if (sellerPhone) {
-        const smsSeller = await smsService.sendSellerSms(sellerPhone, data.orderNumber, data.userName, data.total || 0);
-        console.log('sendReleaseCodeForOrder seller SMS:', smsSeller);
+        console.log(`Sending seller SMS for order ${data.orderNumber} to ${sellerPhone}`);
+        const smsSeller = await smsService.sendSellerSms(
+          sellerPhone,
+          data.orderNumber,
+          recipientName || data.userName,
+          data.total || 0,
+          data.buyerPhone || '',
+          (order as any)?.delivery_directions || ''
+        );
+        console.log('sendReleaseCodeForOrder seller SMS result:', smsSeller);
       }
     } catch (errSms) {
       console.error('sendReleaseCodeForOrder seller notification error:', errSms);
@@ -495,6 +663,47 @@ export const sendVerificationCodeEmail = async (
   });
 };
 
+/**
+ * Notify seller that delivery location has been updated for an order
+ */
+export const sendSellerLocationUpdatedEmail = async (
+  email: string,
+  data: {
+    orderId: string;
+    orderNumber: string;
+    shopName: string;
+    buyerName: string;
+    recipientName: string;
+    deliveryLat: number | null;
+    deliveryLng: number | null;
+    deliveryDirections?: string;
+  }
+): Promise<EmailResult> => {
+  const mapsLink = data.deliveryLat && data.deliveryLng ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${data.deliveryLat},${data.deliveryLng}`)}` : '';
+
+  const html = `
+  <div style="font-family: Arial, sans-serif; font-size:16px; color:#111;">
+    <div style="background:#002147;padding:18px;color:#fff;text-align:left;">
+      <h1 style="margin:0;font-size:20px">Dispatch Command Center</h1>
+    </div>
+    <div style="padding:20px;border:1px solid #eaeaea; background:#ffffff;">
+      <p style="font-size:16px;margin:0 0 12px 0">Order <strong>#${data.orderNumber}</strong> — delivery location was updated.</p>
+      <p style="margin:8px 0">Recipient: <strong>${data.recipientName || 'Recipient'}</strong><br/>Buyer: <strong>${data.buyerName}</strong></p>
+      ${mapsLink ? `<p style="margin:12px 0"><a href="${mapsLink}" style="display:inline-block;background:#2EC4B6;color:#002147;padding:12px 16px;border-radius:6px;text-decoration:none;font-weight:600">📍 Navigate to Recipient</a></p>` : ''}
+      ${data.deliveryDirections ? `<div style="margin-top:12px;padding:12px;border:1px solid #ddd;background:#f9f9f9"><strong>Driver Notes:</strong><div style="margin-top:6px">${data.deliveryDirections}</div></div>` : ''}
+      <p style="margin-top:18px;font-size:14px;color:#666">This is an automated notification — please check the seller dashboard for full details.</p>
+    </div>
+  </div>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: `Delivery location updated — Order #${data.orderNumber}`,
+    html,
+    tags: [{ name: 'category', value: 'delivery-update' }, { name: 'order_number', value: data.orderNumber }],
+  });
+};
+
 // Export email service object for convenience
 export const emailService = {
   send: sendEmail,
@@ -504,8 +713,10 @@ export const emailService = {
   sendNotification: sendNotificationEmail,
   sendReleaseCode: sendReleaseCodeEmail,
   sendReleaseCodeForOrder,
+  sendSellerDispatchEmail,
   sendWalletCredited: sendWalletCreditedEmail,
   sendWithdrawalCompleted: sendWithdrawalCompletedEmail,
   sendVerificationCode: sendVerificationCodeEmail,
   isConfigured: isEmailConfigured,
+  sendSellerLocationUpdatedEmail,
 };

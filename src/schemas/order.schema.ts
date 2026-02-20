@@ -25,7 +25,47 @@ export const checkoutSchema = z.object({
       .string({ message: "Last name is required" })
       .min(1, "Last name cannot be empty")
       .max(100, "Last name must not exceed 100 characters")
-  })
+    ,
+    // Optional: ship to someone else details (third-party delivery)
+    ship_to_other: z.boolean().optional(),
+    recipient_name: z.string().min(1).max(255).optional(),
+    recipient_phone: z
+      .string()
+      .regex(/^\+?265\d{7,9}$/, "Recipient phone must be a Malawi number starting with +265")
+      .optional(),
+    // Logistics fork: HOME vs DEPOT
+    logistics_path: z.enum(["HOME", "DEPOT"]).optional(),
+    // Home delivery anchor
+    delivery_lat: z.number().min(-90).max(90).optional(),
+    delivery_lng: z.number().min(-180).max(180).optional(),
+    delivery_directions: z.string().max(2000).optional(),
+    // Depot / inter-city pickup fields
+    depot_name: z.string().max(255).optional(),
+    depot_lat: z.number().min(-90).max(90).optional(),
+    depot_lng: z.number().min(-180).max(180).optional(),
+    preferred_carrier_details: z.string().max(2000).optional(),
+    package_label_text: z.string().max(255).optional()
+   })
+   .refine((body) => {
+     // If shipping to someone else, ensure recipient phone is provided
+     if (body.ship_to_other) {
+       const hasPhone = Boolean(body.recipient_phone);
+       if (!hasPhone) return false;
+     }
+     // Enforce logistics path requirements
+     const path = body.logistics_path || 'HOME';
+     if (path === 'HOME') {
+       const hasLat = typeof body.delivery_lat === 'number';
+       const hasLng = typeof body.delivery_lng === 'number';
+       return hasLat && hasLng;
+     }
+     if (path === 'DEPOT') {
+       const hasDepot = Boolean(body.depot_name);
+       const hasDepotCoords = typeof body.depot_lat === 'number' && typeof body.depot_lng === 'number';
+       return hasDepot && hasDepotCoords;
+     }
+     return true;
+   }, { message: 'Provide required logistics data: HOME requires delivery_lat and delivery_lng; DEPOT requires depot_name and depot_lat/depot_lng' })
 });
 
 /**
@@ -90,6 +130,9 @@ export const updateOrderStatusSchema = z.object({
       .string()
       .max(500, "Notes must not exceed 500 characters")
       .optional()
+    ,
+    waybill_number: z.string().max(200).optional(),
+    waybill_photo_url: z.string().max(2000).optional()
   })
 });
 
@@ -144,6 +187,21 @@ export const getShopOrdersSchema = z.object({
 export const getOrderTrackingSchema = z.object({
   params: z.object({
     orderId: z.string().uuid("Invalid order ID format")
+  })
+});
+
+/**
+ * Schema for updating delivery location (buyer or recipient via token)
+ */
+export const updateDeliveryLocationSchema = z.object({
+  params: z.object({
+    orderId: z.string().uuid("Invalid order ID format")
+  }),
+  body: z.object({
+    delivery_lat: z.number().min(-90).max(90),
+    delivery_lng: z.number().min(-180).max(180),
+    delivery_directions: z.string().max(2000).optional(),
+    token: z.string().optional()
   })
 });
 

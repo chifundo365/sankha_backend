@@ -34,6 +34,23 @@ model orders {
   total_amount             Decimal             @db.Decimal(10, 2)
   status                   order_status?       @default(PENDING)
   delivery_address_id      String?             @db.Uuid
+  // Snapshot fields for delivery (do not change after checkout)
+  recipient_name           String?             @db.VarChar(255)
+  recipient_phone          String?             @db.VarChar(20)
+  delivery_lat             Decimal?            @db.Decimal(10, 6)
+  delivery_lng             Decimal?            @db.Decimal(10, 6)
+  delivery_directions      String?             @db.Text
+  // Depot / inter-city shipping fields (Logistics Fork - DEPOT path)
+  depot_name               String?             @db.VarChar(255)
+  depot_lat                Decimal?            @db.Decimal(10, 6)
+  depot_lng                Decimal?            @db.Decimal(10, 6)
+  preferred_carrier_details String?            @db.Text
+  package_label_text       String?             @db.VarChar(255)
+  // Waybill & proof of shipment
+  waybill_number           String?             @db.VarChar(100)
+  waybill_photo_url        String?             @db.VarChar(1000)
+  // Token allowing secure recipient updates to delivery pin prior to OUT_FOR_DELIVERY
+  delivery_update_token    String?             @db.VarChar(255)
   
   // Release code for delivery verification (Sankha escrow)
   release_code             String?             @db.VarChar(10)

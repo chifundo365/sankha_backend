@@ -13,6 +13,7 @@ import {
   getReleaseCode,
   generateReleaseCode
 } from "../controllers/order.controller";
+import { updateDeliveryLocation } from "../controllers/order.controller";
 import { protect } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/authorize.middleware";
 import validateResource from "../middleware/validateResource";
@@ -24,6 +25,7 @@ import {
   cancelOrderSchema,
   getShopOrdersSchema,
   getOrderTrackingSchema,
+  updateDeliveryLocationSchema,
   getAllOrdersSchema,
   getOrderStatsSchema
 } from "../schemas/order.schema";
@@ -174,6 +176,20 @@ router.post(
   protect,
   authorize("ADMIN", "SUPER_ADMIN"),
   generateReleaseCode
+);
+
+/**
+ * @route   PATCH /api/orders/:orderId/delivery-location
+ * @desc    Update delivery lat/lng and directions (buyer or recipient via token)
+ * @access  Protected for buyer, or public with valid token
+ */
+router.patch(
+  "/:orderId/delivery-location",
+  validateResource(updateDeliveryLocationSchema),
+  // note: intentionally not using `protect` so recipients can use the tokenized link
+  // Server-side handler will accept either an authenticated buyer or a valid token
+  // in the request body/query.
+  updateDeliveryLocation
 );
 
 export default router;

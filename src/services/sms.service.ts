@@ -72,11 +72,33 @@ export function buildBuyerSms(amount: number | string, shopName: string, code: s
   return msg.length <= 160 ? msg : msg.slice(0, 160);
 }
 
-export function buildSellerSms(orderNum: string, buyerName: string, amount: number | string, buyerPhone: string): string {
+export function buildSellerSms(orderNum: string, buyerName: string, amount: number | string, buyerPhone: string, deliveryDirections?: string): string {
   const amt = Number(amount || 0).toLocaleString();
-  let msg = `SANKHA: Order #${orderNum} arriving for ${buyerName}. Once they inspect, ask for the Release Code to get your MK${amt}. Call Buyer: ${buyerPhone}`;
+  // Prefer a short numeric order id when possible (e.g., ORD-2026-000021 -> 21)
+  let shortOrder = String(orderNum || '');
+  const m = shortOrder.match(/(\d+)$/);
+  if (m) shortOrder = m[1];
+
+  const displayBuyerPhone = normalizeNumber(String(buyerPhone || '')).replace(/\D/g, '');
+  const buyerPhoneLabel = displayBuyerPhone ? `+${displayBuyerPhone}` : (buyerPhone || 'Not available');
+
+  let msg = `SANKHA: Order #${shortOrder} for ${buyerName} is ready. Once they inspect goods, ask them for the Release Code to get your MK${amt}. Call Recipient: ${buyerPhoneLabel}`;
+  // Append short delivery directions snippet when available
+  if (deliveryDirections) {
+    const snippet = deliveryDirections.replace(/\s+/g, ' ').trim().slice(0, 60);
+    msg = `${msg} Directions: ${snippet}`;
+  }
   msg = stripToGSM7(msg);
-  return msg.length <= 160 ? msg : msg.slice(0, 160);
+  if (msg.length <= 160) return msg;
+
+  // Fallback shorter version
+  msg = `SANKHA: Order #${shortOrder} ready. After inspection ask for Release Code to get MK${amt}. Call Recipient: ${buyerPhoneLabel}`;
+  if (deliveryDirections) {
+    const snippet = deliveryDirections.replace(/\s+/g, ' ').trim().slice(0, 40);
+    msg = `${msg} Directions: ${snippet}`;
+  }
+  msg = stripToGSM7(msg).slice(0, 160);
+  return msg;
 }
 
 function stripToGSM7(s: string) {
@@ -124,11 +146,73 @@ export async function sendBuyerSms(toPhone: string, amount: number | string, sho
   return await sendSms(to, message);
 }
 
-export async function sendSellerSms(toPhone: string, orderNum: string, buyerName: string, amount: number | string): Promise<SmsResult> {
-  const message = buildSellerSms(orderNum, buyerName, amount, toPhone);
+/**
+ * Send buyer SMS tailored to logistics path (HOME or DEPOT)
+ */
+export async function sendBuyerDeliverySms(toPhone: string, options: { logisticsPath: 'HOME' | 'DEPOT', driverHintLink?: string, code: string, sellerPhone?: string, carrierName?: string, waybillNumber?: string, depotName?: string, labelText?: string }) : Promise<SmsResult> {
+  const to = normalizeNumber(toPhone) || normalizeNumber('+' + String(toPhone).replace(/\D/g, ''));
+  if (!to) return { success: false, error: 'Invalid recipient phone' };
+
+  let msg = '';
+  if (options.logisticsPath === 'HOME') {
+    const linkPart = options.driverHintLink ? `View their location hint here: ${options.driverHintLink}. ` : '';
+    msg = `Your driver is coming! ${linkPart}Your Release Code: ${options.code}.`;
+  } else {
+    // DEPOT
+    const carrier = options.carrierName ? options.carrierName : 'carrier';
+    const waybillPart = options.waybillNumber ? `Waybill: #${options.waybillNumber}. ` : '';
+    const depotPart = options.depotName ? `Collect at ${options.depotName}. ` : '';
+    const labelPart = options.labelText ? `Look for the box marked '${options.labelText}'. ` : '';
+    msg = `Your gift is on the ${carrier} bus! ${waybillPart}${depotPart}${labelPart}Your Release Code: ${options.code}.`;
+  }
+
+  msg = stripToGSM7(msg).slice(0, 160);
+  return await sendSms(to, msg);
+}
+
+export async function sendSellerSms(toPhone: string, orderNum: string, buyerName: string, amount: number | string, buyerPhone?: string, deliveryDirections?: string): Promise<SmsResult> {
+  const message = buildSellerSms(orderNum, buyerName, amount, buyerPhone || '', deliveryDirections || '');
   const to = normalizeNumber(toPhone) || normalizeNumber('+' + String(toPhone).replace(/\D/g, ''));
   if (!to) return { success: false, error: 'Invalid recipient phone' };
   return await sendSms(to, message);
 }
 
-export default { sendSms, sendReleaseCodeSms, buildReleaseSms, buildBuyerSms, buildSellerSms, sendBuyerSms, sendSellerSms };
+export async function sendSellerLocationUpdateSms(toPhone: string, orderNum: string): Promise<SmsResult> {
+  const shortOrder = String(orderNum || '').slice(-6);
+  let msg = `SANKHA: Delivery location updated for Order #${shortOrder}. Check your seller dashboard for new map pin.`;
+  msg = stripToGSM7(msg).slice(0, 160);
+  const to = normalizeNumber(toPhone) || normalizeNumber('+' + String(toPhone).replace(/\D/g, ''));
+  if (!to) return { success: false, error: 'Invalid recipient phone' };
+  return await sendSms(to, msg);
+}
+
+export async function sendRecipientSms(toPhone: string, buyerName: string, orderNum: string, link: string): Promise<SmsResult> {
+  const shortOrder = String(orderNum || '').slice(-6);
+  const shortLink = link ? link : '';
+  let msg = `Zikomo! ${buyerName} has sent you a package via Sankha (Order #${shortOrder}). The driver will call you. View delivery status: ${shortLink}`;
+  msg = stripToGSM7(msg).slice(0, 160);
+  const to = normalizeNumber(toPhone) || normalizeNumber('+' + String(toPhone).replace(/\D/g, ''));
+  if (!to) return { success: false, error: 'Invalid recipient phone' };
+  return await sendSms(to, msg);
+}
+
+/**
+ * Send recipient a magic link to update delivery location.
+ * Accepts an order-like object with `id`, `delivery_update_token`, and buyer name fields.
+ */
+export async function sendRecipientMagicLink(order: any): Promise<SmsResult> {
+  const recipientPhone = order?.recipient_phone || order?.user_addresses?.[0]?.phone_number || '';
+  const buyerName = order?.users ? `${order.users.first_name || ''} ${order.users.last_name || ''}`.trim() : (order?.buyer_name || 'Someone');
+  if (!recipientPhone) return { success: false, error: 'No recipient phone available' };
+  const token = order?.delivery_update_token;
+  if (!token) return { success: false, error: 'No delivery token available' };
+  const linkBase = process.env.FRONTEND_URL || '';
+  const link = `${linkBase.replace(/\/$/, '')}/orders/${encodeURIComponent(order.id)}/update-delivery?token=${encodeURIComponent(token)}`;
+  const msg = `Zikomo! A gift from ${buyerName} is coming. Update your delivery spot here: ${link}`;
+  const safe = stripToGSM7(msg).slice(0, 160);
+  const to = normalizeNumber(recipientPhone) || normalizeNumber('+' + String(recipientPhone).replace(/\D/g, ''));
+  if (!to) return { success: false, error: 'Invalid recipient phone' };
+  return await sendSms(to, safe);
+}
+
+export default { sendSms, sendReleaseCodeSms, buildReleaseSms, buildBuyerSms, buildSellerSms, sendBuyerSms, sendSellerSms, sendSellerLocationUpdateSms, sendRecipientSms, sendRecipientMagicLink, sendBuyerDeliverySms };

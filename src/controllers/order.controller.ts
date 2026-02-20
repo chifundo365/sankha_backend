@@ -4,6 +4,9 @@ import { successResponse, errorResponse } from "../utils/response";
 import { paymentService } from "../services/payment.service";
 import { Prisma } from "../../generated/prisma";
 import { orderConfirmationService } from "../services/orderConfirmation.service";
+import crypto from 'crypto';
+import { emailService } from '../services/email.service';
+import smsService from '../services/sms.service';
 
 /**
  * Generate unique order number
@@ -155,14 +158,41 @@ export const checkout = async (req: Request, res: Response) => {
       const initialStatus = payment_method === "paychangu" ? "PENDING_PAYMENT" : "CONFIRMED";
 
       // Update cart to pending payment order
+      // Determine snapshot delivery fields: prefer explicit recipient/logistics fields from request when provided
+      const recipientNameFromReq = (req.body as any).recipient_name;
+      const recipientPhoneFromReq = (req.body as any).recipient_phone;
+      const deliveryUpdateToken = crypto.randomBytes(16).toString('hex');
+      const logisticsPath = (req.body as any).logistics_path || 'HOME';
+      const deliveryLatFromReq = (req.body as any).delivery_lat;
+      const deliveryLngFromReq = (req.body as any).delivery_lng;
+      const deliveryDirectionsFromReq = (req.body as any).delivery_directions;
+      const depotNameFromReq = (req.body as any).depot_name;
+      const depotLatFromReq = (req.body as any).depot_lat;
+      const depotLngFromReq = (req.body as any).depot_lng;
+      const preferredCarrierFromReq = (req.body as any).preferred_carrier_details;
+      const packageLabelFromReq = (req.body as any).package_label_text;
+
       const pendingOrder = await prismaClient.orders.update({
         where: { id: cart.id },
         data: {
           order_number: orderNumber,
           status: initialStatus,
           delivery_address_id: delivery_address_id,
+          // Snapshot recipient details so they remain immutable for this order
+          recipient_name: recipientNameFromReq || undefined,
+          recipient_phone: recipientPhoneFromReq || undefined,
+          delivery_update_token: deliveryUpdateToken || undefined,
+          // Logistics fork snapshot
+          delivery_lat: logisticsPath === 'HOME' && deliveryLatFromReq !== undefined ? deliveryLatFromReq : undefined,
+          delivery_lng: logisticsPath === 'HOME' && deliveryLngFromReq !== undefined ? deliveryLngFromReq : undefined,
+          delivery_directions: logisticsPath === 'HOME' ? (deliveryDirectionsFromReq || undefined) : undefined,
+          depot_name: logisticsPath === 'DEPOT' ? (depotNameFromReq || undefined) : undefined,
+          depot_lat: logisticsPath === 'DEPOT' && depotLatFromReq !== undefined ? depotLatFromReq : undefined,
+          depot_lng: logisticsPath === 'DEPOT' && depotLngFromReq !== undefined ? depotLngFromReq : undefined,
+          preferred_carrier_details: logisticsPath === 'DEPOT' ? (preferredCarrierFromReq || undefined) : undefined,
+          package_label_text: logisticsPath === 'DEPOT' ? (packageLabelFromReq || undefined) : undefined,
           updated_at: new Date(),
-        },
+        } as any,
         include: {
           order_items: {
             include: {
@@ -198,6 +228,21 @@ export const checkout = async (req: Request, res: Response) => {
 
       pendingOrders.push(pendingOrder);
       orderIds.push(pendingOrder.id);
+      // If shipping to someone else and recipient phone provided, send magic link SMS
+      try {
+        const buyerPhone = customer_phone || (deliveryAddress as any)?.phone_number || '';
+        const recipientPhone = recipientPhoneFromReq || (deliveryAddress as any)?.phone_number || '';
+        if (recipientPhone && recipientPhone !== buyerPhone) {
+          // send recipient magic link so they can update the pin if needed
+          try {
+            await smsService.sendRecipientMagicLink(pendingOrder as any);
+          } catch (smErr) {
+            console.warn('Failed to send recipient magic link SMS', smErr);
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
     }
 
     // 6. Handle payment based on method
@@ -332,13 +377,13 @@ export const checkout = async (req: Request, res: Response) => {
         : "Order placed successfully",
       {
         orders: pendingOrders.map((o) => ({
-          order_id: o.id,
-          order_number: o.order_number,
-          shop: o.shops.name,
-          total_amount: Number(o.total_amount),
-          status: o.status,
-          items_count: o.order_items.length,
-          delivery_address: o.user_addresses,
+          order_id: (o as any).id,
+          order_number: (o as any).order_number,
+          shop: (o as any).shops?.name,
+          total_amount: Number((o as any).total_amount),
+          status: (o as any).status,
+          items_count: (o as any).order_items?.length || 0,
+          delivery_address: (o as any).user_addresses,
         })),
         total_orders: pendingOrders.length,
         total_amount: totalAmount,
@@ -469,6 +514,112 @@ export const getOrderById = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Get order error:", error);
     return errorResponse(res, "Failed to retrieve order", 500);
+  }
+};
+
+/**
+ * Update delivery pin (lat/lng) and directions.
+ * Allowed: authenticated buyer for the order OR valid token provided in body.
+ * Not allowed once order status becomes OUT_FOR_DELIVERY.
+ */
+export const updateDeliveryLocation = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    const { delivery_lat, delivery_lng, delivery_directions, token } = req.body as any;
+
+    const order = await prismaClient.orders.findUnique({
+      where: { id: orderId },
+      include: {
+        users: true,
+        shops: true,
+        user_addresses: true,
+      },
+    });
+
+    if (!order) return errorResponse(res, 'Order not found', 404);
+
+    if (order.status === 'OUT_FOR_DELIVERY') {
+      return errorResponse(res, 'Delivery location can no longer be changed', 400);
+    }
+
+    const authUserId = (req as any).user?.id;
+    const isBuyer = Boolean(authUserId && order.buyer_id === authUserId);
+    const tokenMatches = Boolean(token && (order as any).delivery_update_token && token === (order as any).delivery_update_token);
+
+    if (!isBuyer && !tokenMatches) {
+      return errorResponse(res, 'Unauthorized to update delivery location', 403);
+    }
+
+    // Distance check: prevent moving more than 20km from original checkout anchor
+    const origLat = (order as any)?.delivery_lat;
+    const origLng = (order as any)?.delivery_lng;
+    if (typeof origLat === 'number' && typeof origLng === 'number') {
+      const toRad = (v: number) => (v * Math.PI) / 180;
+      const R = 6371; // km
+      const dLat = toRad(Number(delivery_lat) - Number(origLat));
+      const dLon = toRad(Number(delivery_lng) - Number(origLng));
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(toRad(Number(origLat))) * Math.cos(toRad(Number(delivery_lat))) * Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const distKm = R * c;
+      if (distKm > 20) {
+        return errorResponse(res, 'New delivery pin is too far from original location', 400);
+      }
+    }
+
+    const updated = await prismaClient.orders.update({
+      where: { id: orderId },
+      data: {
+        delivery_lat,
+        delivery_lng,
+        delivery_directions: delivery_directions || undefined,
+        updated_at: new Date(),
+      },
+    } as any);
+
+    // Notify seller about the updated pin
+    try {
+      const shopObj = order.shops || {} as any;
+      const sellerEmail = shopObj.email || (shopObj as any).users?.email || '';
+      const sellerPhone = shopObj.phone || (shopObj as any).phone_number || '';
+      const buyerName = `${order.users?.first_name || ''} ${order.users?.last_name || ''}`.trim() || 'Buyer';
+      const recipientName = (order as any).recipient_name || (order as any).user_addresses?.[0]?.contact_name || buyerName;
+
+      if (sellerEmail) {
+        await emailService.sendSellerLocationUpdatedEmail(sellerEmail, {
+          orderId: order.id,
+          orderNumber: order.order_number,
+          shopName: shopObj.name || '',
+          buyerName,
+          recipientName,
+          deliveryLat: delivery_lat,
+          deliveryLng: delivery_lng,
+          deliveryDirections: delivery_directions || '',
+        });
+      }
+
+      if (sellerPhone) {
+        await smsService.sendSellerLocationUpdateSms(sellerPhone, order.order_number || order.id.slice(0,8));
+      }
+    } catch (notifyErr) {
+      console.error('Failed to notify seller of delivery-location update', notifyErr);
+    }
+
+    // If this is a gift (recipient different from buyer), notify recipient via SMS
+    try {
+      const buyerPhone = (order.users as any)?.phone_number || (order.user_addresses as any)?.[0]?.phone_number || '';
+      const recipientPhone = (order as any)?.recipient_phone || (order.user_addresses as any)?.[0]?.phone_number || '';
+      if (recipientPhone && recipientPhone !== buyerPhone) {
+        const recipientLink = `${process.env.FRONTEND_URL || ''}/orders/${order.id}`;
+        await smsService.sendRecipientSms(recipientPhone, `${order.users?.first_name || ''} ${order.users?.last_name || ''}`, order.order_number || order.id.slice(0,8), recipientLink);
+      }
+    } catch (recErr) {
+      console.error('Failed to send recipient SMS for delivery update', recErr);
+    }
+
+    return successResponse(res, 'Delivery location updated', { order: updated }, 200);
+  } catch (err: any) {
+    console.error('updateDeliveryLocation error:', err);
+    return errorResponse(res, 'Failed to update delivery location', 500);
   }
 };
 
@@ -716,7 +867,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const userRole = req.user!.role;
     const { orderId } = req.params;
-    const { status, notes } = req.body;
+    const { status, notes, waybill_number, waybill_photo_url } = req.body as any;
 
     // Get order with shop info
     const order = await prismaClient.orders.findUnique({
@@ -736,6 +887,13 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 
     if (!isShopOwner && !isAdmin) {
       return errorResponse(res, "Unauthorized to update this order", 403);
+    }
+
+    // If this is a depot/shipment, require waybill on READY_FOR_PICKUP (seller marks as shipped)
+    if (status === 'READY_FOR_PICKUP' && (order as any).depot_name) {
+      if (!waybill_number && !waybill_photo_url) {
+        return errorResponse(res, 'Depot shipments require a waybill number or a photo of the receipt before marking as READY_FOR_PICKUP', 400);
+      }
     }
 
     // Validate status transitions
@@ -763,13 +921,17 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       );
     }
 
-    // Update order status
+    // Update order status (include waybill fields when provided)
+    const updateData: any = {
+      status: status,
+      updated_at: new Date(),
+    };
+    if (waybill_number) updateData.waybill_number = waybill_number;
+    if (waybill_photo_url) updateData.waybill_photo_url = waybill_photo_url;
+
     const updatedOrder = await prismaClient.orders.update({
       where: { id: orderId },
-      data: {
-        status: status,
-        updated_at: new Date(),
-      },
+      data: updateData,
       include: {
         shops: true,
         users: {
