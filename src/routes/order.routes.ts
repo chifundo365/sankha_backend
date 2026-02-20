@@ -13,6 +13,7 @@ import {
   getReleaseCode,
   generateReleaseCode
 } from "../controllers/order.controller";
+import { uploadWaybill } from "../controllers/order.controller";
 import { updateDeliveryLocation } from "../controllers/order.controller";
 import { protect } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/authorize.middleware";
@@ -26,6 +27,7 @@ import {
   getShopOrdersSchema,
   getOrderTrackingSchema,
   updateDeliveryLocationSchema,
+  uploadWaybillSchema,
   getAllOrdersSchema,
   getOrderStatsSchema
 } from "../schemas/order.schema";
@@ -190,6 +192,18 @@ router.patch(
   // Server-side handler will accept either an authenticated buyer or a valid token
   // in the request body/query.
   updateDeliveryLocation
+);
+
+/**
+ * Upload waybill photo (seller)
+ */
+import { uploadSingle } from "../middleware/upload.middleware";
+router.post(
+  "/:orderId/waybill",
+  protect,
+  uploadSingle,
+  validateResource(uploadWaybillSchema),
+  uploadWaybill
 );
 
 export default router;

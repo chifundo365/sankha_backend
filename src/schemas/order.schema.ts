@@ -33,8 +33,8 @@ export const checkoutSchema = z.object({
       .string()
       .regex(/^\+?265\d{7,9}$/, "Recipient phone must be a Malawi number starting with +265")
       .optional(),
-    // Logistics fork: HOME vs DEPOT
-    logistics_path: z.enum(["HOME", "DEPOT"]).optional(),
+    // Logistics fork: HOME_DELIVERY vs DEPOT_COLLECTION
+    delivery_method: z.enum(["HOME_DELIVERY", "DEPOT_COLLECTION"]).optional(),
     // Home delivery anchor
     delivery_lat: z.number().min(-90).max(90).optional(),
     delivery_lng: z.number().min(-180).max(180).optional(),
@@ -47,23 +47,23 @@ export const checkoutSchema = z.object({
     package_label_text: z.string().max(255).optional()
    })
    .refine((body) => {
-     // If shipping to someone else, ensure recipient phone is provided
-     if (body.ship_to_other) {
-       const hasPhone = Boolean(body.recipient_phone);
-       if (!hasPhone) return false;
-     }
-     // Enforce logistics path requirements
-     const path = body.logistics_path || 'HOME';
-     if (path === 'HOME') {
-       const hasLat = typeof body.delivery_lat === 'number';
-       const hasLng = typeof body.delivery_lng === 'number';
-       return hasLat && hasLng;
-     }
-     if (path === 'DEPOT') {
-       const hasDepot = Boolean(body.depot_name);
-       const hasDepotCoords = typeof body.depot_lat === 'number' && typeof body.depot_lng === 'number';
-       return hasDepot && hasDepotCoords;
-     }
+    // If shipping to someone else, ensure recipient phone is provided
+    if (body.ship_to_other) {
+      const hasPhone = Boolean(body.recipient_phone);
+      if (!hasPhone) return false;
+    }
+    // Enforce delivery_method requirements
+    const method = body.delivery_method || 'HOME_DELIVERY';
+    if (method === 'HOME_DELIVERY') {
+      const hasLat = typeof body.delivery_lat === 'number';
+      const hasLng = typeof body.delivery_lng === 'number';
+      return hasLat && hasLng;
+    }
+    if (method === 'DEPOT_COLLECTION') {
+      const hasDepot = Boolean(body.depot_name);
+      const hasDepotCoords = typeof body.depot_lat === 'number' && typeof body.depot_lng === 'number';
+      return hasDepot && hasDepotCoords;
+    }
      return true;
    }, { message: 'Provide required logistics data: HOME requires delivery_lat and delivery_lng; DEPOT requires depot_name and depot_lat/depot_lng' })
 });
@@ -202,6 +202,16 @@ export const updateDeliveryLocationSchema = z.object({
     delivery_lng: z.number().min(-180).max(180),
     delivery_directions: z.string().max(2000).optional(),
     token: z.string().optional()
+  })
+});
+
+/**
+ * Schema for uploading waybill (seller)
+ */
+export const uploadWaybillSchema = z.object({
+  params: z.object({ orderId: z.string().uuid("Invalid order ID format") }),
+  body: z.object({
+    waybill_number: z.string().max(200).optional()
   })
 });
 

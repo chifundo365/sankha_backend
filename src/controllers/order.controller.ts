@@ -7,6 +7,7 @@ import { orderConfirmationService } from "../services/orderConfirmation.service"
 import crypto from 'crypto';
 import { emailService } from '../services/email.service';
 import smsService from '../services/sms.service';
+import { CloudinaryService } from '../services/cloudinary.service';
 
 /**
  * Generate unique order number
@@ -162,7 +163,7 @@ export const checkout = async (req: Request, res: Response) => {
       const recipientNameFromReq = (req.body as any).recipient_name;
       const recipientPhoneFromReq = (req.body as any).recipient_phone;
       const deliveryUpdateToken = crypto.randomBytes(16).toString('hex');
-      const logisticsPath = (req.body as any).logistics_path || 'HOME';
+      const deliveryMethod = (req.body as any).delivery_method || 'HOME_DELIVERY';
       const deliveryLatFromReq = (req.body as any).delivery_lat;
       const deliveryLngFromReq = (req.body as any).delivery_lng;
       const deliveryDirectionsFromReq = (req.body as any).delivery_directions;
@@ -171,6 +172,25 @@ export const checkout = async (req: Request, res: Response) => {
       const depotLngFromReq = (req.body as any).depot_lng;
       const preferredCarrierFromReq = (req.body as any).preferred_carrier_details;
       const packageLabelFromReq = (req.body as any).package_label_text;
+
+      // Compute cart subtotal for this shop
+      const cartSubtotal = (cart.order_items || []).reduce((s: number, it: any) => s + Number(it.unit_price ?? it.base_price ?? 0) * Number(it.quantity || 0), 0);
+      // Seller pricing config (fallbacks to 0)
+      const shopObj = (cart as any).shops || {};
+      const freeThreshold = Number((shopObj as any)?.free_delivery_threshold ?? 0);
+      const baseFee = Number((shopObj as any)?.base_delivery_fee ?? 0);
+      const intercityFee = Number((shopObj as any)?.intercity_delivery_fee ?? baseFee ?? 0);
+      // Determine delivery fee using rules: free if subtotal >= threshold; HOME uses baseFee; DEPOT uses intercityFee
+      let computedDeliveryFee = 0;
+      if (cartSubtotal >= freeThreshold && freeThreshold > 0) {
+        computedDeliveryFee = 0;
+      } else {
+        if (deliveryMethod === 'DEPOT_COLLECTION') {
+          computedDeliveryFee = intercityFee;
+        } else {
+          computedDeliveryFee = baseFee;
+        }
+      }
 
       const pendingOrder = await prismaClient.orders.update({
         where: { id: cart.id },
@@ -183,14 +203,18 @@ export const checkout = async (req: Request, res: Response) => {
           recipient_phone: recipientPhoneFromReq || undefined,
           delivery_update_token: deliveryUpdateToken || undefined,
           // Logistics fork snapshot
-          delivery_lat: logisticsPath === 'HOME' && deliveryLatFromReq !== undefined ? deliveryLatFromReq : undefined,
-          delivery_lng: logisticsPath === 'HOME' && deliveryLngFromReq !== undefined ? deliveryLngFromReq : undefined,
-          delivery_directions: logisticsPath === 'HOME' ? (deliveryDirectionsFromReq || undefined) : undefined,
-          depot_name: logisticsPath === 'DEPOT' ? (depotNameFromReq || undefined) : undefined,
-          depot_lat: logisticsPath === 'DEPOT' && depotLatFromReq !== undefined ? depotLatFromReq : undefined,
-          depot_lng: logisticsPath === 'DEPOT' && depotLngFromReq !== undefined ? depotLngFromReq : undefined,
-          preferred_carrier_details: logisticsPath === 'DEPOT' ? (preferredCarrierFromReq || undefined) : undefined,
-          package_label_text: logisticsPath === 'DEPOT' ? (packageLabelFromReq || undefined) : undefined,
+          delivery_method: deliveryMethod as any,
+          delivery_lat: deliveryMethod === 'HOME_DELIVERY' && deliveryLatFromReq !== undefined ? deliveryLatFromReq : undefined,
+          delivery_lng: deliveryMethod === 'HOME_DELIVERY' && deliveryLngFromReq !== undefined ? deliveryLngFromReq : undefined,
+          delivery_directions: deliveryMethod === 'HOME_DELIVERY' ? (deliveryDirectionsFromReq || undefined) : undefined,
+          depot_name: deliveryMethod === 'DEPOT_COLLECTION' ? (depotNameFromReq || undefined) : undefined,
+          depot_lat: deliveryMethod === 'DEPOT_COLLECTION' && depotLatFromReq !== undefined ? depotLatFromReq : undefined,
+          depot_lng: deliveryMethod === 'DEPOT_COLLECTION' && depotLngFromReq !== undefined ? depotLngFromReq : undefined,
+          preferred_carrier_details: deliveryMethod === 'DEPOT_COLLECTION' ? (preferredCarrierFromReq || undefined) : undefined,
+          package_label_text: deliveryMethod === 'DEPOT_COLLECTION' ? (packageLabelFromReq || undefined) : undefined,
+          // Money side snapshot
+          delivery_fee: computedDeliveryFee !== undefined ? computedDeliveryFee : undefined,
+          destination_name: deliveryMethod === 'DEPOT_COLLECTION' ? (depotNameFromReq || recipientNameFromReq || undefined) : (recipientNameFromReq || undefined),
           updated_at: new Date(),
         } as any,
         include: {
@@ -986,6 +1010,76 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Update order status error:", error);
     return errorResponse(res, "Failed to update order status", 500);
+  }
+};
+
+/**
+ * Upload waybill photo for an order (seller action).
+ * POST /api/orders/:orderId/waybill
+ * Protected: shop owner or admin
+ */
+export const uploadWaybill = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { orderId } = req.params;
+    const waybill_number = (req as any).body?.waybill_number || undefined;
+
+    const order = await prismaClient.orders.findUnique({
+      where: { id: orderId },
+      include: { shops: true, users: true }
+    });
+
+    if (!order) return errorResponse(res, 'Order not found', 404);
+
+    // Authorization: only shop owner or admins can upload waybill
+    const isShopOwner = order.shops?.owner_id === userId;
+    const isAdmin = (req as any).user && ["ADMIN", "SUPER_ADMIN"].includes((req as any).user.role);
+    if (!isShopOwner && !isAdmin) return errorResponse(res, 'Unauthorized', 403);
+
+    // Expect multer `uploadSingle` to have been used; file buffer is in req.file.buffer
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (!file || !file.buffer) return errorResponse(res, 'No waybill image provided', 400);
+
+    // Upload to Cloudinary under 'waybills/{shopId}/{orderId}'
+    const folder = `waybills/${order.shops?.id}/${order.id}`;
+    const uploadRes = await CloudinaryService.uploadImage(file.buffer, folder);
+    if (!uploadRes.success || !uploadRes.url) {
+      return errorResponse(res, 'Failed to upload waybill image', 500);
+    }
+
+    // Save waybill url and number, and set status to READY_FOR_PICKUP (if appropriate)
+    const updateData: any = {
+      waybill_photo_url: uploadRes.url,
+      waybill_number: waybill_number || undefined,
+      updated_at: new Date()
+    };
+
+    const updated = await prismaClient.orders.update({
+      where: { id: orderId },
+      data: updateData,
+    } as any);
+
+    // Notify buyer/recipient that waybill has been uploaded
+    try {
+      const buyerEmail = (order.users as any)?.email;
+      if (buyerEmail) {
+        await emailService.sendNotification(buyerEmail, {
+          userName: `${(order.users as any)?.first_name || ''} ${(order.users as any)?.last_name || ''}`.trim() || 'Customer',
+          title: `Waybill uploaded for order #${order.order_number}`,
+          message: `Waybill has been uploaded by the seller. Waybill number: ${waybill_number || 'N/A'}. You can view details in your orders.`,
+          ctaText: 'View Order',
+          ctaUrl: `${process.env.FRONTEND_URL || emailService ? emailService : ''}/orders/${order.id}`,
+          type: 'info'
+        });
+      }
+    } catch (notifyErr) {
+      console.warn('Failed to notify buyer about waybill upload', notifyErr);
+    }
+
+    return successResponse(res, 'Waybill uploaded', { order: updated }, 200);
+  } catch (err: any) {
+    console.error('uploadWaybill error:', err);
+    return errorResponse(res, 'Failed to upload waybill', 500);
   }
 };
 

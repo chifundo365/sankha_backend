@@ -300,13 +300,18 @@ export const sendReleaseCodeEmail = async (
       <p style="font-size:16px;margin:0 0 12px 0">Your order <strong>#${payload.orderNumber}</strong> is secured. Share the Release Code only after the recipient confirms they have the goods.</p>
 
       <div style="background:#FFD700;padding:16px;border-radius:6px;margin:18px 0;text-align:center">
-        <div style="font-size:24px;font-weight:700;letter-spacing:4px">${payload.releaseCode || ''}</div>
+        <div style="font-size:24px;font-weight:700;letter-spacing:4px;font-family:monospace">${payload.releaseCode || ''}</div>
         <div style="margin-top:8px;font-size:14px;font-weight:700">Inspection Warning: Do NOT share this code until recipient inspects the items.</div>
       </div>
-
       ${mapsLink ? `<p style="font-size:16px;margin:0 0 12px 0">Delivery anchor: <a href="${mapsLink}">${payload.buyerAddress || 'View map'}</a></p>` : ''}
 
-      <p style="font-size:16px;margin:0">Seller: <strong>${payload.seller?.shopName || ''}</strong> — Call: <a href="tel:${payload.seller?.phoneNumber || ''}">${payload.seller?.phoneNumber || 'Not available'}</a></p>
+      <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:16px">
+        <tr><td style="padding:6px 8px">Subtotal</td><td style="padding:6px 8px;text-align:right">MWK ${((payload.subtotal||0)).toLocaleString()}</td></tr>
+        <tr><td style="padding:6px 8px">Delivery</td><td style="padding:6px 8px;text-align:right">MWK ${((payload.deliveryFee||0)).toLocaleString()}</td></tr>
+        <tr style="border-top:2px solid #ddd;font-weight:700"><td style="padding:6px 8px">Total</td><td style="padding:6px 8px;text-align:right">MWK ${((payload.total||0)).toLocaleString()}</td></tr>
+      </table>
+
+      <p style="font-size:16px;margin:12px 0 0 0">Seller: <strong>${payload.seller?.shopName || ''}</strong> — Call: <a href="tel:${payload.seller?.phoneNumber || ''}">${payload.seller?.phoneNumber || 'Not available'}</a></p>
 
       <p style="font-size:14px;color:#666;margin-top:18px">This code releases escrow. Only provide it to the delivery person once the recipient confirms receipt of goods.</p>
     </div>
@@ -345,6 +350,7 @@ export const sendSellerDispatchEmail = async (
     preferredCarrierDetails?: string;
     packageLabelText?: string;
     items?: OrderItem[];
+    deliveryFee?: number;
   }
 ): Promise<EmailResult> => {
   const mapsLink = data.deliveryLat && data.deliveryLng ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${data.deliveryLat},${data.deliveryLng}`)}` : (data.depotLat && data.depotLng ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${data.depotLat},${data.depotLng}`)}` : '');
@@ -373,6 +379,8 @@ export const sendSellerDispatchEmail = async (
         <thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:2px solid #ddd">Item</th><th style="text-align:center;padding:6px 8px;border-bottom:2px solid #ddd">Qty</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd">Price</th></tr></thead>
         <tbody>${itemsHtml}</tbody>
       </table>
+
+      <p style="margin-top:12px;font-size:16px"><strong>Note:</strong> Buyer has paid MWK ${data.deliveryFee ? Number(data.deliveryFee).toLocaleString() : '0'} for transport costs.</p>
 
       <p style="margin-top:18px;font-size:14px;color:#666">Manage this order in your dashboard: <a href="${emailConfig.app.url}/seller/orders/${data.orderId}">${emailConfig.app.url}/seller/orders/${data.orderId}</a></p>
     </div>
@@ -556,6 +564,7 @@ export const sendReleaseCodeForOrder = async (orderId: string): Promise<EmailRes
             depotLng: (order as any)?.depot_lng ?? undefined,
             preferredCarrierDetails: (order as any)?.preferred_carrier_details || undefined,
             packageLabelText: (order as any)?.package_label_text || undefined,
+            deliveryFee: Number((order as any)?.delivery_fee ?? 0),
             items,
           });
           console.log('sendReleaseCodeForOrder seller dispatch email result:', dispatchRes);
