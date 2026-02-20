@@ -144,10 +144,21 @@ exports.Prisma.OrdersScalarFieldEnum = {
   delivery_lat: 'delivery_lat',
   delivery_lng: 'delivery_lng',
   delivery_directions: 'delivery_directions',
+  depot_name: 'depot_name',
+  depot_lat: 'depot_lat',
+  depot_lng: 'depot_lng',
+  preferred_carrier_details: 'preferred_carrier_details',
+  package_label_text: 'package_label_text',
+  waybill_number: 'waybill_number',
+  waybill_photo_url: 'waybill_photo_url',
+  delivery_update_token: 'delivery_update_token',
   release_code: 'release_code',
   release_code_status: 'release_code_status',
   release_code_expires_at: 'release_code_expires_at',
   release_code_verified_at: 'release_code_verified_at',
+  delivery_method: 'delivery_method',
+  destination_name: 'destination_name',
+  delivery_fee: 'delivery_fee',
   created_at: 'created_at',
   updated_at: 'updated_at'
 };
@@ -229,6 +240,9 @@ exports.Prisma.ShopsScalarFieldEnum = {
   wallet_balance: 'wallet_balance',
   whatsapp_number: 'whatsapp_number',
   delivery_zones: 'delivery_zones',
+  free_delivery_threshold: 'free_delivery_threshold',
+  base_delivery_fee: 'base_delivery_fee',
+  intercity_delivery_fee: 'intercity_delivery_fee',
   logo: 'logo',
   banner: 'banner',
   gallery: 'gallery',
@@ -492,6 +506,11 @@ exports.release_code_status = exports.$Enums.release_code_status = {
   VERIFIED: 'VERIFIED',
   EXPIRED: 'EXPIRED',
   CANCELLED: 'CANCELLED'
+};
+
+exports.delivery_method = exports.$Enums.delivery_method = {
+  HOME_DELIVERY: 'HOME_DELIVERY',
+  DEPOT_COLLECTION: 'DEPOT_COLLECTION'
 };
 
 exports.payment_status = exports.$Enums.payment_status = {

@@ -137,6 +137,14 @@ export const delivery_status: {
 export type delivery_status = (typeof delivery_status)[keyof typeof delivery_status]
 
 
+export const delivery_method: {
+  HOME_DELIVERY: 'HOME_DELIVERY',
+  DEPOT_COLLECTION: 'DEPOT_COLLECTION'
+};
+
+export type delivery_method = (typeof delivery_method)[keyof typeof delivery_method]
+
+
 export const message_channel: {
   EMAIL: 'EMAIL',
   SMS: 'SMS',
@@ -333,6 +341,10 @@ export const address_type: typeof $Enums.address_type
 export type delivery_status = $Enums.delivery_status
 
 export const delivery_status: typeof $Enums.delivery_status
+
+export type delivery_method = $Enums.delivery_method
+
+export const delivery_method: typeof $Enums.delivery_method
 
 export type message_channel = $Enums.message_channel
 
@@ -4430,12 +4442,18 @@ export namespace Prisma {
     total_amount: Decimal | null
     delivery_lat: Decimal | null
     delivery_lng: Decimal | null
+    depot_lat: Decimal | null
+    depot_lng: Decimal | null
+    delivery_fee: Decimal | null
   }
 
   export type OrdersSumAggregateOutputType = {
     total_amount: Decimal | null
     delivery_lat: Decimal | null
     delivery_lng: Decimal | null
+    depot_lat: Decimal | null
+    depot_lng: Decimal | null
+    delivery_fee: Decimal | null
   }
 
   export type OrdersMinAggregateOutputType = {
@@ -4451,10 +4469,21 @@ export namespace Prisma {
     delivery_lat: Decimal | null
     delivery_lng: Decimal | null
     delivery_directions: string | null
+    depot_name: string | null
+    depot_lat: Decimal | null
+    depot_lng: Decimal | null
+    preferred_carrier_details: string | null
+    package_label_text: string | null
+    waybill_number: string | null
+    waybill_photo_url: string | null
+    delivery_update_token: string | null
     release_code: string | null
     release_code_status: $Enums.release_code_status | null
     release_code_expires_at: Date | null
     release_code_verified_at: Date | null
+    delivery_method: $Enums.delivery_method | null
+    destination_name: string | null
+    delivery_fee: Decimal | null
     created_at: Date | null
     updated_at: Date | null
   }
@@ -4472,10 +4501,21 @@ export namespace Prisma {
     delivery_lat: Decimal | null
     delivery_lng: Decimal | null
     delivery_directions: string | null
+    depot_name: string | null
+    depot_lat: Decimal | null
+    depot_lng: Decimal | null
+    preferred_carrier_details: string | null
+    package_label_text: string | null
+    waybill_number: string | null
+    waybill_photo_url: string | null
+    delivery_update_token: string | null
     release_code: string | null
     release_code_status: $Enums.release_code_status | null
     release_code_expires_at: Date | null
     release_code_verified_at: Date | null
+    delivery_method: $Enums.delivery_method | null
+    destination_name: string | null
+    delivery_fee: Decimal | null
     created_at: Date | null
     updated_at: Date | null
   }
@@ -4493,10 +4533,21 @@ export namespace Prisma {
     delivery_lat: number
     delivery_lng: number
     delivery_directions: number
+    depot_name: number
+    depot_lat: number
+    depot_lng: number
+    preferred_carrier_details: number
+    package_label_text: number
+    waybill_number: number
+    waybill_photo_url: number
+    delivery_update_token: number
     release_code: number
     release_code_status: number
     release_code_expires_at: number
     release_code_verified_at: number
+    delivery_method: number
+    destination_name: number
+    delivery_fee: number
     created_at: number
     updated_at: number
     _all: number
@@ -4507,12 +4558,18 @@ export namespace Prisma {
     total_amount?: true
     delivery_lat?: true
     delivery_lng?: true
+    depot_lat?: true
+    depot_lng?: true
+    delivery_fee?: true
   }
 
   export type OrdersSumAggregateInputType = {
     total_amount?: true
     delivery_lat?: true
     delivery_lng?: true
+    depot_lat?: true
+    depot_lng?: true
+    delivery_fee?: true
   }
 
   export type OrdersMinAggregateInputType = {
@@ -4528,10 +4585,21 @@ export namespace Prisma {
     delivery_lat?: true
     delivery_lng?: true
     delivery_directions?: true
+    depot_name?: true
+    depot_lat?: true
+    depot_lng?: true
+    preferred_carrier_details?: true
+    package_label_text?: true
+    waybill_number?: true
+    waybill_photo_url?: true
+    delivery_update_token?: true
     release_code?: true
     release_code_status?: true
     release_code_expires_at?: true
     release_code_verified_at?: true
+    delivery_method?: true
+    destination_name?: true
+    delivery_fee?: true
     created_at?: true
     updated_at?: true
   }
@@ -4549,10 +4617,21 @@ export namespace Prisma {
     delivery_lat?: true
     delivery_lng?: true
     delivery_directions?: true
+    depot_name?: true
+    depot_lat?: true
+    depot_lng?: true
+    preferred_carrier_details?: true
+    package_label_text?: true
+    waybill_number?: true
+    waybill_photo_url?: true
+    delivery_update_token?: true
     release_code?: true
     release_code_status?: true
     release_code_expires_at?: true
     release_code_verified_at?: true
+    delivery_method?: true
+    destination_name?: true
+    delivery_fee?: true
     created_at?: true
     updated_at?: true
   }
@@ -4570,10 +4649,21 @@ export namespace Prisma {
     delivery_lat?: true
     delivery_lng?: true
     delivery_directions?: true
+    depot_name?: true
+    depot_lat?: true
+    depot_lng?: true
+    preferred_carrier_details?: true
+    package_label_text?: true
+    waybill_number?: true
+    waybill_photo_url?: true
+    delivery_update_token?: true
     release_code?: true
     release_code_status?: true
     release_code_expires_at?: true
     release_code_verified_at?: true
+    delivery_method?: true
+    destination_name?: true
+    delivery_fee?: true
     created_at?: true
     updated_at?: true
     _all?: true
@@ -4678,10 +4768,21 @@ export namespace Prisma {
     delivery_lat: Decimal | null
     delivery_lng: Decimal | null
     delivery_directions: string | null
+    depot_name: string | null
+    depot_lat: Decimal | null
+    depot_lng: Decimal | null
+    preferred_carrier_details: string | null
+    package_label_text: string | null
+    waybill_number: string | null
+    waybill_photo_url: string | null
+    delivery_update_token: string | null
     release_code: string | null
     release_code_status: $Enums.release_code_status | null
     release_code_expires_at: Date | null
     release_code_verified_at: Date | null
+    delivery_method: $Enums.delivery_method | null
+    destination_name: string | null
+    delivery_fee: Decimal | null
     created_at: Date | null
     updated_at: Date | null
     _count: OrdersCountAggregateOutputType | null
@@ -4718,10 +4819,21 @@ export namespace Prisma {
     delivery_lat?: boolean
     delivery_lng?: boolean
     delivery_directions?: boolean
+    depot_name?: boolean
+    depot_lat?: boolean
+    depot_lng?: boolean
+    preferred_carrier_details?: boolean
+    package_label_text?: boolean
+    waybill_number?: boolean
+    waybill_photo_url?: boolean
+    delivery_update_token?: boolean
     release_code?: boolean
     release_code_status?: boolean
     release_code_expires_at?: boolean
     release_code_verified_at?: boolean
+    delivery_method?: boolean
+    destination_name?: boolean
+    delivery_fee?: boolean
     created_at?: boolean
     updated_at?: boolean
     order_items?: boolean | orders$order_itemsArgs<ExtArgs>
@@ -4748,10 +4860,21 @@ export namespace Prisma {
     delivery_lat?: boolean
     delivery_lng?: boolean
     delivery_directions?: boolean
+    depot_name?: boolean
+    depot_lat?: boolean
+    depot_lng?: boolean
+    preferred_carrier_details?: boolean
+    package_label_text?: boolean
+    waybill_number?: boolean
+    waybill_photo_url?: boolean
+    delivery_update_token?: boolean
     release_code?: boolean
     release_code_status?: boolean
     release_code_expires_at?: boolean
     release_code_verified_at?: boolean
+    delivery_method?: boolean
+    destination_name?: boolean
+    delivery_fee?: boolean
     created_at?: boolean
     updated_at?: boolean
     users?: boolean | usersDefaultArgs<ExtArgs>
@@ -4772,10 +4895,21 @@ export namespace Prisma {
     delivery_lat?: boolean
     delivery_lng?: boolean
     delivery_directions?: boolean
+    depot_name?: boolean
+    depot_lat?: boolean
+    depot_lng?: boolean
+    preferred_carrier_details?: boolean
+    package_label_text?: boolean
+    waybill_number?: boolean
+    waybill_photo_url?: boolean
+    delivery_update_token?: boolean
     release_code?: boolean
     release_code_status?: boolean
     release_code_expires_at?: boolean
     release_code_verified_at?: boolean
+    delivery_method?: boolean
+    destination_name?: boolean
+    delivery_fee?: boolean
     created_at?: boolean
     updated_at?: boolean
     users?: boolean | usersDefaultArgs<ExtArgs>
@@ -4796,15 +4930,26 @@ export namespace Prisma {
     delivery_lat?: boolean
     delivery_lng?: boolean
     delivery_directions?: boolean
+    depot_name?: boolean
+    depot_lat?: boolean
+    depot_lng?: boolean
+    preferred_carrier_details?: boolean
+    package_label_text?: boolean
+    waybill_number?: boolean
+    waybill_photo_url?: boolean
+    delivery_update_token?: boolean
     release_code?: boolean
     release_code_status?: boolean
     release_code_expires_at?: boolean
     release_code_verified_at?: boolean
+    delivery_method?: boolean
+    destination_name?: boolean
+    delivery_fee?: boolean
     created_at?: boolean
     updated_at?: boolean
   }
 
-  export type ordersOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "order_number" | "buyer_id" | "shop_id" | "total_amount" | "status" | "delivery_address_id" | "recipient_name" | "recipient_phone" | "delivery_lat" | "delivery_lng" | "delivery_directions" | "release_code" | "release_code_status" | "release_code_expires_at" | "release_code_verified_at" | "created_at" | "updated_at", ExtArgs["result"]["orders"]>
+  export type ordersOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "order_number" | "buyer_id" | "shop_id" | "total_amount" | "status" | "delivery_address_id" | "recipient_name" | "recipient_phone" | "delivery_lat" | "delivery_lng" | "delivery_directions" | "depot_name" | "depot_lat" | "depot_lng" | "preferred_carrier_details" | "package_label_text" | "waybill_number" | "waybill_photo_url" | "delivery_update_token" | "release_code" | "release_code_status" | "release_code_expires_at" | "release_code_verified_at" | "delivery_method" | "destination_name" | "delivery_fee" | "created_at" | "updated_at", ExtArgs["result"]["orders"]>
   export type ordersInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     order_items?: boolean | orders$order_itemsArgs<ExtArgs>
     order_messages?: boolean | orders$order_messagesArgs<ExtArgs>
@@ -4852,10 +4997,21 @@ export namespace Prisma {
       delivery_lat: Prisma.Decimal | null
       delivery_lng: Prisma.Decimal | null
       delivery_directions: string | null
+      depot_name: string | null
+      depot_lat: Prisma.Decimal | null
+      depot_lng: Prisma.Decimal | null
+      preferred_carrier_details: string | null
+      package_label_text: string | null
+      waybill_number: string | null
+      waybill_photo_url: string | null
+      delivery_update_token: string | null
       release_code: string | null
       release_code_status: $Enums.release_code_status | null
       release_code_expires_at: Date | null
       release_code_verified_at: Date | null
+      delivery_method: $Enums.delivery_method | null
+      destination_name: string | null
+      delivery_fee: Prisma.Decimal | null
       created_at: Date | null
       updated_at: Date | null
     }, ExtArgs["result"]["orders"]>
@@ -5301,10 +5457,21 @@ export namespace Prisma {
     readonly delivery_lat: FieldRef<"orders", 'Decimal'>
     readonly delivery_lng: FieldRef<"orders", 'Decimal'>
     readonly delivery_directions: FieldRef<"orders", 'String'>
+    readonly depot_name: FieldRef<"orders", 'String'>
+    readonly depot_lat: FieldRef<"orders", 'Decimal'>
+    readonly depot_lng: FieldRef<"orders", 'Decimal'>
+    readonly preferred_carrier_details: FieldRef<"orders", 'String'>
+    readonly package_label_text: FieldRef<"orders", 'String'>
+    readonly waybill_number: FieldRef<"orders", 'String'>
+    readonly waybill_photo_url: FieldRef<"orders", 'String'>
+    readonly delivery_update_token: FieldRef<"orders", 'String'>
     readonly release_code: FieldRef<"orders", 'String'>
     readonly release_code_status: FieldRef<"orders", 'release_code_status'>
     readonly release_code_expires_at: FieldRef<"orders", 'DateTime'>
     readonly release_code_verified_at: FieldRef<"orders", 'DateTime'>
+    readonly delivery_method: FieldRef<"orders", 'delivery_method'>
+    readonly destination_name: FieldRef<"orders", 'String'>
+    readonly delivery_fee: FieldRef<"orders", 'Decimal'>
     readonly created_at: FieldRef<"orders", 'DateTime'>
     readonly updated_at: FieldRef<"orders", 'DateTime'>
   }
@@ -9795,12 +9962,18 @@ export namespace Prisma {
     latitude: Decimal | null
     longitude: Decimal | null
     wallet_balance: Decimal | null
+    free_delivery_threshold: Decimal | null
+    base_delivery_fee: Decimal | null
+    intercity_delivery_fee: Decimal | null
   }
 
   export type ShopsSumAggregateOutputType = {
     latitude: Decimal | null
     longitude: Decimal | null
     wallet_balance: Decimal | null
+    free_delivery_threshold: Decimal | null
+    base_delivery_fee: Decimal | null
+    intercity_delivery_fee: Decimal | null
   }
 
   export type ShopsMinAggregateOutputType = {
@@ -9817,6 +9990,9 @@ export namespace Prisma {
     email: string | null
     wallet_balance: Decimal | null
     whatsapp_number: string | null
+    free_delivery_threshold: Decimal | null
+    base_delivery_fee: Decimal | null
+    intercity_delivery_fee: Decimal | null
     logo: string | null
     banner: string | null
     is_verified: boolean | null
@@ -9840,6 +10016,9 @@ export namespace Prisma {
     email: string | null
     wallet_balance: Decimal | null
     whatsapp_number: string | null
+    free_delivery_threshold: Decimal | null
+    base_delivery_fee: Decimal | null
+    intercity_delivery_fee: Decimal | null
     logo: string | null
     banner: string | null
     is_verified: boolean | null
@@ -9864,6 +10043,9 @@ export namespace Prisma {
     wallet_balance: number
     whatsapp_number: number
     delivery_zones: number
+    free_delivery_threshold: number
+    base_delivery_fee: number
+    intercity_delivery_fee: number
     logo: number
     banner: number
     gallery: number
@@ -9881,12 +10063,18 @@ export namespace Prisma {
     latitude?: true
     longitude?: true
     wallet_balance?: true
+    free_delivery_threshold?: true
+    base_delivery_fee?: true
+    intercity_delivery_fee?: true
   }
 
   export type ShopsSumAggregateInputType = {
     latitude?: true
     longitude?: true
     wallet_balance?: true
+    free_delivery_threshold?: true
+    base_delivery_fee?: true
+    intercity_delivery_fee?: true
   }
 
   export type ShopsMinAggregateInputType = {
@@ -9903,6 +10091,9 @@ export namespace Prisma {
     email?: true
     wallet_balance?: true
     whatsapp_number?: true
+    free_delivery_threshold?: true
+    base_delivery_fee?: true
+    intercity_delivery_fee?: true
     logo?: true
     banner?: true
     is_verified?: true
@@ -9926,6 +10117,9 @@ export namespace Prisma {
     email?: true
     wallet_balance?: true
     whatsapp_number?: true
+    free_delivery_threshold?: true
+    base_delivery_fee?: true
+    intercity_delivery_fee?: true
     logo?: true
     banner?: true
     is_verified?: true
@@ -9950,6 +10144,9 @@ export namespace Prisma {
     wallet_balance?: true
     whatsapp_number?: true
     delivery_zones?: true
+    free_delivery_threshold?: true
+    base_delivery_fee?: true
+    intercity_delivery_fee?: true
     logo?: true
     banner?: true
     gallery?: true
@@ -10063,6 +10260,9 @@ export namespace Prisma {
     wallet_balance: Decimal
     whatsapp_number: string | null
     delivery_zones: string[]
+    free_delivery_threshold: Decimal | null
+    base_delivery_fee: Decimal | null
+    intercity_delivery_fee: Decimal | null
     logo: string | null
     banner: string | null
     gallery: string[]
@@ -10108,6 +10308,9 @@ export namespace Prisma {
     wallet_balance?: boolean
     whatsapp_number?: boolean
     delivery_zones?: boolean
+    free_delivery_threshold?: boolean
+    base_delivery_fee?: boolean
+    intercity_delivery_fee?: boolean
     logo?: boolean
     banner?: boolean
     gallery?: boolean
@@ -10142,6 +10345,9 @@ export namespace Prisma {
     wallet_balance?: boolean
     whatsapp_number?: boolean
     delivery_zones?: boolean
+    free_delivery_threshold?: boolean
+    base_delivery_fee?: boolean
+    intercity_delivery_fee?: boolean
     logo?: boolean
     banner?: boolean
     gallery?: boolean
@@ -10169,6 +10375,9 @@ export namespace Prisma {
     wallet_balance?: boolean
     whatsapp_number?: boolean
     delivery_zones?: boolean
+    free_delivery_threshold?: boolean
+    base_delivery_fee?: boolean
+    intercity_delivery_fee?: boolean
     logo?: boolean
     banner?: boolean
     gallery?: boolean
@@ -10196,6 +10405,9 @@ export namespace Prisma {
     wallet_balance?: boolean
     whatsapp_number?: boolean
     delivery_zones?: boolean
+    free_delivery_threshold?: boolean
+    base_delivery_fee?: boolean
+    intercity_delivery_fee?: boolean
     logo?: boolean
     banner?: boolean
     gallery?: boolean
@@ -10207,7 +10419,7 @@ export namespace Prisma {
     updated_at?: boolean
   }
 
-  export type shopsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "owner_id" | "name" | "description" | "business_registration_no" | "address_line1" | "city" | "latitude" | "longitude" | "phone" | "email" | "wallet_balance" | "whatsapp_number" | "delivery_zones" | "logo" | "banner" | "gallery" | "delivery_methods" | "is_verified" | "delivery_enabled" | "can_bulk_upload" | "created_at" | "updated_at", ExtArgs["result"]["shops"]>
+  export type shopsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "owner_id" | "name" | "description" | "business_registration_no" | "address_line1" | "city" | "latitude" | "longitude" | "phone" | "email" | "wallet_balance" | "whatsapp_number" | "delivery_zones" | "free_delivery_threshold" | "base_delivery_fee" | "intercity_delivery_fee" | "logo" | "banner" | "gallery" | "delivery_methods" | "is_verified" | "delivery_enabled" | "can_bulk_upload" | "created_at" | "updated_at", ExtArgs["result"]["shops"]>
   export type shopsInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     orders?: boolean | shops$ordersArgs<ExtArgs>
     shop_products?: boolean | shops$shop_productsArgs<ExtArgs>
@@ -10251,6 +10463,9 @@ export namespace Prisma {
       wallet_balance: Prisma.Decimal
       whatsapp_number: string | null
       delivery_zones: string[]
+      free_delivery_threshold: Prisma.Decimal | null
+      base_delivery_fee: Prisma.Decimal | null
+      intercity_delivery_fee: Prisma.Decimal | null
       logo: string | null
       banner: string | null
       gallery: string[]
@@ -10704,6 +10919,9 @@ export namespace Prisma {
     readonly wallet_balance: FieldRef<"shops", 'Decimal'>
     readonly whatsapp_number: FieldRef<"shops", 'String'>
     readonly delivery_zones: FieldRef<"shops", 'String[]'>
+    readonly free_delivery_threshold: FieldRef<"shops", 'Decimal'>
+    readonly base_delivery_fee: FieldRef<"shops", 'Decimal'>
+    readonly intercity_delivery_fee: FieldRef<"shops", 'Decimal'>
     readonly logo: FieldRef<"shops", 'String'>
     readonly banner: FieldRef<"shops", 'String'>
     readonly gallery: FieldRef<"shops", 'String[]'>
@@ -27245,10 +27463,21 @@ export namespace Prisma {
     delivery_lat: 'delivery_lat',
     delivery_lng: 'delivery_lng',
     delivery_directions: 'delivery_directions',
+    depot_name: 'depot_name',
+    depot_lat: 'depot_lat',
+    depot_lng: 'depot_lng',
+    preferred_carrier_details: 'preferred_carrier_details',
+    package_label_text: 'package_label_text',
+    waybill_number: 'waybill_number',
+    waybill_photo_url: 'waybill_photo_url',
+    delivery_update_token: 'delivery_update_token',
     release_code: 'release_code',
     release_code_status: 'release_code_status',
     release_code_expires_at: 'release_code_expires_at',
     release_code_verified_at: 'release_code_verified_at',
+    delivery_method: 'delivery_method',
+    destination_name: 'destination_name',
+    delivery_fee: 'delivery_fee',
     created_at: 'created_at',
     updated_at: 'updated_at'
   };
@@ -27342,6 +27571,9 @@ export namespace Prisma {
     wallet_balance: 'wallet_balance',
     whatsapp_number: 'whatsapp_number',
     delivery_zones: 'delivery_zones',
+    free_delivery_threshold: 'free_delivery_threshold',
+    base_delivery_fee: 'base_delivery_fee',
+    intercity_delivery_fee: 'intercity_delivery_fee',
     logo: 'logo',
     banner: 'banner',
     gallery: 'gallery',
@@ -27738,6 +27970,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'delivery_method'
+   */
+  export type Enumdelivery_methodFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'delivery_method'>
+    
+
+
+  /**
+   * Reference to a field of type 'delivery_method[]'
+   */
+  export type ListEnumdelivery_methodFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'delivery_method[]'>
+    
+
+
+  /**
    * Reference to a field of type 'payment_status'
    */
   export type Enumpayment_statusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'payment_status'>
@@ -28076,10 +28322,21 @@ export namespace Prisma {
     delivery_lat?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: StringNullableFilter<"orders"> | string | null
+    depot_name?: StringNullableFilter<"orders"> | string | null
+    depot_lat?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: StringNullableFilter<"orders"> | string | null
+    package_label_text?: StringNullableFilter<"orders"> | string | null
+    waybill_number?: StringNullableFilter<"orders"> | string | null
+    waybill_photo_url?: StringNullableFilter<"orders"> | string | null
+    delivery_update_token?: StringNullableFilter<"orders"> | string | null
     release_code?: StringNullableFilter<"orders"> | string | null
     release_code_status?: Enumrelease_code_statusNullableFilter<"orders"> | $Enums.release_code_status | null
     release_code_expires_at?: DateTimeNullableFilter<"orders"> | Date | string | null
     release_code_verified_at?: DateTimeNullableFilter<"orders"> | Date | string | null
+    delivery_method?: Enumdelivery_methodNullableFilter<"orders"> | $Enums.delivery_method | null
+    destination_name?: StringNullableFilter<"orders"> | string | null
+    delivery_fee?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
     created_at?: DateTimeNullableFilter<"orders"> | Date | string | null
     updated_at?: DateTimeNullableFilter<"orders"> | Date | string | null
     order_items?: Order_itemsListRelationFilter
@@ -28105,10 +28362,21 @@ export namespace Prisma {
     delivery_lat?: SortOrderInput | SortOrder
     delivery_lng?: SortOrderInput | SortOrder
     delivery_directions?: SortOrderInput | SortOrder
+    depot_name?: SortOrderInput | SortOrder
+    depot_lat?: SortOrderInput | SortOrder
+    depot_lng?: SortOrderInput | SortOrder
+    preferred_carrier_details?: SortOrderInput | SortOrder
+    package_label_text?: SortOrderInput | SortOrder
+    waybill_number?: SortOrderInput | SortOrder
+    waybill_photo_url?: SortOrderInput | SortOrder
+    delivery_update_token?: SortOrderInput | SortOrder
     release_code?: SortOrderInput | SortOrder
     release_code_status?: SortOrderInput | SortOrder
     release_code_expires_at?: SortOrderInput | SortOrder
     release_code_verified_at?: SortOrderInput | SortOrder
+    delivery_method?: SortOrderInput | SortOrder
+    destination_name?: SortOrderInput | SortOrder
+    delivery_fee?: SortOrderInput | SortOrder
     created_at?: SortOrderInput | SortOrder
     updated_at?: SortOrderInput | SortOrder
     order_items?: order_itemsOrderByRelationAggregateInput
@@ -28137,10 +28405,21 @@ export namespace Prisma {
     delivery_lat?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: StringNullableFilter<"orders"> | string | null
+    depot_name?: StringNullableFilter<"orders"> | string | null
+    depot_lat?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: StringNullableFilter<"orders"> | string | null
+    package_label_text?: StringNullableFilter<"orders"> | string | null
+    waybill_number?: StringNullableFilter<"orders"> | string | null
+    waybill_photo_url?: StringNullableFilter<"orders"> | string | null
+    delivery_update_token?: StringNullableFilter<"orders"> | string | null
     release_code?: StringNullableFilter<"orders"> | string | null
     release_code_status?: Enumrelease_code_statusNullableFilter<"orders"> | $Enums.release_code_status | null
     release_code_expires_at?: DateTimeNullableFilter<"orders"> | Date | string | null
     release_code_verified_at?: DateTimeNullableFilter<"orders"> | Date | string | null
+    delivery_method?: Enumdelivery_methodNullableFilter<"orders"> | $Enums.delivery_method | null
+    destination_name?: StringNullableFilter<"orders"> | string | null
+    delivery_fee?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
     created_at?: DateTimeNullableFilter<"orders"> | Date | string | null
     updated_at?: DateTimeNullableFilter<"orders"> | Date | string | null
     order_items?: Order_itemsListRelationFilter
@@ -28166,10 +28445,21 @@ export namespace Prisma {
     delivery_lat?: SortOrderInput | SortOrder
     delivery_lng?: SortOrderInput | SortOrder
     delivery_directions?: SortOrderInput | SortOrder
+    depot_name?: SortOrderInput | SortOrder
+    depot_lat?: SortOrderInput | SortOrder
+    depot_lng?: SortOrderInput | SortOrder
+    preferred_carrier_details?: SortOrderInput | SortOrder
+    package_label_text?: SortOrderInput | SortOrder
+    waybill_number?: SortOrderInput | SortOrder
+    waybill_photo_url?: SortOrderInput | SortOrder
+    delivery_update_token?: SortOrderInput | SortOrder
     release_code?: SortOrderInput | SortOrder
     release_code_status?: SortOrderInput | SortOrder
     release_code_expires_at?: SortOrderInput | SortOrder
     release_code_verified_at?: SortOrderInput | SortOrder
+    delivery_method?: SortOrderInput | SortOrder
+    destination_name?: SortOrderInput | SortOrder
+    delivery_fee?: SortOrderInput | SortOrder
     created_at?: SortOrderInput | SortOrder
     updated_at?: SortOrderInput | SortOrder
     _count?: ordersCountOrderByAggregateInput
@@ -28195,10 +28485,21 @@ export namespace Prisma {
     delivery_lat?: DecimalNullableWithAggregatesFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: DecimalNullableWithAggregatesFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: StringNullableWithAggregatesFilter<"orders"> | string | null
+    depot_name?: StringNullableWithAggregatesFilter<"orders"> | string | null
+    depot_lat?: DecimalNullableWithAggregatesFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: DecimalNullableWithAggregatesFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: StringNullableWithAggregatesFilter<"orders"> | string | null
+    package_label_text?: StringNullableWithAggregatesFilter<"orders"> | string | null
+    waybill_number?: StringNullableWithAggregatesFilter<"orders"> | string | null
+    waybill_photo_url?: StringNullableWithAggregatesFilter<"orders"> | string | null
+    delivery_update_token?: StringNullableWithAggregatesFilter<"orders"> | string | null
     release_code?: StringNullableWithAggregatesFilter<"orders"> | string | null
     release_code_status?: Enumrelease_code_statusNullableWithAggregatesFilter<"orders"> | $Enums.release_code_status | null
     release_code_expires_at?: DateTimeNullableWithAggregatesFilter<"orders"> | Date | string | null
     release_code_verified_at?: DateTimeNullableWithAggregatesFilter<"orders"> | Date | string | null
+    delivery_method?: Enumdelivery_methodNullableWithAggregatesFilter<"orders"> | $Enums.delivery_method | null
+    destination_name?: StringNullableWithAggregatesFilter<"orders"> | string | null
+    delivery_fee?: DecimalNullableWithAggregatesFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
     created_at?: DateTimeNullableWithAggregatesFilter<"orders"> | Date | string | null
     updated_at?: DateTimeNullableWithAggregatesFilter<"orders"> | Date | string | null
   }
@@ -28598,6 +28899,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFilter<"shops"> | Decimal | DecimalJsLike | number | string
     whatsapp_number?: StringNullableFilter<"shops"> | string | null
     delivery_zones?: StringNullableListFilter<"shops">
+    free_delivery_threshold?: DecimalNullableFilter<"shops"> | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: DecimalNullableFilter<"shops"> | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: DecimalNullableFilter<"shops"> | Decimal | DecimalJsLike | number | string | null
     logo?: StringNullableFilter<"shops"> | string | null
     banner?: StringNullableFilter<"shops"> | string | null
     gallery?: StringNullableListFilter<"shops">
@@ -28631,6 +28935,9 @@ export namespace Prisma {
     wallet_balance?: SortOrder
     whatsapp_number?: SortOrderInput | SortOrder
     delivery_zones?: SortOrder
+    free_delivery_threshold?: SortOrderInput | SortOrder
+    base_delivery_fee?: SortOrderInput | SortOrder
+    intercity_delivery_fee?: SortOrderInput | SortOrder
     logo?: SortOrderInput | SortOrder
     banner?: SortOrderInput | SortOrder
     gallery?: SortOrder
@@ -28667,6 +28974,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFilter<"shops"> | Decimal | DecimalJsLike | number | string
     whatsapp_number?: StringNullableFilter<"shops"> | string | null
     delivery_zones?: StringNullableListFilter<"shops">
+    free_delivery_threshold?: DecimalNullableFilter<"shops"> | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: DecimalNullableFilter<"shops"> | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: DecimalNullableFilter<"shops"> | Decimal | DecimalJsLike | number | string | null
     logo?: StringNullableFilter<"shops"> | string | null
     banner?: StringNullableFilter<"shops"> | string | null
     gallery?: StringNullableListFilter<"shops">
@@ -28700,6 +29010,9 @@ export namespace Prisma {
     wallet_balance?: SortOrder
     whatsapp_number?: SortOrderInput | SortOrder
     delivery_zones?: SortOrder
+    free_delivery_threshold?: SortOrderInput | SortOrder
+    base_delivery_fee?: SortOrderInput | SortOrder
+    intercity_delivery_fee?: SortOrderInput | SortOrder
     logo?: SortOrderInput | SortOrder
     banner?: SortOrderInput | SortOrder
     gallery?: SortOrder
@@ -28734,6 +29047,9 @@ export namespace Prisma {
     wallet_balance?: DecimalWithAggregatesFilter<"shops"> | Decimal | DecimalJsLike | number | string
     whatsapp_number?: StringNullableWithAggregatesFilter<"shops"> | string | null
     delivery_zones?: StringNullableListFilter<"shops">
+    free_delivery_threshold?: DecimalNullableWithAggregatesFilter<"shops"> | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: DecimalNullableWithAggregatesFilter<"shops"> | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: DecimalNullableWithAggregatesFilter<"shops"> | Decimal | DecimalJsLike | number | string | null
     logo?: StringNullableWithAggregatesFilter<"shops"> | string | null
     banner?: StringNullableWithAggregatesFilter<"shops"> | string | null
     gallery?: StringNullableListFilter<"shops">
@@ -30130,10 +30446,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsCreateNestedManyWithoutOrdersInput
@@ -30159,10 +30486,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsUncheckedCreateNestedManyWithoutOrdersInput
@@ -30182,10 +30520,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUpdateManyWithoutOrdersNestedInput
@@ -30211,10 +30560,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUncheckedUpdateManyWithoutOrdersNestedInput
@@ -30237,10 +30597,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
   }
@@ -30255,10 +30626,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -30276,10 +30658,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -30738,6 +31131,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -30771,6 +31167,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -30802,6 +31201,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -30835,6 +31237,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -30867,6 +31272,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -30892,6 +31300,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -30918,6 +31329,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -32680,6 +33094,13 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
+  export type Enumdelivery_methodNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.delivery_method | Enumdelivery_methodFieldRefInput<$PrismaModel> | null
+    in?: $Enums.delivery_method[] | ListEnumdelivery_methodFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.delivery_method[] | ListEnumdelivery_methodFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumdelivery_methodNullableFilter<$PrismaModel> | $Enums.delivery_method | null
+  }
+
   export type Order_itemsListRelationFilter = {
     every?: order_itemsWhereInput
     some?: order_itemsWhereInput
@@ -32758,10 +33179,21 @@ export namespace Prisma {
     delivery_lat?: SortOrder
     delivery_lng?: SortOrder
     delivery_directions?: SortOrder
+    depot_name?: SortOrder
+    depot_lat?: SortOrder
+    depot_lng?: SortOrder
+    preferred_carrier_details?: SortOrder
+    package_label_text?: SortOrder
+    waybill_number?: SortOrder
+    waybill_photo_url?: SortOrder
+    delivery_update_token?: SortOrder
     release_code?: SortOrder
     release_code_status?: SortOrder
     release_code_expires_at?: SortOrder
     release_code_verified_at?: SortOrder
+    delivery_method?: SortOrder
+    destination_name?: SortOrder
+    delivery_fee?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
   }
@@ -32770,6 +33202,9 @@ export namespace Prisma {
     total_amount?: SortOrder
     delivery_lat?: SortOrder
     delivery_lng?: SortOrder
+    depot_lat?: SortOrder
+    depot_lng?: SortOrder
+    delivery_fee?: SortOrder
   }
 
   export type ordersMaxOrderByAggregateInput = {
@@ -32785,10 +33220,21 @@ export namespace Prisma {
     delivery_lat?: SortOrder
     delivery_lng?: SortOrder
     delivery_directions?: SortOrder
+    depot_name?: SortOrder
+    depot_lat?: SortOrder
+    depot_lng?: SortOrder
+    preferred_carrier_details?: SortOrder
+    package_label_text?: SortOrder
+    waybill_number?: SortOrder
+    waybill_photo_url?: SortOrder
+    delivery_update_token?: SortOrder
     release_code?: SortOrder
     release_code_status?: SortOrder
     release_code_expires_at?: SortOrder
     release_code_verified_at?: SortOrder
+    delivery_method?: SortOrder
+    destination_name?: SortOrder
+    delivery_fee?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
   }
@@ -32806,10 +33252,21 @@ export namespace Prisma {
     delivery_lat?: SortOrder
     delivery_lng?: SortOrder
     delivery_directions?: SortOrder
+    depot_name?: SortOrder
+    depot_lat?: SortOrder
+    depot_lng?: SortOrder
+    preferred_carrier_details?: SortOrder
+    package_label_text?: SortOrder
+    waybill_number?: SortOrder
+    waybill_photo_url?: SortOrder
+    delivery_update_token?: SortOrder
     release_code?: SortOrder
     release_code_status?: SortOrder
     release_code_expires_at?: SortOrder
     release_code_verified_at?: SortOrder
+    delivery_method?: SortOrder
+    destination_name?: SortOrder
+    delivery_fee?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
   }
@@ -32818,6 +33275,9 @@ export namespace Prisma {
     total_amount?: SortOrder
     delivery_lat?: SortOrder
     delivery_lng?: SortOrder
+    depot_lat?: SortOrder
+    depot_lng?: SortOrder
+    delivery_fee?: SortOrder
   }
 
   export type Enumorder_statusNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -32870,6 +33330,16 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type Enumdelivery_methodNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.delivery_method | Enumdelivery_methodFieldRefInput<$PrismaModel> | null
+    in?: $Enums.delivery_method[] | ListEnumdelivery_methodFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.delivery_method[] | ListEnumdelivery_methodFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumdelivery_methodNullableWithAggregatesFilter<$PrismaModel> | $Enums.delivery_method | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumdelivery_methodNullableFilter<$PrismaModel>
+    _max?: NestedEnumdelivery_methodNullableFilter<$PrismaModel>
   }
 
   export type Enumpayment_statusNullableFilter<$PrismaModel = never> = {
@@ -33325,6 +33795,9 @@ export namespace Prisma {
     wallet_balance?: SortOrder
     whatsapp_number?: SortOrder
     delivery_zones?: SortOrder
+    free_delivery_threshold?: SortOrder
+    base_delivery_fee?: SortOrder
+    intercity_delivery_fee?: SortOrder
     logo?: SortOrder
     banner?: SortOrder
     gallery?: SortOrder
@@ -33340,6 +33813,9 @@ export namespace Prisma {
     latitude?: SortOrder
     longitude?: SortOrder
     wallet_balance?: SortOrder
+    free_delivery_threshold?: SortOrder
+    base_delivery_fee?: SortOrder
+    intercity_delivery_fee?: SortOrder
   }
 
   export type shopsMaxOrderByAggregateInput = {
@@ -33356,6 +33832,9 @@ export namespace Prisma {
     email?: SortOrder
     wallet_balance?: SortOrder
     whatsapp_number?: SortOrder
+    free_delivery_threshold?: SortOrder
+    base_delivery_fee?: SortOrder
+    intercity_delivery_fee?: SortOrder
     logo?: SortOrder
     banner?: SortOrder
     is_verified?: SortOrder
@@ -33379,6 +33858,9 @@ export namespace Prisma {
     email?: SortOrder
     wallet_balance?: SortOrder
     whatsapp_number?: SortOrder
+    free_delivery_threshold?: SortOrder
+    base_delivery_fee?: SortOrder
+    intercity_delivery_fee?: SortOrder
     logo?: SortOrder
     banner?: SortOrder
     is_verified?: SortOrder
@@ -33392,6 +33874,9 @@ export namespace Prisma {
     latitude?: SortOrder
     longitude?: SortOrder
     wallet_balance?: SortOrder
+    free_delivery_threshold?: SortOrder
+    base_delivery_fee?: SortOrder
+    intercity_delivery_fee?: SortOrder
   }
 
   export type BoolWithAggregatesFilter<$PrismaModel = never> = {
@@ -34644,6 +35129,10 @@ export namespace Prisma {
 
   export type NullableDateTimeFieldUpdateOperationsInput = {
     set?: Date | string | null
+  }
+
+  export type NullableEnumdelivery_methodFieldUpdateOperationsInput = {
+    set?: $Enums.delivery_method | null
   }
 
   export type order_itemsUpdateManyWithoutOrdersNestedInput = {
@@ -36592,6 +37081,13 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
+  export type NestedEnumdelivery_methodNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.delivery_method | Enumdelivery_methodFieldRefInput<$PrismaModel> | null
+    in?: $Enums.delivery_method[] | ListEnumdelivery_methodFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.delivery_method[] | ListEnumdelivery_methodFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumdelivery_methodNullableFilter<$PrismaModel> | $Enums.delivery_method | null
+  }
+
   export type NestedEnumorder_statusNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.order_status | Enumorder_statusFieldRefInput<$PrismaModel> | null
     in?: $Enums.order_status[] | ListEnumorder_statusFieldRefInput<$PrismaModel> | null
@@ -36641,6 +37137,16 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type NestedEnumdelivery_methodNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.delivery_method | Enumdelivery_methodFieldRefInput<$PrismaModel> | null
+    in?: $Enums.delivery_method[] | ListEnumdelivery_methodFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.delivery_method[] | ListEnumdelivery_methodFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumdelivery_methodNullableWithAggregatesFilter<$PrismaModel> | $Enums.delivery_method | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumdelivery_methodNullableFilter<$PrismaModel>
+    _max?: NestedEnumdelivery_methodNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumpayment_statusNullableFilter<$PrismaModel = never> = {
@@ -37065,10 +37571,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_messages?: order_messagesCreateNestedManyWithoutOrdersInput
@@ -37093,10 +37610,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_messages?: order_messagesUncheckedCreateNestedManyWithoutOrdersInput
@@ -37182,10 +37710,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_messages?: order_messagesUpdateManyWithoutOrdersNestedInput
@@ -37210,10 +37749,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_messages?: order_messagesUncheckedUpdateManyWithoutOrdersNestedInput
@@ -37477,6 +38027,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -37509,6 +38062,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -37837,6 +38393,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -37869,6 +38428,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -37971,10 +38533,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsCreateNestedManyWithoutOrdersInput
@@ -37999,10 +38572,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsUncheckedCreateNestedManyWithoutOrdersInput
@@ -38065,10 +38649,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUpdateManyWithoutOrdersNestedInput
@@ -38093,10 +38688,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUncheckedUpdateManyWithoutOrdersNestedInput
@@ -38850,10 +39456,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsCreateNestedManyWithoutOrdersInput
@@ -38877,10 +39494,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsUncheckedCreateNestedManyWithoutOrdersInput
@@ -39247,10 +39875,21 @@ export namespace Prisma {
     delivery_lat?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: StringNullableFilter<"orders"> | string | null
+    depot_name?: StringNullableFilter<"orders"> | string | null
+    depot_lat?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: StringNullableFilter<"orders"> | string | null
+    package_label_text?: StringNullableFilter<"orders"> | string | null
+    waybill_number?: StringNullableFilter<"orders"> | string | null
+    waybill_photo_url?: StringNullableFilter<"orders"> | string | null
+    delivery_update_token?: StringNullableFilter<"orders"> | string | null
     release_code?: StringNullableFilter<"orders"> | string | null
     release_code_status?: Enumrelease_code_statusNullableFilter<"orders"> | $Enums.release_code_status | null
     release_code_expires_at?: DateTimeNullableFilter<"orders"> | Date | string | null
     release_code_verified_at?: DateTimeNullableFilter<"orders"> | Date | string | null
+    delivery_method?: Enumdelivery_methodNullableFilter<"orders"> | $Enums.delivery_method | null
+    destination_name?: StringNullableFilter<"orders"> | string | null
+    delivery_fee?: DecimalNullableFilter<"orders"> | Decimal | DecimalJsLike | number | string | null
     created_at?: DateTimeNullableFilter<"orders"> | Date | string | null
     updated_at?: DateTimeNullableFilter<"orders"> | Date | string | null
   }
@@ -39478,10 +40117,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsCreateNestedManyWithoutOrdersInput
@@ -39505,10 +40155,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsUncheckedCreateNestedManyWithoutOrdersInput
@@ -39650,10 +40311,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsCreateNestedManyWithoutOrdersInput
@@ -39677,10 +40349,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsUncheckedCreateNestedManyWithoutOrdersInput
@@ -39744,6 +40427,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -39775,6 +40461,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -40058,6 +40747,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFilter<"shops"> | Decimal | DecimalJsLike | number | string
     whatsapp_number?: StringNullableFilter<"shops"> | string | null
     delivery_zones?: StringNullableListFilter<"shops">
+    free_delivery_threshold?: DecimalNullableFilter<"shops"> | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: DecimalNullableFilter<"shops"> | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: DecimalNullableFilter<"shops"> | Decimal | DecimalJsLike | number | string | null
     logo?: StringNullableFilter<"shops"> | string | null
     banner?: StringNullableFilter<"shops"> | string | null
     gallery?: StringNullableListFilter<"shops">
@@ -40315,10 +41007,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsCreateNestedManyWithoutOrdersInput
@@ -40343,10 +41046,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsUncheckedCreateNestedManyWithoutOrdersInput
@@ -40381,10 +41095,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUpdateManyWithoutOrdersNestedInput
@@ -40409,10 +41134,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUncheckedUpdateManyWithoutOrdersNestedInput
@@ -40431,10 +41167,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsCreateNestedManyWithoutOrdersInput
@@ -40459,10 +41206,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsUncheckedCreateNestedManyWithoutOrdersInput
@@ -40593,10 +41351,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUpdateManyWithoutOrdersNestedInput
@@ -40621,10 +41390,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUncheckedUpdateManyWithoutOrdersNestedInput
@@ -40842,6 +41622,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -40874,6 +41657,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -41098,6 +41884,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -41130,6 +41919,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -41361,6 +42153,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -41393,6 +42188,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -41561,6 +42359,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -41593,6 +42394,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -41698,6 +42502,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -41730,6 +42537,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -41825,6 +42635,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -41857,6 +42670,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -41955,6 +42771,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -41987,6 +42806,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -42018,10 +42840,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsCreateNestedManyWithoutOrdersInput
@@ -42046,10 +42879,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     order_items?: order_itemsUncheckedCreateNestedManyWithoutOrdersInput
@@ -42143,6 +42987,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -42175,6 +43022,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -42212,10 +43062,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUpdateManyWithoutOrdersNestedInput
@@ -42240,10 +43101,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUncheckedUpdateManyWithoutOrdersNestedInput
@@ -42327,6 +43199,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -42359,6 +43234,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -42440,6 +43318,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -42472,6 +43353,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -43151,10 +44035,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
   }
@@ -43273,10 +44168,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUpdateManyWithoutOrdersNestedInput
@@ -43300,10 +44206,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUncheckedUpdateManyWithoutOrdersNestedInput
@@ -43325,10 +44242,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -43669,10 +44597,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
   }
@@ -43687,10 +44626,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUpdateManyWithoutOrdersNestedInput
@@ -43714,10 +44664,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUncheckedUpdateManyWithoutOrdersNestedInput
@@ -43739,10 +44700,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -43759,10 +44731,21 @@ export namespace Prisma {
     delivery_lat?: Decimal | DecimalJsLike | number | string | null
     delivery_lng?: Decimal | DecimalJsLike | number | string | null
     delivery_directions?: string | null
+    depot_name?: string | null
+    depot_lat?: Decimal | DecimalJsLike | number | string | null
+    depot_lng?: Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: string | null
+    package_label_text?: string | null
+    waybill_number?: string | null
+    waybill_photo_url?: string | null
+    delivery_update_token?: string | null
     release_code?: string | null
     release_code_status?: $Enums.release_code_status | null
     release_code_expires_at?: Date | string | null
     release_code_verified_at?: Date | string | null
+    delivery_method?: $Enums.delivery_method | null
+    destination_name?: string | null
+    delivery_fee?: Decimal | DecimalJsLike | number | string | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
   }
@@ -43791,6 +44774,9 @@ export namespace Prisma {
     wallet_balance?: Decimal | DecimalJsLike | number | string
     whatsapp_number?: string | null
     delivery_zones?: shopsCreatedelivery_zonesInput | string[]
+    free_delivery_threshold?: Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: Decimal | DecimalJsLike | number | string | null
     logo?: string | null
     banner?: string | null
     gallery?: shopsCreategalleryInput | string[]
@@ -43882,10 +44868,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUpdateManyWithoutOrdersNestedInput
@@ -43909,10 +44906,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order_items?: order_itemsUncheckedUpdateManyWithoutOrdersNestedInput
@@ -43934,10 +44942,21 @@ export namespace Prisma {
     delivery_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     delivery_directions?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_name?: NullableStringFieldUpdateOperationsInput | string | null
+    depot_lat?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    depot_lng?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    preferred_carrier_details?: NullableStringFieldUpdateOperationsInput | string | null
+    package_label_text?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_number?: NullableStringFieldUpdateOperationsInput | string | null
+    waybill_photo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_update_token?: NullableStringFieldUpdateOperationsInput | string | null
     release_code?: NullableStringFieldUpdateOperationsInput | string | null
     release_code_status?: NullableEnumrelease_code_statusFieldUpdateOperationsInput | $Enums.release_code_status | null
     release_code_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     release_code_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    delivery_method?: NullableEnumdelivery_methodFieldUpdateOperationsInput | $Enums.delivery_method | null
+    destination_name?: NullableStringFieldUpdateOperationsInput | string | null
+    delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -43986,6 +45005,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -44017,6 +45039,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]
@@ -44048,6 +45073,9 @@ export namespace Prisma {
     wallet_balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     whatsapp_number?: NullableStringFieldUpdateOperationsInput | string | null
     delivery_zones?: shopsUpdatedelivery_zonesInput | string[]
+    free_delivery_threshold?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    base_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    intercity_delivery_fee?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     logo?: NullableStringFieldUpdateOperationsInput | string | null
     banner?: NullableStringFieldUpdateOperationsInput | string | null
     gallery?: shopsUpdategalleryInput | string[]

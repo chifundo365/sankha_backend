@@ -27,25 +27,41 @@ model order_items {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model orders {
-  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  order_number        String        @unique @db.VarChar(50)
-  buyer_id            String        @db.Uuid
-  shop_id             String        @db.Uuid
-  total_amount        Decimal       @db.Decimal(10, 2)
-  status              order_status? @default(PENDING)
-  delivery_address_id String?       @db.Uuid
+  id                        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_number              String        @unique @db.VarChar(50)
+  buyer_id                  String        @db.Uuid
+  shop_id                   String        @db.Uuid
+  total_amount              Decimal       @db.Decimal(10, 2)
+  status                    order_status? @default(PENDING)
+  delivery_address_id       String?       @db.Uuid
   // Snapshot fields for delivery (do not change after checkout)
-  recipient_name      String?       @db.VarChar(255)
-  recipient_phone     String?       @db.VarChar(20)
-  delivery_lat        Decimal?      @db.Decimal(10, 6)
-  delivery_lng        Decimal?      @db.Decimal(10, 6)
-  delivery_directions String?       @db.Text
+  recipient_name            String?       @db.VarChar(255)
+  recipient_phone           String?       @db.VarChar(20)
+  delivery_lat              Decimal?      @db.Decimal(10, 6)
+  delivery_lng              Decimal?      @db.Decimal(10, 6)
+  delivery_directions       String?       @db.Text
+  // Depot / inter-city shipping fields (Logistics Fork - DEPOT path)
+  depot_name                String?       @db.VarChar(255)
+  depot_lat                 Decimal?      @db.Decimal(10, 6)
+  depot_lng                 Decimal?      @db.Decimal(10, 6)
+  preferred_carrier_details String?       @db.Text
+  package_label_text        String?       @db.VarChar(255)
+  // Waybill & proof of shipment
+  waybill_number            String?       @db.VarChar(100)
+  waybill_photo_url         String?       @db.VarChar(1000)
+  // Token allowing secure recipient updates to delivery pin prior to OUT_FOR_DELIVERY
+  delivery_update_token     String?       @db.VarChar(255)
 
   // Release code for delivery verification (Sankha escrow)
   release_code             String?              @db.VarChar(10)
   release_code_status      release_code_status? @default(PENDING)
   release_code_expires_at  DateTime?            @db.Timestamp(6)
   release_code_verified_at DateTime?            @db.Timestamp(6)
+  // Delivery method and pricing snapshot
+  delivery_method          delivery_method?     @default(HOME_DELIVERY)
+  destination_name         String?              @db.VarChar(255)
+  // Delivery fee snapshot (separate line item)
+  delivery_fee             Decimal?             @db.Decimal(10, 2)
 
   created_at     DateTime?        @default(now()) @db.Timestamp(6)
   updated_at     DateTime?        @default(now()) @db.Timestamp(6)
@@ -167,9 +183,13 @@ model shops {
   email                    String?  @db.VarChar(255)
 
   // Sankha wallet & contact
-  wallet_balance  Decimal  @default(0.00) @db.Decimal(12, 2)
-  whatsapp_number String?  @db.VarChar(20)
-  delivery_zones  String[] // e.g., ["Lilongwe", "Blantyre"]
+  wallet_balance          Decimal  @default(0.00) @db.Decimal(12, 2)
+  whatsapp_number         String?  @db.VarChar(20)
+  delivery_zones          String[] // e.g., ["Lilongwe", "Blantyre"]
+  // Delivery pricing configuration (money side)
+  free_delivery_threshold Decimal? @db.Decimal(10, 2)
+  base_delivery_fee       Decimal? @db.Decimal(10, 2)
+  intercity_delivery_fee  Decimal? @db.Decimal(10, 2)
 
   logo             String?
   banner           String?
@@ -338,6 +358,11 @@ enum delivery_status {
   OUT_FOR_DELIVERY
   DELIVERED
   FAILED
+}
+
+enum delivery_method {
+  HOME_DELIVERY
+  DEPOT_COLLECTION
 }
 
 enum message_channel {
