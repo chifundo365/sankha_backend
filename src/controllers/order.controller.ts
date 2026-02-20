@@ -177,6 +177,25 @@ export const checkout = async (req: Request, res: Response) => {
       const cartSubtotal = (cart.order_items || []).reduce((s: number, it: any) => s + Number(it.unit_price ?? it.base_price ?? 0) * Number(it.quantity || 0), 0);
       // Seller pricing config (fallbacks to 0)
       const shopObj = (cart as any).shops || {};
+      // Validate the shop supports the chosen delivery method
+      const shopDeliveryMethods: string[] = (shopObj && (shopObj as any).delivery_methods) || [];
+      const deliveryMethodSupported = (() => {
+        if (!shopDeliveryMethods || shopDeliveryMethods.length === 0) return false;
+        if (deliveryMethod === 'DEPOT_COLLECTION') {
+          return shopDeliveryMethods.includes('PICKUP_POINT');
+        }
+        // HOME_DELIVERY maps to DOOR_TO_DOOR or COURIER in shop settings
+        return shopDeliveryMethods.includes('DOOR_TO_DOOR') || shopDeliveryMethods.includes('COURIER');
+      })();
+
+      if (!deliveryMethodSupported) {
+        return errorResponse(
+          res,
+          `Selected delivery method ${deliveryMethod} is not supported by shop ${(shopObj && (shopObj as any).name) || 'this seller'}`,
+          null,
+          400
+        );
+      }
       const freeThreshold = Number((shopObj as any)?.free_delivery_threshold ?? 0);
       const baseFee = Number((shopObj as any)?.base_delivery_fee ?? 0);
       const intercityFee = Number((shopObj as any)?.intercity_delivery_fee ?? baseFee ?? 0);
