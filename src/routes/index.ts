@@ -15,6 +15,9 @@ import withdrawalRoutes from "./withdrawal.routes";
 import sellerInventoryRoutes from "./sellerInventory.routes";
 import { rateLimiter } from "../middleware/rateLimiter.middleware";
 import { ipBlocker } from "../middleware/ipBlocker.middleware";
+import validateResource from "../middleware/validateResource";
+import { search as searchController } from "../controllers/search.controller";
+import { searchSchema } from "../schemas/product.schema";
 
 const router = Router();
 
@@ -49,5 +52,8 @@ router.use("/withdrawals", withdrawalRoutes);
 router.use("/seller/inventory", sellerInventoryRoutes);
 // Shop product routes are nested under shops routes
 // They handle /shops/:shopId/products
+
+// Top-level unified search route (Logistics-aware)
+router.get("/search", validateResource(searchSchema), searchController);
 
 export default router;

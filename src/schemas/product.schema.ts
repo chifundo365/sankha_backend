@@ -189,6 +189,59 @@ export const getProductsByCategorySchema = z.object({
 });
 
 /**
+ * Schema for unified search endpoint
+ */
+export const searchSchema = z.object({
+  query: z.object({
+    q: z.string().max(255).optional().default("") ,
+    lat: z
+      .string()
+      .optional()
+      .refine(val => val === undefined || /^-?\d+(\.\d+)?$/.test(val), "lat must be a valid number")
+      .transform(val => (val === undefined ? undefined : parseFloat(val))),
+    lng: z
+      .string()
+      .optional()
+      .refine(val => val === undefined || /^-?\d+(\.\d+)?$/.test(val), "lng must be a valid number")
+      .transform(val => (val === undefined ? undefined : parseFloat(val))),
+    radiusKm: z
+      .string()
+      .optional()
+      .default("15")
+      .refine(val => /^\d+$/.test(val), "radiusKm must be an integer")
+      .transform(Number),
+    city: z.string().max(100).optional(),
+    condition: z.enum(["NEW", "REFURBISHED", "USED_LIKE_NEW", "USED_GOOD", "USED_FAIR"]).optional(),
+    minPrice: z
+      .string()
+      .regex(/^\d+(\.\d{1,2})?$/, "minPrice must be a valid number")
+      .transform((val) => Number(val))
+      .optional(),
+    maxPrice: z
+      .string()
+      .regex(/^\d+(\.\d{1,2})?$/, "maxPrice must be a valid number")
+      .transform((val) => Number(val))
+      .optional(),
+    ram: z.string().max(50).optional(),
+    storage: z.string().max(50).optional(),
+    page: z
+      .string()
+      .optional()
+      .default("1")
+      .refine(val => /^\d+$/.test(val), "Page must be a positive number")
+      .transform(Number)
+      .refine(val => val > 0, "Page must be greater than 0"),
+    limit: z
+      .string()
+      .optional()
+      .default("20")
+      .refine(val => /^\d+$/.test(val), "Limit must be a positive number")
+      .transform(Number)
+      .refine(val => val > 0 && val <= 100, "Limit must be between 1 and 100"),
+  })
+});
+
+/**
  * Schema for uploading product images
  */
 export const uploadProductImagesSchema = z.object({

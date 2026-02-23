@@ -28,6 +28,8 @@ router.get(
   productController.getAllProducts
 );
 
+// (search endpoint moved to top-level router at /api/search)
+
 // Get products by category
 router.get(
   "/category/:categoryId",
