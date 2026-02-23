@@ -1,153 +1,273 @@
 import { Request, Response } from "express";
 import prisma from "../prismaClient";
+import { Prisma } from '@prisma/client';
 
-// Helper: Malawi latitude bounds
-const MALAWI_LAT_MIN = -17.5;
-const MALAWI_LAT_MAX = -9.0;
+// Types for response shaping
+type ShopEntry = {
+  shop_product_id: string;
+  shop_id: string;
+  shop_name: string | null;
+  shop_logo: string | null;
+  distance_km: number | null;
+  price: number;
+  currency: string;
+  condition: string | null;
+  stock_quantity: number;
+  is_free_delivery: boolean;
+  delivery_zones: string[] | null;
+  listing_status: string | null;
+  variant_values: any;
+  avg_rating: number | null;
+  review_count: number;
+};
+
+type ProductResult = {
+  product: any;
+  market_stats: any;
+  shops: ShopEntry[];
+};
+
+// Removed escapeLike: we use parameterized queries (Prisma.sql) to avoid SQL injection
 
 export const search = async (req: Request, res: Response) => {
-  let __debug_sql: string | undefined = undefined;
+  const start = Date.now();
   try {
-    // Parsed & validated query should be provided by validateResource middleware.
-    // But we defensively coerce here to support calls without validation.
-    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
-    const page = req.query.page ? Number(req.query.page) : 1;
+    const qRaw = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    // Fix 5: explicit validation for query length (must be 2-100 chars)
+    if (qRaw.length < 2) {
+      return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_QUERY', message: 'Search query must be at least 2 characters' } });
+    }
+    if (qRaw.length > 100) {
+      return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_QUERY', message: 'Search query must not exceed 100 characters' } });
+    }
+    const q = qRaw; // validated
+    const page = req.query.page ? Math.max(1, Number(req.query.page)) : 1;
     const rawLimit = req.query.limit ? Number(req.query.limit) : 20;
-    const limit = Math.min(Math.max(1, rawLimit || 20), 50); // cap to 50
-    const offset = (Math.max(1, page) - 1) * limit;
+    const limit = Math.min(Math.max(1, rawLimit || 20), 50);
+    const offset = (page - 1) * limit;
 
-    const latVal = req.query.lat !== undefined ? Number(req.query.lat) : undefined;
-    const lngVal = req.query.lng !== undefined ? Number(req.query.lng) : undefined;
-    const radius = req.query.radiusKm ? Number(req.query.radiusKm) : 15;
+    const lat = req.query.lat !== undefined ? Number(req.query.lat) : null;
+    const lng = req.query.lng !== undefined ? Number(req.query.lng) : null;
+    const buyerHasCoords = lat !== null && lng !== null && !Number.isNaN(lat) && !Number.isNaN(lng);
 
-    const city = typeof req.query.city === "string" ? req.query.city : undefined;
-    const condition = typeof req.query.condition === "string" ? req.query.condition : undefined;
-    const minPrice = req.query.minPrice ? Number(req.query.minPrice) : undefined;
-    const maxPrice = req.query.maxPrice ? Number(req.query.maxPrice) : undefined;
-    const ram = typeof req.query.ram === "string" ? req.query.ram : undefined;
-    const storage = typeof req.query.storage === "string" ? req.query.storage : undefined;
+    const condition = typeof req.query.condition === 'string' ? req.query.condition : null;
+    const minPrice = req.query.min_price ? Number(req.query.min_price) : null;
+    const maxPrice = req.query.max_price ? Number(req.query.max_price) : null;
+    const categoryId = typeof req.query.category_id === 'string' ? req.query.category_id : null;
 
-    // Decide whether to use geo filtering: must have valid lat & lng and be within Malawi latitude bounds.
-    const hasCoords = !Number.isNaN(latVal) && !Number.isNaN(lngVal) && latVal !== undefined && lngVal !== undefined;
-    const inMalawiLat = hasCoords && latVal >= MALAWI_LAT_MIN && latVal <= MALAWI_LAT_MAX;
-    const useGeo = hasCoords && inMalawiLat;
-
-    // Build small SQL fragments defensively and avoid Prisma.sql helpers which may not be available in this runtime
-    const escapeLiteral = (s: string) => s.replace(/'/g, "''");
-
-    const conds: string[] = [];
-    if (condition) conds.push(`AND sp.condition = '${escapeLiteral(condition)}'`);
-    if (minPrice !== undefined) conds.push(`AND sp.price >= ${Number(minPrice)}`);
-    if (maxPrice !== undefined) conds.push(`AND sp.price <= ${Number(maxPrice)}`);
-    if (city) conds.push(`AND lower(s.city) = lower('${escapeLiteral(city)}')`);
-    if (ram) conds.push(`AND (sp.specs->>'ram') = '${escapeLiteral(ram)}'`);
-    if (storage) conds.push(`AND (sp.specs->>'storage') = '${escapeLiteral(storage)}'`);
-
-    const tsvCondition = q
-      ? `(to_tsvector('english', coalesce(p.name, '') || ' ' || coalesce(p.brand, '') || ' ' || coalesce(p.model, '')) @@ plainto_tsquery('english', '${escapeLiteral(
-          q
-        )}') OR p.name ILIKE '%${escapeLiteral(q)}%' OR p.brand ILIKE '%${escapeLiteral(q)}%' OR p.model ILIKE '%${escapeLiteral(
-          q
-        )}%' OR similarity(coalesce(p.normalized_name, ''), '${escapeLiteral(q)}') > 0.55)`
-      : 'true';
-
-    const orderBy = useGeo
-      ? `(ST_Distance(s.location::geography, ST_SetSRID(ST_MakePoint(${lngVal}, ${latVal}),4326)::geography)/1000) ASC, stats.min_price ASC NULLS LAST`
-      : `stats.min_price ASC NULLS LAST`;
-
-    const searchType = useGeo ? 'LOCAL' : 'NATIONWIDE';
-
-    const whereExtra = conds.join(' ');
-
-    const sql = `
-      SELECT
-        json_build_object('id', p.id, 'title', p.name, 'brand', p.brand) AS base_product,
-        json_build_object(
-          'price_range', json_build_object('min', stats.min_price, 'max', stats.max_price),
-          'total_active_shops', COALESCE(stats.total_active_shops, 0),
-          'conditions_available', COALESCE(stats.conditions_available::text[], ARRAY[]::text[])
-        ) AS market_stats,
-        json_build_object(
-          'shop_name', COALESCE(nearest.shop_name, ''),
-          'distance_km', nearest.distance_km,
-          'price', COALESCE(nearest.price, 0),
-          'condition', COALESCE(nearest.condition::text, 'UNKNOWN'),
-          'is_free_delivery', COALESCE(nearest.is_free_delivery, false),
-          'delivery_zone', COALESCE(nearest.delivery_zone, 'NATIONWIDE')
-        ) AS nearest_deal
-      FROM products p
-
-      JOIN LATERAL (
-        SELECT
-          COUNT(*) FILTER (WHERE sp.stock_quantity > 0 AND sp.listing_status = 'LIVE') AS total_active_shops,
-          MIN(sp.price) FILTER (WHERE sp.stock_quantity > 0 AND sp.listing_status = 'LIVE') AS min_price,
-          MAX(sp.price) FILTER (WHERE sp.stock_quantity > 0 AND sp.listing_status = 'LIVE') AS max_price,
-          array_remove(array_agg(DISTINCT sp.condition) FILTER (WHERE sp.stock_quantity > 0 AND sp.listing_status = 'LIVE'), NULL) AS conditions_available
-        FROM shop_products sp
-        JOIN shops s ON s.id = sp.shop_id
-        WHERE sp.product_id = p.id
-          AND sp.stock_quantity > 0
-          AND sp.listing_status = 'LIVE'
-          ${whereExtra}
-      ) stats ON true
-
-      JOIN LATERAL (
-        SELECT
-          COALESCE(s.name, '') AS shop_name,
-          sp.price,
-          sp.condition,
-          ${useGeo ? `(ST_Distance(s.location::geography, ST_SetSRID(ST_MakePoint(${lngVal}, ${latVal}),4326)::geography)/1000)::double precision` : `NULL`} AS distance_km,
-          ${useGeo ? `(ST_DWithin(s.location::geography, ST_SetSRID(ST_MakePoint(${lngVal}, ${latVal}),4326)::geography, ${radius} * 1000) AND sp.price >= COALESCE(s.free_delivery_threshold, 0))` : `false`} AS is_free_delivery,
-          ${useGeo ? `(CASE WHEN ST_DWithin(s.location::geography, ST_SetSRID(ST_MakePoint(${lngVal}, ${latVal}),4326)::geography, ${radius} * 1000) THEN 'LOCAL_DELIVERY' ELSE 'OTHER' END)` : `'NATIONWIDE'`} AS delivery_zone
-        FROM shop_products sp
-        JOIN shops s ON s.id = sp.shop_id
-        WHERE sp.product_id = p.id
-          AND sp.stock_quantity > 0
-          AND sp.listing_status = 'LIVE'
-          ${whereExtra}
-        ORDER BY ${orderBy}
-        LIMIT 1
-      ) nearest ON true
-
-      WHERE
-        ${tsvCondition}
-        AND (stats.total_active_shops > 0)
-
-      ORDER BY ${orderBy}
-      LIMIT ${limit}
-      OFFSET ${offset};
-    `;
-
-    // Log SQL for debugging (temporary)
-    __debug_sql = sql;
-    console.debug("[search] executing SQL:\n", sql);
-    const rows: Array<{ base_product: any; market_stats: any; nearest_deal: any }> = await prisma.$queryRawUnsafe(sql);
-
-    // Ensure empty-state success
-    if (!rows || rows.length === 0) {
-      res.setHeader('X-Search-Type', searchType);
-      return res.status(200).json({ results: [], metadata: { total_results: 0, search_radius_km: radius } });
+    // Build WHERE clauses dynamically using Prisma.sql runtime helpers.
+    // Use `any` for fragment arrays and cast `Prisma` to `any` to avoid TypeScript helper-type mismatches in this environment.
+    const whereProductFragments: any[] = [
+      (Prisma as any).sql`p.status = 'APPROVED'`,
+      (Prisma as any).sql`coalesce(p.is_active,false) = true`,
+      (Prisma as any).sql`p.merged_into_id IS NULL`
+    ];
+    if (q) {
+      const searchParam = `%${q.toLowerCase()}%`;
+      whereProductFragments.push((Prisma as any).sql`(lower(p.normalized_name) LIKE ${searchParam} OR lower(p.name) LIKE ${searchParam} OR lower(p.brand) LIKE ${searchParam})`);
+    }
+    if (categoryId) {
+      whereProductFragments.push((Prisma as any).sql`p.category_id = ${categoryId}`);
     }
 
-    const metadata = { total_results: rows.length, search_radius_km: radius };
-    res.setHeader('X-Search-Type', searchType);
-    const results = rows.map((r) => ({ base_product: r.base_product, market_stats: r.market_stats, nearest_deal: r.nearest_deal }));
-    return res.json({ results, metadata });
+    const whereListingFragments: any[] = [
+      (Prisma as any).sql`sp.listing_status = 'LIVE'`,
+      (Prisma as any).sql`coalesce(sp.is_available,false) = true`,
+      (Prisma as any).sql`sp.stock_quantity > 0`
+    ];
+    if (condition) whereListingFragments.push((Prisma as any).sql`sp.condition = ${condition}`);
+    if (minPrice !== null) whereListingFragments.push((Prisma as any).sql`sp.price >= ${Number(minPrice)}`);
+    if (maxPrice !== null) whereListingFragments.push((Prisma as any).sql`sp.price <= ${Number(maxPrice)}`);
+
+    // Distance expression (parameterized)
+    const distanceFragment: any = buyerHasCoords
+      ? (Prisma as any).sql`ST_Distance(s.location::geography, ST_SetSRID(ST_MakePoint(${lng}, ${lat}),4326)::geography)/1000.0`
+      : (Prisma as any).sql`NULL`;
+
+    // Build parameterized SQL using Prisma.sql runtime helpers (cast to any for TS compatibility)
+    const sql = (Prisma as any).sql`
+WITH canonical_products AS (
+  SELECT p.id, p.name, p.brand, p.normalized_name, p.model, p.category_id, p.images, p.gtin, p.mpn
+  FROM products p
+  WHERE ${(Prisma as any).join(whereProductFragments, (Prisma as any).sql` AND `)}
+),
+active_listings AS (
+  SELECT
+    sp.id,
+    sp.product_id AS product_id,
+    sp.shop_id,
+    sp.price,
+    sp.stock_quantity,
+    sp.condition::text AS condition,
+    sp.variant_values,
+    sp.listing_status,
+    s.name AS shop_name,
+    s.logo AS shop_logo,
+    s.delivery_zones,
+    s.free_delivery_threshold,
+    ${distanceFragment} AS distance_km,
+    (CASE WHEN s.free_delivery_threshold IS NOT NULL AND sp.price >= s.free_delivery_threshold THEN true ELSE false END) AS is_free_delivery,
+    r.avg_rating AS avg_rating,
+    COALESCE(r.review_count, 0) AS review_count
+  FROM shop_products sp
+  JOIN shops s ON s.id = sp.shop_id
+  LEFT JOIN (
+    SELECT shop_product_id, AVG(rating) AS avg_rating, COUNT(*) AS review_count
+    FROM reviews
+    GROUP BY shop_product_id
+  ) r ON r.shop_product_id = sp.id
+  WHERE ${(Prisma as any).join(whereListingFragments, (Prisma as any).sql` AND `)}
+),
+linked_listings AS (
+  -- Listings whose product is canonical
+  SELECT al.*, al.product_id AS canonical_product_id
+  FROM active_listings al
+  JOIN products p ON p.id = al.product_id
+  WHERE p.merged_into_id IS NULL
+    AND p.status = 'APPROVED'
+
+  UNION ALL
+
+  -- Listings whose product has been merged into a canonical product
+  SELECT al.*, p2.merged_into_id AS canonical_product_id
+  FROM active_listings al
+  JOIN products p2 ON p2.id = al.product_id
+  WHERE p2.merged_into_id IS NOT NULL
+    AND p2.status = 'MERGED'
+),
+aggregated AS (
+  SELECT
+    cp.id AS canonical_product_id,
+    MIN(al.price) AS min_price,
+    MAX(al.price) AS max_price,
+    ROUND(AVG(al.price)::numeric, 2) AS avg_price,
+    COUNT(DISTINCT al.shop_id) AS total_active_shops,
+    ARRAY_REMOVE(ARRAY_AGG(DISTINCT al.condition) FILTER (WHERE al.condition IS NOT NULL), NULL) AS conditions_available,
+    COUNT(*) AS total_shops,
+    (
+      SELECT JSON_AGG(shop_row)
+      FROM (
+        SELECT
+          JSON_BUILD_OBJECT(
+            'shop_product_id', al2.id,
+            'shop_id', al2.shop_id,
+            'shop_name', al2.shop_name,
+            'shop_logo', NULLIF(al2.shop_logo, ''),
+            'distance_km', CASE WHEN al2.distance_km IS NULL THEN NULL ELSE ROUND(al2.distance_km::numeric, 3) END,
+            'price', al2.price,
+            'currency', 'MWK',
+            'condition', al2.condition,
+            'stock_quantity', al2.stock_quantity,
+            'is_free_delivery', al2.is_free_delivery,
+            'delivery_zones', al2.delivery_zones,
+            'listing_status', al2.listing_status,
+            'variant_values', al2.variant_values,
+            'avg_rating', CASE WHEN al2.avg_rating IS NOT NULL THEN ROUND(al2.avg_rating::numeric, 2) ELSE NULL END,
+            'review_count', al2.review_count
+          ) AS shop_row
+        FROM linked_listings al2
+        WHERE al2.canonical_product_id = cp.id
+        ORDER BY (CASE WHEN al2.distance_km IS NULL THEN 1 ELSE 0 END), al2.distance_km ASC NULLS LAST, al2.price ASC
+        LIMIT 20
+      ) limited_shops
+    ) AS shops
+  FROM canonical_products cp
+  JOIN linked_listings al ON al.canonical_product_id = cp.id
+  GROUP BY cp.id
+)
+SELECT
+  cp.id AS product_id,
+  cp.name,
+  cp.brand,
+  cp.normalized_name,
+  cp.model,
+  cp.category_id,
+  cp.images,
+  cp.gtin,
+  cp.mpn,
+  agg.min_price,
+  agg.max_price,
+  agg.avg_price,
+  agg.total_active_shops,
+  agg.conditions_available,
+  agg.total_shops,
+  agg.shops,
+  COUNT(*) OVER() AS total_count
+FROM canonical_products cp
+JOIN aggregated agg ON agg.canonical_product_id = cp.id
+ORDER BY agg.min_price ASC NULLS LAST
+LIMIT ${limit} OFFSET ${offset};
+`;
+
+    // Execute raw SQL
+    // Execute safe parameterized query (Fix 1)
+    const rows: any[] = await prisma.$queryRaw(sql);
+
+    // Format results
+    const results: ProductResult[] = (rows || []).map((r) => {
+      const shopsRaw = r.shops || [];
+      const shops: ShopEntry[] = (shopsRaw as any[]).map((s: any) => ({
+        shop_product_id: s.shop_product_id,
+        shop_id: s.shop_id,
+        shop_name: s.shop_name ?? null,
+        shop_logo: s.shop_logo ?? null,
+        distance_km: s.distance_km === null ? null : Number(s.distance_km),
+        price: s.price !== null ? Number(s.price) : 0,
+        currency: 'MWK',
+        condition: s.condition ?? null,
+        stock_quantity: s.stock_quantity ?? 0,
+        is_free_delivery: !!s.is_free_delivery,
+        delivery_zones: s.delivery_zones ?? null,
+        listing_status: s.listing_status ?? null,
+        variant_values: s.variant_values ?? null,
+        avg_rating: s.avg_rating === null ? null : Number(s.avg_rating),
+        review_count: s.review_count ?? 0
+      }));
+
+      return {
+        product: {
+          id: r.product_id,
+          name: r.name,
+          brand: r.brand ?? null,
+          normalized_name: r.normalized_name ?? null,
+          model: r.model ?? null,
+          category_id: r.category_id ?? null,
+          thumbnail_url: Array.isArray(r.images) && r.images.length ? r.images[0] : null,
+          images: r.images || [],
+          gtin: r.gtin ?? null,
+          mpn: r.mpn ?? null
+        },
+        market_stats: {
+          min_price: r.min_price !== null ? Number(r.min_price) : null,
+          max_price: r.max_price !== null ? Number(r.max_price) : null,
+          avg_price: r.avg_price !== null ? Number(r.avg_price) : null,
+          currency: 'MWK',
+          total_active_shops: Number(r.total_active_shops || 0),
+          conditions_available: r.conditions_available || [],
+          total_shops: Number(r.total_shops || 0)
+        },
+        shops
+      };
+    });
+
+    const responseTime = Date.now() - start;
+    // Fix 4: compute total_results from windowed total_count
+    const totalCount = rows.length > 0 ? Number(rows[0].total_count ?? 0) : 0;
+    const metadata = {
+      query: qRaw,
+      page,
+      limit,
+      total_results: totalCount,
+      returned_results: results.length,
+      has_next_page: offset + results.length < totalCount,
+      currency: 'MWK',
+      buyer_location_provided: buyerHasCoords,
+      response_time_ms: responseTime
+    };
+
+    return res.json({ success: true, metadata, results, error: null });
   } catch (err) {
-    console.error("Search error:", err);
-    try {
-      // expose SQL if available for debugging
-      // @ts-ignore
-      if (err && err.message) console.error("Search error message:", err.message);
-    } catch (e) {
-      // ignore
-    }
-    const debug = process.env.SEARCH_DEBUG === '1' || process.env.NODE_ENV === 'development';
-    if (debug) {
-      // expose error message and SQL for temporary debugging (do not enable in production)
-      // @ts-ignore
-      return res.status(500).json({ error: "Search failed", message: err?.message ?? String(err), sql: __debug_sql ? __debug_sql.substring(0, 2000) : undefined });
-    }
-    return res.status(500).json({ error: "Search failed" });
+    console.error('Search error:', err);
+    return res.status(500).json({ success: false, metadata: null, results: [], error: { code: 'SEARCH_FAILED', message: (err as any)?.message ?? 'Search failed' } });
   }
 };

@@ -1,1126 +1,3496 @@
+// GENERATED FROM LIVE DB - run scripts/generate-seed-from-db.js to refresh
 // @ts-nocheck
-import prisma from "../src/prismaClient";
+import prisma from '../src/prismaClient';
 
 async function main() {
-  console.log("🌱 Seeding database with comprehensive test data...");
+  await prisma.$connect();
+  console.log('Clearing existing data (safe order)');
+  await prisma.order_items.deleteMany();
+  await prisma.payments.deleteMany();
+  await prisma.orders.deleteMany();
+  await prisma.reviews.deleteMany();
+  await prisma.shop_products_log.deleteMany();
+  await prisma.shop_products.deleteMany();
+  await prisma.products.deleteMany();
+  await prisma.shops.deleteMany();
+  await prisma.user_addresses.deleteMany();
+  await prisma.categories.deleteMany();
+  await prisma.users.deleteMany();
 
-  try {
-    // Connect to database
-    console.log("🔗 Connecting to database...");
-    await prisma.$connect();
-    await prisma.$queryRaw`SELECT 1`;
-    console.log("✅ Database connection established");
-
-    // Clear existing data in dependency order
-    console.log("🧹 Clearing existing data...");
-    await prisma.order_items.deleteMany();
-    await prisma.payments.deleteMany();
-    await prisma.orders.deleteMany();
-    await prisma.reviews.deleteMany();
-    await prisma.shop_products_log.deleteMany();
-    await prisma.shop_products.deleteMany();
-    await prisma.products.deleteMany();
-    await prisma.shops.deleteMany();
-    await prisma.user_addresses.deleteMany();
-    await prisma.categories.deleteMany();
-    await prisma.users.deleteMany();
-    console.log("✅ Cleared all existing data");
-
-    await new Promise(resolve => setTimeout(resolve, 500));
-  } catch (error) {
-    console.log("⚠️ Error during setup:", error.message);
-    console.log("Continuing with seeding...");
+  console.log('Seeding users...');
+  await prisma.users.createMany({ data: [
+  {
+    "id": "a5112786-3197-40d6-b0ff-1381e9569cab",
+    "first_name": "Grace",
+    "last_name": "Mwale",
+    "email": "grace.mwale@digitalmw.com",
+    "phone_number": "+265997654321",
+    "password_hash": "$2b$10$MOQOOfV.Mws4oKtAieFwBe2B6HbLp34RSznW/Qpw7MYmmXUCpzdMO",
+    "role": "SELLER",
+    "profile_image": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200",
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:52.537Z",
+    "updated_at": "2025-11-25T22:04:52.537Z"
+  },
+  {
+    "id": "fa9af164-5a9f-4bff-b236-ef773ad601f0",
+    "first_name": "Peter",
+    "last_name": "Nyirenda",
+    "email": "peter.nyirenda@admin.com",
+    "phone_number": "+265996543210",
+    "password_hash": "$2b$10$UZxohMsXEXGLr4u19uIypuZbYrDLXg1tejI4miiLeKNYv/e0TgLBC",
+    "role": "ADMIN",
+    "profile_image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:52.869Z",
+    "updated_at": "2025-11-25T22:04:52.869Z"
+  },
+  {
+    "id": "08861fe8-2720-498a-a5c5-fab8d198b487",
+    "first_name": "Mary",
+    "last_name": "Tembo",
+    "email": "mary.tembo@customer.com",
+    "phone_number": "+265995432109",
+    "password_hash": "$2b$10$d6Wk0QEMRUxxYM6ttaENNuPS7BAb.mOdlpLiYadIdZc6zTlxpvBPK",
+    "role": "USER",
+    "profile_image": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200",
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:53.307Z",
+    "updated_at": "2025-11-25T22:04:53.307Z"
+  },
+  {
+    "id": "684f236e-f76f-48b1-b542-3c1e981c2621",
+    "first_name": "Alice",
+    "last_name": "Banda-Updated",
+    "email": "alice.banda@gmail.com",
+    "phone_number": "+265991234567",
+    "password_hash": "$2b$10$TfwMJc7P1CAsukQl/zaIT.Ba67FQUspgkJvtL1WKWWeYVgVXUzGJe",
+    "role": "USER",
+    "profile_image": "https://images.unsplash.com/photo-1494790108755-2616b612b1c5?w=200",
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:50.327Z",
+    "updated_at": "2025-11-25T22:04:50.327Z"
+  },
+  {
+    "id": "e607f7d6-3d08-42c0-a6f2-d66a6231a4ca",
+    "first_name": "John",
+    "last_name": "Phiri",
+    "email": "john.phiri@techstore.mw",
+    "phone_number": "+265998765432",
+    "password_hash": "$2b$10$RVSnKq8zcqdd6bP9zg9ZTeeq0BlP.XIzLJUdFN1Dr5cWAPePWj8/C",
+    "role": "SELLER",
+    "profile_image": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200",
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:52.062Z",
+    "updated_at": "2026-01-28T09:31:43.236Z"
+  },
+  {
+    "id": "50e9b187-5851-46bc-84e9-ab89048c02cd",
+    "first_name": "Chifundo",
+    "last_name": "Biziweck",
+    "email": "chifundobiziweck@gmail.com",
+    "phone_number": "+265991234567",
+    "password_hash": "$2b$10$4LegGv6pj929VlIgo0UBsu5It0hCpCYzeD2D6HeQ.vOmsmf8rx6yO",
+    "role": "SELLER",
+    "profile_image": null,
+    "is_active": true,
+    "created_at": "2026-01-28T13:40:40.220Z",
+    "updated_at": "2026-02-03T06:23:50.028Z"
+  },
+  {
+    "id": "8d671661-81ce-400c-a4e3-85f77dd17b23",
+    "first_name": "System",
+    "last_name": "Admin",
+    "email": "admin@sankha.shop",
+    "phone_number": "+265999999999",
+    "password_hash": "$2b$10$MrI5JUWMpeQ/LFfd9FRwWO6jRmuH03EbC9ZdlcH0TlF/8LHjh1w8K",
+    "role": "ADMIN",
+    "profile_image": null,
+    "is_active": true,
+    "created_at": "2026-02-03T15:54:22.397Z",
+    "updated_at": "2026-02-03T15:54:22.397Z"
+  },
+  {
+    "id": "e76d59cb-99c1-4f72-a743-dfb3ba4ed52b",
+    "first_name": "Chifundo",
+    "last_name": "User",
+    "email": "chifundo365@gmail.com",
+    "phone_number": "265888123456",
+    "password_hash": "$2b$10$csOlywMYoEWJWLS//BVm0u1.U4lszsOCXzsgxQL8csjZMa2431dvG",
+    "role": "USER",
+    "profile_image": null,
+    "is_active": true,
+    "created_at": "2026-02-17T08:16:46.633Z",
+    "updated_at": "2026-02-17T08:16:46.633Z"
   }
-
-  // Test user passwords (for development/testing only):
-  // Alice Banda (USER): password123
-  // John Phiri (SELLER): secure456
-  // Grace Mwale (SELLER): strong789
-  // Peter Nyirenda (ADMIN): admin321
-  // Mary Tembo (USER): user654
-  const passwordHashes = [
-    "$2b$10$Zl.AxL28qVQVpf5mG2atW.dhJqo7OIb7CoZw/SpSQz/H.CwdBL1BO", // password123
-    "$2b$10$lUN7RS0Mq.a1.boVaqYS0OGWRWxFmnOzOP97PhAe1uqtWif76fNDO", // secure456
-    "$2b$10$MOQOOfV.Mws4oKtAieFwBe2B6HbLp34RSznW/Qpw7MYmmXUCpzdMO", // strong789
-    "$2b$10$UZxohMsXEXGLr4u19uIypuZbYrDLXg1tejI4miiLeKNYv/e0TgLBC", // admin321
-    "$2b$10$d6Wk0QEMRUxxYM6ttaENNuPS7BAb.mOdlpLiYadIdZc6zTlxpvBPK" // user654
-  ];
-
-  // 1. Users
-  console.log("👥 Creating users...");
-  const users = [];
-
-  users.push(
-    await prisma.users.create({
-      data: {
-        first_name: "Alice",
-        last_name: "Banda",
-        email: "alice.banda@gmail.com",
-        phone_number: "+265991234567",
-        password_hash: passwordHashes[0],
-        role: "USER",
-        profile_image:
-          "https://images.unsplash.com/photo-1494790108755-2616b612b1c5?w=200"
-      }
-    })
-  );
-
-  users.push(
-    await prisma.users.create({
-      data: {
-        first_name: "John",
-        last_name: "Phiri",
-        email: "john.phiri@techstore.mw",
-        phone_number: "+265998765432",
-        password_hash: passwordHashes[1],
-        role: "SELLER",
-        profile_image:
-          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200"
-      }
-    })
-  );
-
-  users.push(
-    await prisma.users.create({
-      data: {
-        first_name: "Grace",
-        last_name: "Mwale",
-        email: "grace.mwale@digitalmw.com",
-        phone_number: "+265997654321",
-        password_hash: passwordHashes[2],
-        role: "SELLER",
-        profile_image:
-          "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200"
-      }
-    })
-  );
-
-  users.push(
-    await prisma.users.create({
-      data: {
-        first_name: "Peter",
-        last_name: "Nyirenda",
-        email: "peter.nyirenda@admin.com",
-        phone_number: "+265996543210",
-        password_hash: passwordHashes[3],
-        role: "ADMIN",
-        profile_image:
-          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200"
-      }
-    })
-  );
-
-  users.push(
-    await prisma.users.create({
-      data: {
-        first_name: "Mary",
-        last_name: "Tembo",
-        email: "mary.tembo@customer.com",
-        phone_number: "+265995432109",
-        password_hash: passwordHashes[4],
-        role: "USER",
-        profile_image:
-          "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200"
-      }
-    })
-  );
-
-  console.log(`✅ Created ${users.length} users`);
-
-  // 2. Categories
-  console.log("📱 Creating categories...");
-  const categories = [];
-
-  categories.push(
-    await prisma.categories.create({
-      data: {
-        name: "Smartphones & Tablets",
-        description:
-          "Latest mobile devices, smartphones, tablets and accessories"
-      }
-    })
-  );
-  categories.push(
-    await prisma.categories.create({
-      data: {
-        name: "Laptops & Computers",
-        description:
-          "Desktop computers, laptops, monitors and computer accessories"
-      }
-    })
-  );
-  categories.push(
-    await prisma.categories.create({
-      data: {
-        name: "Audio & Headphones",
-        description: "Speakers, headphones, earbuds and audio equipment"
-      }
-    })
-  );
-  categories.push(
-    await prisma.categories.create({
-      data: {
-        name: "Gaming & Consoles",
-        description: "Gaming consoles, video games, and gaming accessories"
-      }
-    })
-  );
-  categories.push(
-    await prisma.categories.create({
-      data: {
-        name: "Smart Home & IoT",
-        description: "Smart home devices, IoT gadgets, and home automation"
-      }
-    })
-  );
-
-  console.log(`✅ Created ${categories.length} categories`);
-
-  // 3. Products
-  console.log("🛍️ Creating products...");
-  const products = [];
-
-  products.push(
-    await prisma.products.create({
-      data: {
-        name: "iPhone 15 Pro Max",
-        brand: "Apple",
-        description:
-          "The latest iPhone with A17 Pro chip, titanium design, and advanced camera system",
-        category_id: categories[0].id,
-        base_price: "850000.00",
-        images: [
-          "https://images.unsplash.com/photo-1592910147829-99f40bc3d004?w=500",
-          "https://images.unsplash.com/photo-1601972602237-8c79241e468b?w=500"
-        ]
-      }
-    })
-  );
-  products.push(
-    await prisma.products.create({
-      data: {
-        name: "MacBook Air M3",
-        brand: "Apple",
-        description:
-          "Lightweight laptop with M3 chip, 13-inch Retina display, and all-day battery life",
-        category_id: categories[1].id,
-        base_price: "750000.00",
-        images: [
-          "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500",
-          "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500"
-        ]
-      }
-    })
-  );
-  products.push(
-    await prisma.products.create({
-      data: {
-        name: "Sony WH-1000XM5",
-        brand: "Sony",
-        description:
-          "Premium noise-canceling wireless headphones with exceptional sound quality",
-        category_id: categories[2].id,
-        base_price: "185000.00",
-        images: [
-          "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500",
-          "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=500"
-        ]
-      }
-    })
-  );
-  products.push(
-    await prisma.products.create({
-      data: {
-        name: "PlayStation 5",
-        brand: "Sony",
-        description:
-          "Next-generation gaming console with 4K gaming and ultra-high speed SSD",
-        category_id: categories[3].id,
-        base_price: "450000.00",
-        images: [
-          "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=500",
-          "https://images.unsplash.com/photo-1607853202273-797f1c22a38e?w=500"
-        ]
-      }
-    })
-  );
-  products.push(
-    await prisma.products.create({
-      data: {
-        name: "Amazon Echo Dot 5th Gen",
-        brand: "Amazon",
-        description:
-          "Smart speaker with Alexa, improved audio, and smart home hub capabilities",
-        category_id: categories[4].id,
-        base_price: "45000.00",
-        images: [
-          "https://images.unsplash.com/photo-1543512214-318c7553f230?w=500",
-          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500"
-        ]
-      }
-    })
-  );
-
-  console.log(`✅ Created ${products.length} products`);
-
-  // 4. Shops
-  console.log("🏪 Creating shops...");
-  const shops = [];
-
-  shops.push(
-    await prisma.shops.create({
-      data: {
-        name: "TechHub Lilongwe",
-        description: "Premier electronics store in the heart of Lilongwe",
-        owner_id: users[1].id,
-        business_registration_no: "BL-2023-001234",
-        address_line1: "Capital City Mall, Shop 12A",
-        city: "Lilongwe",
-        latitude: "-13.962612",
-        longitude: "33.774119",
-        phone: "+265998765432",
-        email: "info@techhub.mw",
-        is_verified: true,
-        delivery_enabled: true,
-        logo:
-          "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400",
-        banner:
-          "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=1200",
-        gallery: [
-          "https://images.unsplash.com/photo-1593642532871-8b12e02d091c?w=600",
-          "https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=600",
-          "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=600"
-        ],
-        delivery_methods: ["PICKUP_POINT", "COURIER", "DOOR_TO_DOOR"]
-      }
-    })
-  );
-  shops.push(
-    await prisma.shops.create({
-      data: {
-        name: "Digital World Blantyre",
-        description:
-          "Your trusted partner for all digital solutions in Blantyre",
-        owner_id: users[2].id,
-        business_registration_no: "BT-2023-005678",
-        address_line1: "Chichiri Shopping Centre, Unit 45",
-        city: "Blantyre",
-        latitude: "-15.786415",
-        longitude: "35.005410",
-        phone: "+265997654321",
-        email: "contact@digitalworld.mw",
-        is_verified: true,
-        delivery_enabled: true,
-        logo:
-          "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=400",
-        banner:
-          "https://images.unsplash.com/photo-1487017159836-4e23ece2e4cf?w=1200",
-        gallery: [
-          "https://images.unsplash.com/photo-1591370874773-6702e8f12fd8?w=600",
-          "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600"
-        ],
-        delivery_methods: ["COURIER", "DOOR_TO_DOOR"]
-      }
-    })
-  );
-  shops.push(
-    await prisma.shops.create({
-      data: {
-        name: "Gadget Palace Mzuzu",
-        description: "Northern region's leading technology store",
-        owner_id: users[1].id,
-        business_registration_no: "MZ-2023-009012",
-        address_line1: "Mzuzu Main Market, Block C",
-        city: "Mzuzu",
-        latitude: "-11.465277",
-        longitude: "34.015625",
-        phone: "+265995123456",
-        email: "mzuzu@gadgetpalace.mw",
-        is_verified: false,
-        delivery_enabled: true,
-        logo: "https://images.unsplash.com/photo-1556656793-08538906a9f8?w=400",
-        banner:
-          "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200",
-        gallery: [
-          "https://images.unsplash.com/photo-1527698266440-12104e498b76?w=600"
-        ],
-        delivery_methods: ["PICKUP_POINT"]
-      }
-    })
-  );
-  shops.push(
-    await prisma.shops.create({
-      data: {
-        name: "SmartTech Zomba",
-        description:
-          "University town's favorite tech store with student-friendly prices",
-        owner_id: users[2].id,
-        business_registration_no: "ZB-2023-012345",
-        address_line1: "Zomba Town Centre, Ground Floor",
-        city: "Zomba",
-        latitude: "-15.385208",
-        longitude: "35.318749",
-        phone: "+265994321098",
-        email: "zomba@smarttech.mw",
-        is_verified: true,
-        delivery_enabled: false,
-        logo: "https://images.unsplash.com/photo-1542393545-10f5cde2c810?w=400",
-        banner:
-          "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200",
-        gallery: [],
-        delivery_methods: []
-      }
-    })
-  );
-  shops.push(
-    await prisma.shops.create({
-      data: {
-        name: "GameZone Karonga",
-        description: "Gaming paradise in the northern lakeshore region",
-        owner_id: users[1].id,
-        business_registration_no: "KR-2023-067890",
-        address_line1: "Karonga Market, Section A",
-        city: "Karonga",
-        latitude: "-9.934167",
-        longitude: "33.935000",
-        phone: "+265993210987",
-        email: "karonga@gamezone.mw",
-        is_verified: true,
-        delivery_enabled: true,
-        logo:
-          "https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=400",
-        banner:
-          "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=1200",
-        gallery: [
-          "https://images.unsplash.com/photo-1556438064-2d7646166914?w=600",
-          "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=600",
-          "https://images.unsplash.com/photo-1616588589676-62b3bd4ff6d2?w=600",
-          "https://images.unsplash.com/photo-1625805866449-3589fe3f71a3?w=600"
-        ],
-        delivery_methods: ["COURIER", "DOOR_TO_DOOR"]
-      }
-    })
-  );
-
-  console.log(`✅ Created ${shops.length} shops`);
-
-  // 5. User Addresses
-  console.log("🏠 Creating user addresses...");
-  const userAddresses = [];
-
-  userAddresses.push(
-    await prisma.user_addresses.create({
-      data: {
-        user_id: users[0].id,
-        contact_name: "Alice Banda",
-        address_line1: "Plot 123, Area 25",
-        city: "Lilongwe",
-        country: "Malawi",
-        latitude: "-13.962612",
-        longitude: "33.774119",
-        is_default: true
-      }
-    })
-  );
-  userAddresses.push(
-    await prisma.user_addresses.create({
-      data: {
-        user_id: users[1].id,
-        contact_name: "John Phiri",
-        address_line1: "Kamuzu Central Hospital Road, House 456",
-        city: "Lilongwe",
-        country: "Malawi",
-        latitude: "-13.978833",
-        longitude: "33.787778",
-        is_default: true
-      }
-    })
-  );
-  userAddresses.push(
-    await prisma.user_addresses.create({
-      data: {
-        user_id: users[2].id,
-        contact_name: "Grace Mwale",
-        address_line1: "Mandala Road, Flat 7B",
-        city: "Blantyre",
-        country: "Malawi",
-        latitude: "-15.786415",
-        longitude: "35.005410",
-        is_default: true
-      }
-    })
-  );
-  userAddresses.push(
-    await prisma.user_addresses.create({
-      data: {
-        user_id: users[3].id,
-        contact_name: "Peter Nyirenda",
-        address_line1: "Parliament Building, Office Complex",
-        city: "Lilongwe",
-        country: "Malawi",
-        latitude: "-13.968111",
-        longitude: "33.783611",
-        is_default: true
-      }
-    })
-  );
-  userAddresses.push(
-    await prisma.user_addresses.create({
-      data: {
-        user_id: users[4].id,
-        contact_name: "Mary Tembo",
-        address_line1: "University of Malawi, Chancellor College",
-        city: "Zomba",
-        country: "Malawi",
-        latitude: "-15.385208",
-        longitude: "35.318749",
-        is_default: true
-      }
-    })
-  );
-
-  console.log(`✅ Created ${userAddresses.length} user addresses`);
-
-  // 6. Shop Products
-  console.log("📦 Creating shop products...");
-  const shopProducts = [];
-
-  shopProducts.push(
-    await prisma.shop_products.create({
-      data: {
-        shop_id: shops[0].id,
-        product_id: products[0].id,
-        sku: "TECH-IP15PM-256-TI",
-        price: "865000.00",
-        stock_quantity: 8,
-        condition: "NEW",
-        shop_description:
-          "Brand new iPhone 15 Pro Max in Natural Titanium! Includes FREE screen protector and premium case. Official Apple warranty valid in Malawi. Fast delivery available within Lilongwe.",
-        specs: {
-          storage: "256GB",
-          color: "Natural Titanium",
-          warranty: "1 year Apple warranty",
-          network: "5G enabled"
-        },
-        images: [
-          "https://images.unsplash.com/photo-1592910147829-99f40bc3d004?w=500"
-        ]
-      }
-    })
-  );
-  shopProducts.push(
-    await prisma.shop_products.create({
-      data: {
-        shop_id: shops[1].id,
-        product_id: products[1].id,
-        sku: "DW-MBA-M3-256-SG",
-        price: "760000.00",
-        stock_quantity: 5,
-        condition: "NEW",
-        shop_description:
-          "Apple MacBook Air M3 - Perfect for students and professionals! Lightweight design, all-day battery life. Special offer: Buy now and get Microsoft Office installed FREE. Authorized Apple reseller.",
-        specs: {
-          processor: "Apple M3 8-core",
-          memory: "8GB",
-          storage: "256GB SSD",
-          display: "13.6-inch Liquid Retina"
-        },
-        images: [
-          "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500"
-        ]
-      }
-    })
-  );
-  shopProducts.push(
-    await prisma.shop_products.create({
-      data: {
-        shop_id: shops[2].id,
-        product_id: products[2].id,
-        sku: "GP-SONY-1000XM5-BLK",
-        price: "190000.00",
-        stock_quantity: 15,
-        condition: "NEW",
-        shop_description:
-          "Sony WH-1000XM5 - Industry-leading noise cancellation! Perfect for commuters and audiophiles. In stock now with multiple color options. Extended 2-year warranty available at checkout.",
-        specs: {
-          type: "Over-ear headphones",
-          connectivity: "Bluetooth 5.2, NFC",
-          battery: "30 hours playback",
-          features: "Active Noise Cancellation"
-        },
-        images: [
-          "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500"
-        ]
-      }
-    })
-  );
-  shopProducts.push(
-    await prisma.shop_products.create({
-      data: {
-        shop_id: shops[4].id,
-        product_id: products[3].id,
-        sku: "GZ-PS5-STD-WHT",
-        price: "465000.00",
-        stock_quantity: 3,
-        condition: "NEW",
-        shop_description:
-          "PlayStation 5 Standard Edition - LIMITED STOCK! Includes DualSense controller and latest firmware. Bundle deals available with top games. Secure yours today before stock runs out!",
-        specs: {
-          storage: "825GB SSD",
-          controller: "DualSense included",
-          features: "4K Gaming, Ray Tracing",
-          warranty: "1 year Sony warranty"
-        },
-        images: [
-          "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=500"
-        ]
-      }
-    })
-  );
-  shopProducts.push(
-    await prisma.shop_products.create({
-      data: {
-        shop_id: shops[3].id,
-        product_id: products[4].id,
-        sku: "ST-ECHO-DOT5-BLK",
-        price: "48000.00",
-        stock_quantity: 20,
-        condition: "NEW",
-        shop_description:
-          "Amazon Echo Dot (5th Gen) - Transform your home into a smart home! Controls lights, thermostats, and more. Perfect sound quality for music streaming. Great gift idea! Multiple colors in stock.",
-        specs: {
-          connectivity: "Wi-Fi, Bluetooth",
-          assistant: "Alexa built-in",
-          features: "Smart home hub, Music streaming",
-          compatibility: "Works with most smart devices"
-        },
-        images: [
-          "https://images.unsplash.com/photo-1543512214-318c7553f230?w=500"
-        ]
-      }
-    })
-  );
-
-  console.log(`✅ Created ${shopProducts.length} shop products`);
-
-  // 7. Orders
-  console.log("🛒 Creating orders...");
-  const orders = [];
-
-  orders.push(
-    await prisma.orders.create({
-      data: {
-        order_number: "ORD-2024-001",
-        buyer_id: users[0].id,
-        shop_id: shops[0].id,
-        total_amount: "865000.00",
-        status: "DELIVERED",
-        delivery_address_id: userAddresses[0].id
-      }
-    })
-  );
-  orders.push(
-    await prisma.orders.create({
-      data: {
-        order_number: "ORD-2024-002",
-        buyer_id: users[4].id,
-        shop_id: shops[1].id,
-        total_amount: "760000.00",
-        status: "CONFIRMED",
-        delivery_address_id: userAddresses[4].id
-      }
-    })
-  );
-  orders.push(
-    await prisma.orders.create({
-      data: {
-        order_number: "ORD-2024-003",
-        buyer_id: users[1].id,
-        shop_id: shops[2].id,
-        total_amount: "190000.00",
-        status: "PREPARING",
-        delivery_address_id: userAddresses[1].id
-      }
-    })
-  );
-  orders.push(
-    await prisma.orders.create({
-      data: {
-        order_number: "ORD-2024-004",
-        buyer_id: users[0].id,
-        shop_id: shops[4].id,
-        total_amount: "465000.00",
-        status: "OUT_FOR_DELIVERY",
-        delivery_address_id: userAddresses[0].id
-      }
-    })
-  );
-  orders.push(
-    await prisma.orders.create({
-      data: {
-        order_number: "ORD-2024-005",
-        buyer_id: users[4].id,
-        shop_id: shops[3].id,
-        total_amount: "48000.00",
-        status: "DELIVERED",
-        delivery_address_id: userAddresses[4].id
-      }
-    })
-  );
-
-  console.log(`✅ Created ${orders.length} orders`);
-
-  // 7b. Cart Orders (status: CART)
-  console.log("🛒 Creating cart orders...");
-  const cartOrders = [];
-
-  // Alice's cart at TechHub Lilongwe (has 2 items)
-  cartOrders.push(
-    await prisma.orders.create({
-      data: {
-        order_number: `CART-${users[0].id.substring(0, 8)}`, // Unique cart identifier
-        buyer_id: users[0].id, // Alice
-        shop_id: shops[0].id, // TechHub Lilongwe
-        total_amount: "0.00", // Will be calculated from items
-        status: "CART"
-      }
-    })
-  );
-
-  // Mary's cart at Digital World Blantyre (has 1 item)
-  cartOrders.push(
-    await prisma.orders.create({
-      data: {
-        order_number: `CART-${users[4].id.substring(0, 8)}`, // Unique cart identifier
-        buyer_id: users[4].id, // Mary
-        shop_id: shops[1].id, // Digital World Blantyre
-        total_amount: "0.00",
-        status: "CART"
-      }
-    })
-  );
-
-  console.log(`✅ Created ${cartOrders.length} cart orders`);
-
-  // 8. Order Items
-  console.log("📋 Creating order items...");
-  const orderItems = [];
-
-  orderItems.push(
-    await prisma.order_items.create({
-      data: {
-        order_id: orders[0].id,
-        shop_product_id: shopProducts[0].id,
-        product_name: "iPhone 15 Pro Max",
-        quantity: 1,
-        unit_price: "865000.00"
-      }
-    })
-  );
-  orderItems.push(
-    await prisma.order_items.create({
-      data: {
-        order_id: orders[1].id,
-        shop_product_id: shopProducts[1].id,
-        product_name: "MacBook Air M3",
-        quantity: 1,
-        unit_price: "760000.00"
-      }
-    })
-  );
-  orderItems.push(
-    await prisma.order_items.create({
-      data: {
-        order_id: orders[2].id,
-        shop_product_id: shopProducts[2].id,
-        product_name: "Sony WH-1000XM5",
-        quantity: 1,
-        unit_price: "190000.00"
-      }
-    })
-  );
-  orderItems.push(
-    await prisma.order_items.create({
-      data: {
-        order_id: orders[3].id,
-        shop_product_id: shopProducts[3].id,
-        product_name: "PlayStation 5",
-        quantity: 1,
-        unit_price: "465000.00"
-      }
-    })
-  );
-  orderItems.push(
-    await prisma.order_items.create({
-      data: {
-        order_id: orders[4].id,
-        shop_product_id: shopProducts[4].id,
-        product_name: "Amazon Echo Dot 5th Gen",
-        quantity: 1,
-        unit_price: "48000.00"
-      }
-    })
-  );
-
-  console.log(`✅ Created ${orderItems.length} order items`);
-
-  // 8b. Cart Items
-  console.log("🛒 Creating cart items...");
-  const cartItems = [];
-
-  // Alice's cart - 2 items from TechHub Lilongwe
-  cartItems.push(
-    await prisma.order_items.create({
-      data: {
-        order_id: cartOrders[0].id,
-        shop_product_id: shopProducts[0].id, // iPhone 15 Pro Max
-        product_name: "iPhone 15 Pro Max",
-        quantity: 1,
-        unit_price: "865000.00"
-      }
-    })
-  );
-  cartItems.push(
-    await prisma.order_items.create({
-      data: {
-        order_id: cartOrders[0].id,
-        shop_product_id: shopProducts[2].id, // Sony WH-1000XM5 (if from same shop)
-        product_name: "Sony WH-1000XM5",
-        quantity: 2,
-        unit_price: "190000.00"
-      }
-    })
-  );
-
-  // Mary's cart - 1 item from Digital World Blantyre
-  cartItems.push(
-    await prisma.order_items.create({
-      data: {
-        order_id: cartOrders[1].id,
-        shop_product_id: shopProducts[1].id, // MacBook Air M3
-        product_name: "MacBook Air M3",
-        quantity: 1,
-        unit_price: "760000.00"
-      }
-    })
-  );
-
-  // Update cart totals
-  await prisma.orders.update({
-    where: { id: cartOrders[0].id },
-    data: { total_amount: "1245000.00" } // 865000 + (190000 * 2)
-  });
-
-  await prisma.orders.update({
-    where: { id: cartOrders[1].id },
-    data: { total_amount: "760000.00" }
-  });
-
-  console.log(`✅ Created ${cartItems.length} cart items`);
-
-  // 9. Payments
-  console.log("💳 Creating payments...");
-  const payments = [];
-
-  payments.push(
-    await prisma.payments.create({
-      data: {
-        order_id: orders[0].id,
-        amount: "865000.00",
-        payment_method: "MOBILE_MONEY",
-        status: "PAID"
-      }
-    })
-  );
-  payments.push(
-    await prisma.payments.create({
-      data: {
-        order_id: orders[1].id,
-        amount: "760000.00",
-        payment_method: "CARD",
-        status: "PENDING"
-      }
-    })
-  );
-  payments.push(
-    await prisma.payments.create({
-      data: {
-        order_id: orders[2].id,
-        amount: "190000.00",
-        payment_method: "MOBILE_MONEY",
-        status: "PAID"
-      }
-    })
-  );
-  payments.push(
-    await prisma.payments.create({
-      data: {
-        order_id: orders[3].id,
-        amount: "465000.00",
-        payment_method: "CARD",
-        status: "PAID"
-      }
-    })
-  );
-  payments.push(
-    await prisma.payments.create({
-      data: {
-        order_id: orders[4].id,
-        amount: "48000.00",
-        payment_method: "MOBILE_MONEY",
-        status: "PAID"
-      }
-    })
-  );
-
-  console.log(`✅ Created ${payments.length} payments`);
-
-  // 10. Shop Products Logs
-  console.log("📊 Creating shop products logs...");
-  const shopProductLogs = [];
-
-  shopProductLogs.push(
-    await prisma.shop_products_log.create({
-      data: {
-        shop_product_id: shopProducts[0].id,
-        change_type: "DECREASE",
-        change_qty: 1,
-        reason: "Customer purchase - Order ORD-2024-001"
-      }
-    })
-  );
-  shopProductLogs.push(
-    await prisma.shop_products_log.create({
-      data: {
-        shop_product_id: shopProducts[1].id,
-        change_type: "INCREASE",
-        change_qty: 5,
-        reason: "Inventory restock from supplier"
-      }
-    })
-  );
-  shopProductLogs.push(
-    await prisma.shop_products_log.create({
-      data: {
-        shop_product_id: shopProducts[2].id,
-        change_type: "DECREASE",
-        change_qty: 2,
-        reason: "Customer purchase - Bulk order"
-      }
-    })
-  );
-  shopProductLogs.push(
-    await prisma.shop_products_log.create({
-      data: {
-        shop_product_id: shopProducts[3].id,
-        change_type: "DECREASE",
-        change_qty: 1,
-        reason: "Customer purchase - Order ORD-2024-004"
-      }
-    })
-  );
-  shopProductLogs.push(
-    await prisma.shop_products_log.create({
-      data: {
-        shop_product_id: shopProducts[4].id,
-        change_type: "INCREASE",
-        change_qty: 10,
-        reason: "New stock arrival from Amazon"
-      }
-    })
-  );
-
-  console.log(`✅ Created ${shopProductLogs.length} shop products logs`);
-
-  // 11. Reviews
-  console.log("⭐ Creating reviews...");
-  const reviews = [];
-
-  // Review for Order 1: Alice bought iPhone from TechHub (DELIVERED)
-  reviews.push(
-    await prisma.reviews.create({
-      data: {
-        order_id: orders[0].id,
-        reviewer_id: users[0].id,
-        shop_product_id: shopProducts[0].id, // iPhone at TechHub
-        rating: 5,
-        comment:
-          "Excellent phone! Fast delivery and genuine product. Highly recommend TechHub Lilongwe!"
-      }
-    })
-  );
-
-  // Review for Order 3: John bought Sony Headphones from Gadget Palace (PREPARING)
-  // Note: Can only review after DELIVERED, but keeping for seed data
-  reviews.push(
-    await prisma.reviews.create({
-      data: {
-        order_id: orders[2].id,
-        reviewer_id: users[1].id,
-        shop_product_id: shopProducts[2].id, // Sony Headphones at Gadget Palace
-        rating: 4,
-        comment:
-          "Great headphones with amazing noise cancellation. Good service from the team at Gadget Palace."
-      }
-    })
-  );
-
-  // Review for Order 2: Mary bought MacBook from Digital World (CONFIRMED)
-  reviews.push(
-    await prisma.reviews.create({
-      data: {
-        order_id: orders[1].id,
-        reviewer_id: users[4].id,
-        shop_product_id: shopProducts[1].id, // MacBook at Digital World
-        rating: 5,
-        comment:
-          "Perfect laptop for my studies! Fast processing and great battery life. Digital World has excellent customer service."
-      }
-    })
-  );
-
-  // Review for Order 4: Alice bought PS5 from GameZone (DELIVERED)
-  reviews.push(
-    await prisma.reviews.create({
-      data: {
-        order_id: orders[3].id,
-        reviewer_id: users[0].id,
-        shop_product_id: shopProducts[3].id, // PS5 at GameZone
-        rating: 5,
-        comment:
-          "Amazing gaming experience! Fast shipping to Lilongwe. GameZone really knows their gaming products."
-      }
-    })
-  );
-
-  // Review for Order 5: Mary bought Echo Dot from TechVille (DELIVERED)
-  reviews.push(
-    await prisma.reviews.create({
-      data: {
-        order_id: orders[4].id,
-        reviewer_id: users[4].id,
-        shop_product_id: shopProducts[4].id, // Echo Dot at TechVille
-        rating: 4,
-        comment:
-          "Great smart speaker for my dorm room. Easy setup and Alexa works perfectly. Good price for students!"
-      }
-    })
-  );
-
-  console.log(`✅ Created ${reviews.length} reviews`);
-
-  // 12. Order Messages
-  console.log("📧 Creating order messages...");
-  const orderMessages = [];
-
-  orderMessages.push(
-    await prisma.order_messages.create({
-      data: {
-        order_id: orders[0].id,
-        recipient_type: "CUSTOMER",
-        channel: "EMAIL",
-        message_type: "ORDER_CONFIRMATION",
-        subject: "Order Confirmed - ORD-2024-001",
-        body:
-          "Your order for iPhone 15 Pro Max has been confirmed and is being prepared for shipment.",
-        is_sent: true,
-        sent_at: new Date()
-      }
-    })
-  );
-  orderMessages.push(
-    await prisma.order_messages.create({
-      data: {
-        order_id: orders[1].id,
-        recipient_type: "SHOP",
-        channel: "EMAIL",
-        message_type: "NEW_ORDER",
-        subject: "New Order Received - ORD-2024-002",
-        body:
-          "You have received a new order for MacBook Air M3. Please prepare the item for shipment.",
-        is_sent: true,
-        sent_at: new Date()
-      }
-    })
-  );
-  orderMessages.push(
-    await prisma.order_messages.create({
-      data: {
-        order_id: orders[2].id,
-        recipient_type: "CUSTOMER",
-        channel: "SMS",
-        message_type: "ORDER_PREPARING",
-        subject: "Order Being Prepared - ORD-2024-003",
-        body:
-          "Your order for Sony WH-1000XM5 headphones is currently being prepared by Gadget Palace Mzuzu.",
-        is_sent: true,
-        sent_at: new Date()
-      }
-    })
-  );
-  orderMessages.push(
-    await prisma.order_messages.create({
-      data: {
-        order_id: orders[3].id,
-        recipient_type: "CUSTOMER",
-        channel: "PUSH",
-        message_type: "ORDER_SHIPPED",
-        subject: "Order Shipped - ORD-2024-004",
-        body:
-          "Your PlayStation 5 order is out for delivery and should arrive within 2-3 business days.",
-        is_sent: true,
-        sent_at: new Date()
-      }
-    })
-  );
-  orderMessages.push(
-    await prisma.order_messages.create({
-      data: {
-        order_id: orders[4].id,
-        recipient_type: "CUSTOMER",
-        channel: "EMAIL",
-        message_type: "ORDER_DELIVERED",
-        subject: "Order Delivered - ORD-2024-005",
-        body:
-          "Your Amazon Echo Dot has been successfully delivered. Thank you for choosing SmartTech Zomba!",
-        is_sent: true,
-        sent_at: new Date()
-      }
-    })
-  );
-
-  console.log(`✅ Created ${orderMessages.length} order messages`);
-
-  console.log("✅ Seeding completed successfully!");
-  console.log("📊 Database Summary:");
-  console.log(`- 👥 Users: ${users.length} (1 Admin, 2 Sellers, 2 Users)`);
-  console.log(`- 📱 Categories: ${categories.length}`);
-  console.log(`- 🛍️ Products: ${products.length}`);
-  console.log(`- 🏪 Shops: ${shops.length}`);
-  console.log(`- 🏠 User Addresses: ${userAddresses.length}`);
-  console.log(`- 📦 Shop Products: ${shopProducts.length}`);
-  console.log(`- 🛒 Orders: ${orders.length}`);
-  console.log(`- � Cart Orders: ${cartOrders.length}`);
-  console.log(`- �📋 Order Items: ${orderItems.length}`);
-  console.log(`- � Cart Items: ${cartItems.length}`);
-  console.log(`- �💳 Payments: ${payments.length}`);
-  console.log(`- ⭐ Reviews: ${reviews.length}`);
-  console.log(`- 📧 Order Messages: ${orderMessages.length}`);
-  console.log(`- 📊 Shop Products Log: ${shopProductLogs.length}`);
-  console.log("🎉 Database is ready for comprehensive testing!");
-  console.log("🔐 User passwords represented by different hashes:");
-  console.log("  - Alice: password123 (has cart with 2 items)");
-  console.log("  - John: secure456");
-  console.log("  - Grace: strong789");
-  console.log("  - Peter: admin321");
-  console.log("  - Mary: user654 (has cart with 1 item)");
+], skipDuplicates: true });
+  console.log('Seeding categories...');
+  await prisma.categories.createMany({ data: [
+  {
+    "id": "47dccdfc-8c5b-4a2e-91d2-2a9ad4643517",
+    "name": "Smartphones & Tablets",
+    "description": "Latest mobile devices, smartphones, tablets and accessories",
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:53.932Z",
+    "updated_at": "2025-11-27T02:11:40.035Z",
+    "auto_created": false,
+    "created_by": null,
+    "needs_review": false
+  },
+  {
+    "id": "cc032534-f744-495f-b060-71619d0aabd6",
+    "name": "Laptops & Computers",
+    "description": "Desktop computers, laptops, monitors and computer accessories",
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:54.739Z",
+    "updated_at": "2025-11-27T02:11:40.035Z",
+    "auto_created": false,
+    "created_by": null,
+    "needs_review": false
+  },
+  {
+    "id": "541e2b6b-7209-41dc-a71b-e07f75e8f695",
+    "name": "Gaming & Consoles",
+    "description": "Gaming consoles, video games, and gaming accessories",
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:55.393Z",
+    "updated_at": "2025-11-27T02:11:40.035Z",
+    "auto_created": false,
+    "created_by": null,
+    "needs_review": false
+  },
+  {
+    "id": "94225dd0-756c-477e-889d-31480cb815c7",
+    "name": "Smart Home & IoT",
+    "description": "Smart home devices, IoT gadgets, and home automation",
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:55.725Z",
+    "updated_at": "2025-11-27T02:11:40.035Z",
+    "auto_created": false,
+    "created_by": null,
+    "needs_review": false
+  },
+  {
+    "id": "d1c67c1d-01b6-4ad9-be7b-ba42151bec96",
+    "name": "Audio & Headphones",
+    "description": "Premium audio equipment including speakers, headphones, and earbuds",
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:55.102Z",
+    "updated_at": "2025-11-27T02:24:05.995Z",
+    "auto_created": false,
+    "created_by": null,
+    "needs_review": false
+  }
+], skipDuplicates: true });
+  console.log('Seeding products...');
+  await prisma.products.createMany({ data: [
+  {
+    "id": "1169ce16-2a9d-432e-ad9e-9c9e872e96f9",
+    "name": "iPhone 15 Pro Max",
+    "brand": "Apple",
+    "description": "The latest iPhone with A17 Pro chip, titanium design, and advanced camera system",
+    "category_id": "47dccdfc-8c5b-4a2e-91d2-2a9ad4643517",
+    "base_price": "850000",
+    "images": [
+      "https://images.unsplash.com/photo-1592910147829-99f40bc3d004?w=500",
+      "https://images.unsplash.com/photo-1601972602237-8c79241e468b?w=500"
+    ],
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:56.942Z",
+    "updated_at": "2025-11-25T22:04:56.942Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": null,
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "dc19472c-ed17-44ee-ac29-1af8bc243a37",
+    "name": "MacBook Air M3",
+    "brand": "Apple",
+    "description": "Lightweight laptop with M3 chip, 13-inch Retina display, and all-day battery life",
+    "category_id": "cc032534-f744-495f-b060-71619d0aabd6",
+    "base_price": "750000",
+    "images": [
+      "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500",
+      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500"
+    ],
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:58.213Z",
+    "updated_at": "2025-11-25T22:04:58.213Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": null,
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "1090059f-fea2-4972-a82b-95c5ab212a3d",
+    "name": "Sony WH-1000XM5",
+    "brand": "Sony",
+    "description": "Premium noise-canceling wireless headphones with exceptional sound quality",
+    "category_id": "d1c67c1d-01b6-4ad9-be7b-ba42151bec96",
+    "base_price": "185000",
+    "images": [
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500",
+      "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=500"
+    ],
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:58.661Z",
+    "updated_at": "2025-11-25T22:04:58.661Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": null,
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "f0088958-0333-4cad-ba3d-6093efb694a1",
+    "name": "PlayStation 5",
+    "brand": "Sony",
+    "description": "Next-generation gaming console with 4K gaming and ultra-high speed SSD",
+    "category_id": "541e2b6b-7209-41dc-a71b-e07f75e8f695",
+    "base_price": "450000",
+    "images": [
+      "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=500",
+      "https://images.unsplash.com/photo-1607853202273-797f1c22a38e?w=500"
+    ],
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:58.965Z",
+    "updated_at": "2025-11-25T22:04:58.965Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": null,
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "c850210d-c59a-4dfd-a1bd-e79f8f838deb",
+    "name": "Amazon Echo Dot 5th Gen",
+    "brand": "Amazon",
+    "description": "Smart speaker with Alexa, improved audio, and smart home hub capabilities",
+    "category_id": "94225dd0-756c-477e-889d-31480cb815c7",
+    "base_price": "45000",
+    "images": [
+      "https://images.unsplash.com/photo-1543512214-318c7553f230?w=500",
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500"
+    ],
+    "is_active": true,
+    "created_at": "2025-11-25T22:04:59.264Z",
+    "updated_at": "2025-11-25T22:04:59.264Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": null,
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "7dc6a38d-c53a-47fa-86fb-071456d1f38a",
+    "name": "Samsung Galaxy A54 5G",
+    "brand": "Samsung",
+    "description": "Mid-range smartphone with 6.4 inch Super AMOLED display, 128GB storage, 50MP camera",
+    "category_id": "47dccdfc-8c5b-4a2e-91d2-2a9ad4643517",
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-27T13:03:01.047Z",
+    "updated_at": "2026-01-27T13:17:55.358Z",
+    "aliases": [],
+    "approved_by": "fa9af164-5a9f-4bff-b236-ef773ad601f0",
+    "confidence": null,
+    "created_by": "e607f7d6-3d08-42c0-a6f2-d66a6231a4ca",
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "samsung galaxy a54 5g",
+    "rejection_reason": null,
+    "status": "APPROVED"
+  },
+  {
+    "id": "d6c20eaa-e5f8-430c-bd25-be86f3779544",
+    "name": "iPhone 15 Pro Max 256GB",
+    "brand": "Apple",
+    "description": null,
+    "category_id": null,
+    "base_price": "450000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:27:55.080Z",
+    "updated_at": "2026-01-28T13:27:55.080Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "iphone 15 pro max 256gb",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "42279159-8096-402b-848f-1a8ffaaca3cb",
+    "name": "Samsung Galaxy S24 Ultra",
+    "brand": "Samsung",
+    "description": null,
+    "category_id": null,
+    "base_price": "380000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:27:58.882Z",
+    "updated_at": "2026-01-28T13:27:58.882Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "samsung galaxy s24 ultra",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "8e2386b7-ad24-4f2f-b81f-bf0b30eefdd7",
+    "name": "MacBook Air M3 13-inch",
+    "brand": "Apple",
+    "description": null,
+    "category_id": null,
+    "base_price": "750000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:28:00.901Z",
+    "updated_at": "2026-01-28T13:28:00.901Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "macbook air m3 13inch",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "67c3274d-32b2-4dfc-8d52-34b4ec4b118f",
+    "name": "Sony WH-1000XM5 Headphones",
+    "brand": "Sony",
+    "description": null,
+    "category_id": null,
+    "base_price": "120000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:28:02.414Z",
+    "updated_at": "2026-01-28T13:28:02.414Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "sony wh1000xm5 headphones",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "2b9ba2e9-250c-4b22-86c9-b3923a262c47",
+    "name": "iPad Pro 12.9 M2",
+    "brand": "Apple",
+    "description": null,
+    "category_id": null,
+    "base_price": "620000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:28:04.230Z",
+    "updated_at": "2026-01-28T13:28:04.230Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "ipad pro 129 m2",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "582ba3a0-3a2a-4cea-b8f2-a030daed6118",
+    "name": "Dell XPS 15 Laptop",
+    "brand": "Dell",
+    "description": null,
+    "category_id": null,
+    "base_price": "890000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:28:06.268Z",
+    "updated_at": "2026-01-28T13:28:06.268Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "dell xps 15 laptop",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "53999564-2145-466f-b6de-d63dff8af0f5",
+    "name": "AirPods Pro 2nd Gen",
+    "brand": "Apple",
+    "description": null,
+    "category_id": null,
+    "base_price": "95000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:28:08.579Z",
+    "updated_at": "2026-01-28T13:28:08.579Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "airpods pro 2nd gen",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "f492bb6b-c12e-41a9-af67-f19a3792309a",
+    "name": "Samsung 55 inch OLED TV",
+    "brand": "Samsung",
+    "description": null,
+    "category_id": null,
+    "base_price": "520000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:28:10.868Z",
+    "updated_at": "2026-01-28T13:28:10.868Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "samsung 55 inch oled tv",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "0f78b8f8-b255-4703-af76-e6878bf99ac7",
+    "name": "Logitech MX Master 3S Mouse",
+    "brand": "Logitech",
+    "description": null,
+    "category_id": null,
+    "base_price": "45000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:28:12.878Z",
+    "updated_at": "2026-01-28T13:28:12.878Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "logitech mx master 3s mouse",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "c0ce0d62-d0e2-4109-8cc6-3b07dcaa3c30",
+    "name": "JBL Charge 5 Speaker",
+    "brand": "JBL",
+    "description": null,
+    "category_id": null,
+    "base_price": "65000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:28:14.399Z",
+    "updated_at": "2026-01-28T13:28:14.399Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "jbl charge 5 speaker",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "30806904-ba56-4715-874e-894f207ede5b",
+    "name": "iPhone 15 Pro Max 256GB",
+    "brand": "Apple",
+    "description": null,
+    "category_id": null,
+    "base_price": "450000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:41:45.392Z",
+    "updated_at": "2026-01-28T13:41:45.392Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "iphone 15 pro max 256gb",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "d503a00d-b1c0-46ef-a788-30231b1c5e0f",
+    "name": "Samsung Galaxy S24 Ultra",
+    "brand": "Samsung",
+    "description": null,
+    "category_id": null,
+    "base_price": "380000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:41:51.793Z",
+    "updated_at": "2026-01-28T13:41:51.793Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "samsung galaxy s24 ultra",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "c336f6ee-be9f-4694-85f8-7a2ef034ec6e",
+    "name": "MacBook Air M3 13-inch",
+    "brand": "Apple",
+    "description": null,
+    "category_id": null,
+    "base_price": "750000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:41:53.292Z",
+    "updated_at": "2026-01-28T13:41:53.292Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "macbook air m3 13inch",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "36c9d37f-299f-4518-97b2-495de44fe174",
+    "name": "Sony WH-1000XM5 Headphones",
+    "brand": "Sony",
+    "description": null,
+    "category_id": null,
+    "base_price": "120000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:41:55.089Z",
+    "updated_at": "2026-01-28T13:41:55.089Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "sony wh1000xm5 headphones",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "561f867b-2d0b-495c-a990-be826aa2e6dd",
+    "name": "iPad Pro 12.9 M2",
+    "brand": "Apple",
+    "description": null,
+    "category_id": null,
+    "base_price": "620000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:41:56.879Z",
+    "updated_at": "2026-01-28T13:41:56.879Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "ipad pro 129 m2",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "1a722b36-8e5e-4baf-a6a8-4c53c6b7866f",
+    "name": "Dell XPS 15 Laptop",
+    "brand": "Dell",
+    "description": null,
+    "category_id": null,
+    "base_price": "890000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:41:58.882Z",
+    "updated_at": "2026-01-28T13:41:58.882Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "dell xps 15 laptop",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "13c48c94-2c6e-4daa-a8bc-7d60e56a4546",
+    "name": "AirPods Pro 2nd Gen",
+    "brand": "Apple",
+    "description": null,
+    "category_id": null,
+    "base_price": "95000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:42:00.373Z",
+    "updated_at": "2026-01-28T13:42:00.373Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "airpods pro 2nd gen",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "cb513a0d-9dfb-49a9-9626-d3360f7df83d",
+    "name": "Samsung 55 inch OLED TV",
+    "brand": "Samsung",
+    "description": null,
+    "category_id": null,
+    "base_price": "520000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:42:03.172Z",
+    "updated_at": "2026-01-28T13:42:03.172Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "samsung 55 inch oled tv",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "c0002282-e4e6-44ce-ab24-e5148525ec98",
+    "name": "Logitech MX Master 3S Mouse",
+    "brand": "Logitech",
+    "description": null,
+    "category_id": null,
+    "base_price": "45000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:42:04.682Z",
+    "updated_at": "2026-01-28T13:42:04.682Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "logitech mx master 3s mouse",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "d22cb9e0-0458-4985-a79d-5557b4ea497e",
+    "name": "JBL Charge 5 Speaker",
+    "brand": "JBL",
+    "description": null,
+    "category_id": null,
+    "base_price": "65000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:42:06.199Z",
+    "updated_at": "2026-01-28T13:42:06.199Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "jbl charge 5 speaker",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "b47e75d9-87a4-4da1-92d0-0833ca4a384d",
+    "name": "iPhone 15 Pro Max 256GB",
+    "brand": "Apple",
+    "description": null,
+    "category_id": null,
+    "base_price": "450000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:48:31.453Z",
+    "updated_at": "2026-01-28T13:48:31.453Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "iphone 15 pro max 256gb",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "e82c67a9-884d-4bf7-b70e-07be90177b4f",
+    "name": "Samsung Galaxy S24 Ultra",
+    "brand": "Samsung",
+    "description": null,
+    "category_id": null,
+    "base_price": "380000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:48:33.874Z",
+    "updated_at": "2026-01-28T13:48:33.874Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "samsung galaxy s24 ultra",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "59cf3713-6bce-4f87-8cf3-db30104389c6",
+    "name": "MacBook Air M3 13-inch",
+    "brand": "Apple",
+    "description": null,
+    "category_id": null,
+    "base_price": "750000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:48:34.801Z",
+    "updated_at": "2026-01-28T13:48:34.801Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "macbook air m3 13inch",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "766d6999-e8ba-4756-b393-e5567152f443",
+    "name": "Sony WH-1000XM5 Headphones",
+    "brand": "Sony",
+    "description": null,
+    "category_id": null,
+    "base_price": "120000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:48:36.086Z",
+    "updated_at": "2026-01-28T13:48:36.086Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "sony wh1000xm5 headphones",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "19431fed-3f27-4ed2-8d0e-d5dd4bdf15fe",
+    "name": "iPad Pro 12.9 M2",
+    "brand": "Apple",
+    "description": null,
+    "category_id": null,
+    "base_price": "620000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:48:37.543Z",
+    "updated_at": "2026-01-28T13:48:37.543Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "ipad pro 129 m2",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "313374ce-a650-4351-ab5d-78ea54f7a0ad",
+    "name": "Dell XPS 15 Laptop",
+    "brand": "Dell",
+    "description": null,
+    "category_id": null,
+    "base_price": "890000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:48:38.465Z",
+    "updated_at": "2026-01-28T13:48:38.465Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "dell xps 15 laptop",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "4db93c14-06cd-4b9d-9297-a638ea809a12",
+    "name": "AirPods Pro 2nd Gen",
+    "brand": "Apple",
+    "description": null,
+    "category_id": null,
+    "base_price": "95000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:48:39.707Z",
+    "updated_at": "2026-01-28T13:48:39.707Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "airpods pro 2nd gen",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "78e47e45-cf6b-4016-b603-585c9d36b80e",
+    "name": "Samsung 55 inch OLED TV",
+    "brand": "Samsung",
+    "description": null,
+    "category_id": null,
+    "base_price": "520000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:48:40.646Z",
+    "updated_at": "2026-01-28T13:48:40.646Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "samsung 55 inch oled tv",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "9d42476f-1348-491d-bb03-712d2b2451f9",
+    "name": "Logitech MX Master 3S Mouse",
+    "brand": "Logitech",
+    "description": null,
+    "category_id": null,
+    "base_price": "45000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:48:41.574Z",
+    "updated_at": "2026-01-28T13:48:41.574Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "logitech mx master 3s mouse",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "028b1974-fe81-4222-87cc-a1319b3f9b46",
+    "name": "JBL Charge 5 Speaker",
+    "brand": "JBL",
+    "description": null,
+    "category_id": null,
+    "base_price": "65000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-28T13:48:42.539Z",
+    "updated_at": "2026-01-28T13:48:42.539Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "jbl charge 5 speaker",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "a4b89bf8-03a5-4551-9474-2050358c5a0e",
+    "name": "iPhone 15 Pro Max 256GB",
+    "brand": "Apple",
+    "description": null,
+    "category_id": "47dccdfc-8c5b-4a2e-91d2-2a9ad4643517",
+    "base_price": "1500000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-29T07:57:22.612Z",
+    "updated_at": "2026-01-29T07:57:22.612Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "iphone 15 pro max 256gb",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "d9ffed13-47b2-4fbd-bd9e-223eade70945",
+    "name": "Samsung Galaxy S24 Ultra",
+    "brand": "Samsung",
+    "description": null,
+    "category_id": "47dccdfc-8c5b-4a2e-91d2-2a9ad4643517",
+    "base_price": "1350000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-29T07:57:25.164Z",
+    "updated_at": "2026-01-29T07:57:25.164Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "samsung galaxy s24 ultra",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "7f379b79-7cc0-4fc7-a694-c6dfdb7bbc5a",
+    "name": "iPhone 15 Pro Max 256GB",
+    "brand": "Apple",
+    "description": null,
+    "category_id": "47dccdfc-8c5b-4a2e-91d2-2a9ad4643517",
+    "base_price": "1500000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-29T08:10:05.524Z",
+    "updated_at": "2026-01-29T08:10:05.524Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "iphone 15 pro max 256gb",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "51d233bb-1506-4800-b90f-f0a0acebd54d",
+    "name": "Samsung Galaxy S24 Ultra",
+    "brand": "Samsung",
+    "description": null,
+    "category_id": "47dccdfc-8c5b-4a2e-91d2-2a9ad4643517",
+    "base_price": "1350000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-29T08:10:07.053Z",
+    "updated_at": "2026-01-29T08:10:07.053Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "samsung galaxy s24 ultra",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "65b8aacd-389e-4d7a-a5e5-83cb52e6e4ee",
+    "name": "Hisense 55\" Smart TV",
+    "brand": "Hisense",
+    "description": null,
+    "category_id": null,
+    "base_price": "650000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-29T08:10:08.045Z",
+    "updated_at": "2026-01-29T08:10:08.045Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "hisense 55 smart tv",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "dabd428d-6a6d-4248-9b56-c6f1b6e1dd2a",
+    "name": "Generic USB-C Cable",
+    "brand": null,
+    "description": null,
+    "category_id": null,
+    "base_price": "2500",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-29T08:10:10.758Z",
+    "updated_at": "2026-01-29T08:10:10.758Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "generic usbc cable",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "971c72c5-7fe7-4e7a-bfff-0a8d3fa19efd",
+    "name": "Airtel 4G Pocket Wifi",
+    "brand": "Airtel",
+    "description": null,
+    "category_id": null,
+    "base_price": "25000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-29T08:10:13.457Z",
+    "updated_at": "2026-01-29T08:10:13.457Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "airtel 4g pocket wifi",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "b879dee8-1791-4bc2-8279-50f049e973f1",
+    "name": "iPhone 15 Pro Max 256GB",
+    "brand": "Apple",
+    "description": null,
+    "category_id": "47dccdfc-8c5b-4a2e-91d2-2a9ad4643517",
+    "base_price": "1500000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-29T09:12:57.854Z",
+    "updated_at": "2026-01-29T09:12:57.854Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "iphone 15 pro max 256gb",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "26e219b7-82ba-43ef-b28b-5fb06c1c5d42",
+    "name": "MacBook Air M3",
+    "brand": "Apple",
+    "description": null,
+    "category_id": "cc032534-f744-495f-b060-71619d0aabd6",
+    "base_price": "2100000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-29T09:13:00.414Z",
+    "updated_at": "2026-01-29T09:13:00.414Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "macbook air m3",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "5bbfa284-41d1-4b89-b43d-acc4bed64ac2",
+    "name": "iPhone 15 Pro Max 256GB",
+    "brand": "Apple",
+    "description": null,
+    "category_id": "47dccdfc-8c5b-4a2e-91d2-2a9ad4643517",
+    "base_price": "1500000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-29T09:19:15.804Z",
+    "updated_at": "2026-01-29T09:19:15.804Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "iphone 15 pro max 256gb",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "11d9399a-d009-43fd-814a-1cf34c3f2f30",
+    "name": "MacBook Air M3",
+    "brand": "Apple",
+    "description": null,
+    "category_id": "cc032534-f744-495f-b060-71619d0aabd6",
+    "base_price": "2100000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-29T09:19:18.306Z",
+    "updated_at": "2026-01-29T09:19:18.306Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "macbook air m3",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "dd3af6d2-d4a4-416a-911b-eba9db6db382",
+    "name": "iPhone 15 Pro Max 256GB",
+    "brand": "Apple",
+    "description": null,
+    "category_id": "47dccdfc-8c5b-4a2e-91d2-2a9ad4643517",
+    "base_price": "1500000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-29T09:20:11.804Z",
+    "updated_at": "2026-01-29T09:20:11.804Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "iphone 15 pro max 256gb",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "427767e6-542e-4ed9-86ec-5fb2880f7e50",
+    "name": "MacBook Air M3",
+    "brand": "Apple",
+    "description": null,
+    "category_id": "cc032534-f744-495f-b060-71619d0aabd6",
+    "base_price": "2100000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-01-29T09:20:13.836Z",
+    "updated_at": "2026-01-29T09:20:13.836Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "macbook air m3",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "77240b2f-756f-4938-9395-9b362ee50069",
+    "name": "Dell XPS 13 Laptop",
+    "brand": "Dell",
+    "description": "Ultra-portable laptop with InfinityEdge display",
+    "category_id": "cc032534-f744-495f-b060-71619d0aabd6",
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T07:34:44.441Z",
+    "updated_at": "2026-02-03T07:34:44.441Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "dell xps 13 laptop",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "3d3f8e5b-f90b-44d8-a2b5-021ebc2a5ebd",
+    "name": "Sony WH-1000XM5 Headphones",
+    "brand": "Sony",
+    "description": "Premium noise-cancelling headphones",
+    "category_id": "d1c67c1d-01b6-4ad9-be7b-ba42151bec96",
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T07:43:39.777Z",
+    "updated_at": "2026-02-03T07:43:39.777Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "sony wh-1000xm5 headphones",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "788983ac-5718-4324-90cf-a1c1cafd546b",
+    "name": "Samsung Galaxy A54",
+    "brand": "Samsung",
+    "description": "Mid-range smartphone with great camera",
+    "category_id": "47dccdfc-8c5b-4a2e-91d2-2a9ad4643517",
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T07:45:39.035Z",
+    "updated_at": "2026-02-03T07:45:39.035Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "samsung galaxy a54",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "e595d57f-5b37-4142-b9ee-9e7ab64f3c40",
+    "name": "MacBook Air M2",
+    "brand": "Apple",
+    "description": "Lightweight laptop with M2 chip",
+    "category_id": "cc032534-f744-495f-b060-71619d0aabd6",
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T07:45:41.433Z",
+    "updated_at": "2026-02-03T07:45:41.433Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "macbook air m2",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "1880d387-9e5c-4c31-909b-271b49d803ea",
+    "name": "Office Desk Chair",
+    "brand": "Generic",
+    "description": "Ergonomic office chair with lumbar support",
+    "category_id": "94225dd0-756c-477e-889d-31480cb815c7",
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T07:45:43.223Z",
+    "updated_at": "2026-02-03T07:45:43.223Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "office desk chair",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "4b277171-5980-40b3-9ef6-c1b1af6f0afd",
+    "name": "Plastic Phone Holder",
+    "brand": null,
+    "description": "Adjustable phone stand for desk",
+    "category_id": "94225dd0-756c-477e-889d-31480cb815c7",
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T07:45:44.694Z",
+    "updated_at": "2026-02-03T07:45:44.694Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "plastic phone holder",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "2681ccd0-f413-475f-aa43-583a2556f7db",
+    "name": "Generic USB-C Cable",
+    "brand": null,
+    "description": "Simple charging cable",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T08:32:08.959Z",
+    "updated_at": "2026-02-03T08:32:08.959Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "generic usb-c cable",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "46cf141a-1c2a-4173-89bb-3b05475e958a",
+    "name": "iPhone 15 Pro Max 2026",
+    "brand": "Apple",
+    "description": "Latest iPhone - missing RAM and Storage specs",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T08:48:36.313Z",
+    "updated_at": "2026-02-03T08:48:36.313Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "iphone 15 pro max 2026",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "96d03936-1921-4b1b-bb36-369c691619ec",
+    "name": "Dell XPS 15 9530 2026",
+    "brand": "Dell",
+    "description": "High-end laptop - missing processor and specs",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T08:48:39.176Z",
+    "updated_at": "2026-02-03T08:48:39.176Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "dell xps 15 9530 2026",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "7596a1e7-392b-4c93-ace6-d372e7766491",
+    "name": "Samsung Galaxy S24 Ultra 2026",
+    "brand": "Samsung",
+    "description": "Flagship phone with only screen size",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T08:48:40.726Z",
+    "updated_at": "2026-02-03T08:48:40.726Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "samsung galaxy s24 ultra 2026",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "c19aec08-8abc-4a1f-8fc6-349050afed80",
+    "name": "MacBook Air M3 2026",
+    "brand": "Apple",
+    "description": "Complete specs - should go to NEEDS_IMAGES",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T08:48:42.264Z",
+    "updated_at": "2026-02-03T08:48:42.264Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "macbook air m3 2026",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "7cd31475-1ff0-4ed3-9fc2-8b43aa882c9c",
+    "name": "Google Pixel 8 Pro Special Edition",
+    "brand": "Google",
+    "description": "Missing ALL specs - should be NEEDS_SPECS",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T09:11:48.850Z",
+    "updated_at": "2026-02-03T09:11:48.850Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "google pixel 8 pro special edition",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "8fde8214-7192-4003-98ce-b72d61843a87",
+    "name": "HP Pavilion Gaming Laptop 2026",
+    "brand": "HP",
+    "description": "Has RAM only, missing others",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T09:11:52.551Z",
+    "updated_at": "2026-02-03T09:11:52.551Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "hp pavilion gaming laptop 2026",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "635743cc-0d8c-4233-9a31-a076f0d66689",
+    "name": "Lenovo ThinkPad X1 Carbon Gen 11",
+    "brand": "Lenovo",
+    "description": "Complete specs - should be NEEDS_IMAGES",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T09:11:54.046Z",
+    "updated_at": "2026-02-03T09:11:54.046Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "lenovo thinkpad x1 carbon gen 11",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "13232941-b9b0-4e8e-8ebd-1383cba2b454",
+    "name": "OnePlus 12 Pro Test",
+    "brand": "OnePlus",
+    "description": "Missing storage and screen - should be NEEDS_SPECS",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T15:46:14.630Z",
+    "updated_at": "2026-02-03T15:46:14.630Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "oneplus 12 pro test",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "99b0caae-3dc6-4413-890e-e44e83fbe073",
+    "name": "ASUS ROG Laptop Test Edition",
+    "brand": "ASUS",
+    "description": "Complete specs - should be NEEDS_IMAGES",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T15:46:17.790Z",
+    "updated_at": "2026-02-03T15:46:17.790Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "asus rog laptop test edition",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "7b2443c8-ff95-429f-a5c1-7429de19395a",
+    "name": "Premium Leather Wallet",
+    "brand": "Generic",
+    "description": "General product - should be NEEDS_IMAGES",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T15:46:19.632Z",
+    "updated_at": "2026-02-03T15:46:19.632Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "premium leather wallet",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "c39d20a2-36bd-4756-9a5e-a5d1ffbdbd6f",
+    "name": "Test Preview Product",
+    "brand": "Test",
+    "description": "Testing preview mode",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T15:47:11.281Z",
+    "updated_at": "2026-02-03T15:47:11.281Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "test preview product",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "c2a6a61a-6260-4c49-8d70-2e0e00bc2691",
+    "name": "Xiaomi Redmi Note 13 Pro Admin Test",
+    "brand": "Xiaomi",
+    "description": "Testing admin approval workflow",
+    "category_id": null,
+    "base_price": "380000",
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-03T15:54:32.018Z",
+    "updated_at": "2026-02-03T15:54:42.645Z",
+    "aliases": [],
+    "approved_by": "8d671661-81ce-400c-a4e3-85f77dd17b23",
+    "confidence": null,
+    "created_by": "50e9b187-5851-46bc-84e9-ab89048c02cd",
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "xiaomi redmi note 13 pro admin test",
+    "rejection_reason": null,
+    "status": "APPROVED"
+  },
+  {
+    "id": "82198942-4339-4ccf-b10e-73956ea03ba2",
+    "name": "Test Reject Product",
+    "brand": "Test",
+    "description": "This will be rejected",
+    "category_id": null,
+    "base_price": "50000",
+    "images": [],
+    "is_active": false,
+    "created_at": "2026-02-03T15:54:54.491Z",
+    "updated_at": "2026-02-03T15:54:57.119Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": "50e9b187-5851-46bc-84e9-ab89048c02cd",
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "test reject product",
+    "rejection_reason": "Duplicate product - already exists in catalog",
+    "status": "REJECTED"
+  },
+  {
+    "id": "ad815669-7149-4040-8768-8b095aa3cf72",
+    "name": "Samsung Galaxy A55 5G",
+    "brand": "Samsung",
+    "description": "Mid-range Samsung phone",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-04T13:55:47.986Z",
+    "updated_at": "2026-02-04T13:55:47.986Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "samsung galaxy a55 5g",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "43638392-be96-46b7-9597-e8561d60664d",
+    "name": "iPhone 14 Pro",
+    "brand": "Apple",
+    "description": "Apple flagship",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-04T13:55:56.124Z",
+    "updated_at": "2026-02-04T13:55:56.124Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "iphone 14 pro",
+    "rejection_reason": null,
+    "status": "PENDING"
+  },
+  {
+    "id": "9422a9af-8747-4066-8294-b094fab75808",
+    "name": "JBL Tune 520BT",
+    "brand": "JBL",
+    "description": "Wireless headphones",
+    "category_id": null,
+    "base_price": null,
+    "images": [],
+    "is_active": true,
+    "created_at": "2026-02-06T13:37:19.767Z",
+    "updated_at": "2026-02-06T13:37:19.767Z",
+    "aliases": [],
+    "approved_by": null,
+    "confidence": null,
+    "created_by": null,
+    "gtin": null,
+    "keywords": [],
+    "merged_into_id": null,
+    "model": null,
+    "mpn": null,
+    "normalized_name": "jbl tune 520bt",
+    "rejection_reason": null,
+    "status": "PENDING"
+  }
+], skipDuplicates: true });
+  console.log('Seeding shops...');
+  await prisma.shops.createMany({ data: [
+  {
+    "id": "66c4ea25-f0c0-40ca-9ffd-5add68448a8e",
+    "owner_id": "e607f7d6-3d08-42c0-a6f2-d66a6231a4ca",
+    "name": "Test Shop 5",
+    "description": "Fifth shop",
+    "business_registration_no": null,
+    "address_line1": null,
+    "city": null,
+    "latitude": "23.765862",
+    "longitude": "-109.867559",
+    "phone": null,
+    "email": null,
+    "is_verified": false,
+    "delivery_enabled": true,
+    "created_at": "2025-11-25T22:07:37.155Z",
+    "updated_at": "2025-11-25T22:07:37.155Z",
+    "banner": null,
+    "delivery_methods": [
+      "DOOR_TO_DOOR"
+    ],
+    "gallery": [],
+    "logo": null,
+    "delivery_zones": [],
+    "wallet_balance": "0",
+    "whatsapp_number": null,
+    "can_bulk_upload": true,
+    "base_delivery_fee": null,
+    "free_delivery_threshold": null,
+    "intercity_delivery_fee": null
+  },
+  {
+    "id": "83648ace-5b24-4ffe-ae50-542c9fecac5b",
+    "owner_id": "e607f7d6-3d08-42c0-a6f2-d66a6231a4ca",
+    "name": "Test Shop 4",
+    "description": "Fourth shop",
+    "business_registration_no": null,
+    "address_line1": null,
+    "city": null,
+    "latitude": "69.400065",
+    "longitude": "-66.55817",
+    "phone": null,
+    "email": null,
+    "is_verified": false,
+    "delivery_enabled": true,
+    "created_at": "2025-11-25T22:07:18.858Z",
+    "updated_at": "2025-11-25T22:07:18.858Z",
+    "banner": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200",
+    "delivery_methods": [
+      "COURIER"
+    ],
+    "gallery": [
+      "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?w=600",
+      "https://images.unsplash.com/photo-1585399000684-d2f72660f092?w=600"
+    ],
+    "logo": "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=400",
+    "delivery_zones": [],
+    "wallet_balance": "0",
+    "whatsapp_number": null,
+    "can_bulk_upload": true,
+    "base_delivery_fee": null,
+    "free_delivery_threshold": null,
+    "intercity_delivery_fee": null
+  },
+  {
+    "id": "b989043d-1b72-400d-ac42-4ab5acf4d0eb",
+    "owner_id": "e607f7d6-3d08-42c0-a6f2-d66a6231a4ca",
+    "name": "GameZone Karonga",
+    "description": "Gaming paradise in the northern lakeshore region",
+    "business_registration_no": "KR-2023-067890",
+    "address_line1": "Karonga Market, Section A",
+    "city": "Karonga",
+    "latitude": "-9.934167",
+    "longitude": "33.935",
+    "phone": "+265993210987",
+    "email": "karonga@gamezone.mw",
+    "is_verified": true,
+    "delivery_enabled": true,
+    "created_at": "2025-11-25T22:05:01.239Z",
+    "updated_at": "2025-11-25T22:05:01.239Z",
+    "banner": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=1200",
+    "delivery_methods": [
+      "COURIER",
+      "DOOR_TO_DOOR"
+    ],
+    "gallery": [
+      "https://images.unsplash.com/photo-1556438064-2d7646166914?w=600",
+      "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=600",
+      "https://images.unsplash.com/photo-1616588589676-62b3bd4ff6d2?w=600",
+      "https://images.unsplash.com/photo-1625805866449-3589fe3f71a3?w=600"
+    ],
+    "logo": "https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=400",
+    "delivery_zones": [],
+    "wallet_balance": "0",
+    "whatsapp_number": null,
+    "can_bulk_upload": true,
+    "base_delivery_fee": null,
+    "free_delivery_threshold": null,
+    "intercity_delivery_fee": null
+  },
+  {
+    "id": "80017670-d4b6-4be2-8435-0d7655fc9b1e",
+    "owner_id": "a5112786-3197-40d6-b0ff-1381e9569cab",
+    "name": "Digital World Blantyre",
+    "description": "Your trusted partner for all digital solutions in Blantyre",
+    "business_registration_no": "BT-2023-005678",
+    "address_line1": "Chichiri Shopping Centre, Unit 45",
+    "city": "Blantyre",
+    "latitude": "-15.786415",
+    "longitude": "35.00541",
+    "phone": "+265997654321",
+    "email": "contact@digitalworld.mw",
+    "is_verified": true,
+    "delivery_enabled": true,
+    "created_at": "2025-11-25T22:05:00.263Z",
+    "updated_at": "2026-01-27T12:31:34.294Z",
+    "banner": "https://images.unsplash.com/photo-1487017159836-4e23ece2e4cf?w=1200",
+    "delivery_methods": [
+      "COURIER",
+      "DOOR_TO_DOOR"
+    ],
+    "gallery": [
+      "https://images.unsplash.com/photo-1591370874773-6702e8f12fd8?w=600",
+      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600"
+    ],
+    "logo": "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=400",
+    "delivery_zones": [],
+    "wallet_balance": "0",
+    "whatsapp_number": null,
+    "can_bulk_upload": true,
+    "base_delivery_fee": null,
+    "free_delivery_threshold": null,
+    "intercity_delivery_fee": null
+  },
+  {
+    "id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "owner_id": "50e9b187-5851-46bc-84e9-ab89048c02cd",
+    "name": "Chifundo Tech Store",
+    "description": "Test shop for Chifundo",
+    "business_registration_no": null,
+    "address_line1": null,
+    "city": "Lilongwe",
+    "latitude": "-13.9756",
+    "longitude": "33.7698",
+    "phone": "+265991234567",
+    "email": null,
+    "is_verified": false,
+    "delivery_enabled": true,
+    "created_at": "2026-01-28T13:41:17.892Z",
+    "updated_at": "2026-01-28T13:41:17.892Z",
+    "banner": null,
+    "delivery_methods": [],
+    "gallery": [],
+    "logo": null,
+    "delivery_zones": [],
+    "wallet_balance": "0",
+    "whatsapp_number": null,
+    "can_bulk_upload": true,
+    "base_delivery_fee": null,
+    "free_delivery_threshold": null,
+    "intercity_delivery_fee": null
+  },
+  {
+    "id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "owner_id": "e607f7d6-3d08-42c0-a6f2-d66a6231a4ca",
+    "name": "TechHub Lilongwe",
+    "description": "Premier electronics store in the heart of Lilongwe",
+    "business_registration_no": "BL-2023-001234",
+    "address_line1": "Capital City Mall, Shop 12A",
+    "city": "Lilongwe",
+    "latitude": "-13.962612",
+    "longitude": "33.774119",
+    "phone": "+265998765432",
+    "email": "info@techhub.mw",
+    "is_verified": true,
+    "delivery_enabled": true,
+    "created_at": "2025-11-25T22:04:59.610Z",
+    "updated_at": "2026-01-27T12:38:45.138Z",
+    "banner": "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=1200",
+    "delivery_methods": [
+      "PICKUP_POINT",
+      "COURIER",
+      "DOOR_TO_DOOR"
+    ],
+    "gallery": [
+      "https://images.unsplash.com/photo-1593642532871-8b12e02d091c?w=600",
+      "https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=600",
+      "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=600"
+    ],
+    "logo": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400",
+    "delivery_zones": [],
+    "wallet_balance": "84000",
+    "whatsapp_number": null,
+    "can_bulk_upload": true,
+    "base_delivery_fee": null,
+    "free_delivery_threshold": null,
+    "intercity_delivery_fee": null
+  },
+  {
+    "id": "65389d7e-3bd0-4f61-b975-886cea38a08c",
+    "owner_id": "e607f7d6-3d08-42c0-a6f2-d66a6231a4ca",
+    "name": "Gadget Palace Mzuzu",
+    "description": "Northern region's leading technology store",
+    "business_registration_no": "MZ-2023-009012",
+    "address_line1": "Mzuzu Main Market, Block C",
+    "city": "Mzuzu",
+    "latitude": "-11.465277",
+    "longitude": "34.015625",
+    "phone": "+265995123456",
+    "email": "mzuzu@gadgetpalace.mw",
+    "is_verified": false,
+    "delivery_enabled": true,
+    "created_at": "2025-11-25T22:05:00.564Z",
+    "updated_at": "2026-01-28T08:32:11.629Z",
+    "banner": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200",
+    "delivery_methods": [
+      "PICKUP_POINT"
+    ],
+    "gallery": [
+      "https://images.unsplash.com/photo-1527698266440-12104e498b76?w=600"
+    ],
+    "logo": "https://images.unsplash.com/photo-1556656793-08538906a9f8?w=400",
+    "delivery_zones": [],
+    "wallet_balance": "2000000",
+    "whatsapp_number": null,
+    "can_bulk_upload": true,
+    "base_delivery_fee": null,
+    "free_delivery_threshold": null,
+    "intercity_delivery_fee": null
+  },
+  {
+    "id": "d6e6836b-f12b-4d79-a087-31c9e9a40b1a",
+    "owner_id": "a5112786-3197-40d6-b0ff-1381e9569cab",
+    "name": "SmartTech Zomba",
+    "description": "University town's favorite tech store with student-friendly prices",
+    "business_registration_no": "ZB-2023-012345",
+    "address_line1": "Zomba Town Centre, Ground Floor",
+    "city": "Zomba",
+    "latitude": "-15.385208",
+    "longitude": "35.318749",
+    "phone": "+265994321098",
+    "email": "zomba@smarttech.mw",
+    "is_verified": true,
+    "delivery_enabled": false,
+    "created_at": "2025-11-25T22:05:00.883Z",
+    "updated_at": "2026-02-12T12:46:02.515Z",
+    "banner": "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200",
+    "delivery_methods": [],
+    "gallery": [],
+    "logo": "https://images.unsplash.com/photo-1542393545-10f5cde2c810?w=400",
+    "delivery_zones": [],
+    "wallet_balance": "48000",
+    "whatsapp_number": null,
+    "can_bulk_upload": true,
+    "base_delivery_fee": null,
+    "free_delivery_threshold": null,
+    "intercity_delivery_fee": null
+  }
+], skipDuplicates: true });
+  console.log('Seeding shop_products...');
+  await prisma.shop_products.createMany({ data: [
+  {
+    "id": "f81ed540-ff0d-421b-b91a-b1d60d17feea",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "3d3f8e5b-f90b-44d8-a2b5-021ebc2a5ebd",
+    "sku": "SONY-WH1000XM5",
+    "price": "294728",
+    "stock_quantity": 10,
+    "condition": "NEW",
+    "shop_description": "Premium noise-cancelling headphones",
+    "specs": {
+      "Type": "Over-Ear",
+      "Color": "Black",
+      "Battery Life": "30 hours",
+      "Connectivity": "Bluetooth 5.2"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T07:43:40.387Z",
+    "updated_at": "2026-02-03T07:43:40.387Z",
+    "base_price": "280000",
+    "bulk_upload_id": "2c41ac71-c558-4433-bd90-c82d97c210c1",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "dd91fc83-3372-469d-bf8c-51d8c07a158d",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "788983ac-5718-4324-90cf-a1c1cafd546b",
+    "sku": "SG-A54-128",
+    "price": "336832",
+    "stock_quantity": 8,
+    "condition": "NEW",
+    "shop_description": "Mid-range smartphone with great camera",
+    "specs": {
+      "Color": "Lime Green",
+      "Screen Size": "6.4 inches"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T07:45:39.636Z",
+    "updated_at": "2026-02-03T07:45:39.636Z",
+    "base_price": "320000",
+    "bulk_upload_id": "241e2f71-87ad-4eea-bfac-ced919b0faee",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "c00517f4-7110-4201-aee2-d70efd868fb2",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "e595d57f-5b37-4142-b9ee-9e7ab64f3c40",
+    "sku": "MBA-M2-256",
+    "price": "1263120",
+    "stock_quantity": 4,
+    "condition": "NEW",
+    "shop_description": "Lightweight laptop with M2 chip",
+    "specs": {
+      "RAM": "8GB",
+      "Screen Size": "13.6 inches"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T07:45:41.727Z",
+    "updated_at": "2026-02-03T07:45:41.727Z",
+    "base_price": "1200000",
+    "bulk_upload_id": "241e2f71-87ad-4eea-bfac-ced919b0faee",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "2cdb400d-4675-43ab-bab1-543772228796",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "1880d387-9e5c-4c31-909b-271b49d803ea",
+    "sku": "CHAIR-OFFICE-001",
+    "price": "47367",
+    "stock_quantity": 20,
+    "condition": "NEW",
+    "shop_description": "Ergonomic office chair with lumbar support",
+    "specs": {
+      "Color": "Black",
+      "Material": "Mesh + Steel",
+      "Weight Capacity": "120kg"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T07:45:43.516Z",
+    "updated_at": "2026-02-03T07:45:43.516Z",
+    "base_price": "45000",
+    "bulk_upload_id": "241e2f71-87ad-4eea-bfac-ced919b0faee",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "b34ffd2f-5b98-42b7-8a78-1038e1b8259c",
+    "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "product_id": "1169ce16-2a9d-432e-ad9e-9c9e872e96f9",
+    "sku": "TECH-IP15PM-256-TI",
+    "price": "910499",
+    "stock_quantity": 8,
+    "condition": "NEW",
+    "shop_description": "Brand new iPhone 15 Pro Max in Natural Titanium! Includes FREE screen protector and premium case. Official Apple warranty valid in Malawi. Fast delivery available within Lilongwe.",
+    "specs": {
+      "color": "Natural Titanium",
+      "network": "5G enabled",
+      "storage": "256GB",
+      "warranty": "1 year Apple warranty"
+    },
+    "images": [
+      "https://images.unsplash.com/photo-1592910147829-99f40bc3d004?w=500"
+    ],
+    "is_available": true,
+    "created_at": "2025-11-25T22:05:03.504Z",
+    "updated_at": "2025-11-25T22:05:03.504Z",
+    "base_price": "865000",
+    "bulk_upload_id": null,
+    "listing_status": "LIVE",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "033b8b66-28fc-4904-a23f-465f020759fd",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "4b277171-5980-40b3-9ef6-c1b1af6f0afd",
+    "sku": "CHIFUN-20260203-007",
+    "price": "2632",
+    "stock_quantity": 100,
+    "condition": "NEW",
+    "shop_description": "Adjustable phone stand for desk",
+    "specs": {
+      "Material": "Plastic",
+      "Adjustable": "Yes"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T07:45:45.883Z",
+    "updated_at": "2026-02-03T07:45:45.883Z",
+    "base_price": "2500",
+    "bulk_upload_id": "241e2f71-87ad-4eea-bfac-ced919b0faee",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "b8977bdc-453e-4054-a85a-edd453eea6f7",
+    "shop_id": "65389d7e-3bd0-4f61-b975-886cea38a08c",
+    "product_id": "1090059f-fea2-4972-a82b-95c5ab212a3d",
+    "sku": "GP-SONY-1000XM5-BLK",
+    "price": "199994",
+    "stock_quantity": 15,
+    "condition": "NEW",
+    "shop_description": "Sony WH-1000XM5 - Industry-leading noise cancellation! Perfect for commuters and audiophiles. In stock now with multiple color options. Extended 2-year warranty available at checkout.",
+    "specs": {
+      "type": "Over-ear headphones",
+      "battery": "30 hours playback",
+      "features": "Active Noise Cancellation",
+      "connectivity": "Bluetooth 5.2, NFC"
+    },
+    "images": [
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500"
+    ],
+    "is_available": true,
+    "created_at": "2025-11-25T22:05:04.871Z",
+    "updated_at": "2025-11-25T22:05:04.871Z",
+    "base_price": "190000",
+    "bulk_upload_id": null,
+    "listing_status": "LIVE",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "c28cb4a5-61cd-4071-aa85-32b0e24ba96f",
+    "shop_id": "b989043d-1b72-400d-ac42-4ab5acf4d0eb",
+    "product_id": "f0088958-0333-4cad-ba3d-6093efb694a1",
+    "sku": "GZ-PS5-STD-WHT",
+    "price": "489459",
+    "stock_quantity": 3,
+    "condition": "NEW",
+    "shop_description": "PlayStation 5 Standard Edition - LIMITED STOCK! Includes DualSense controller and latest firmware. Bundle deals available with top games. Secure yours today before stock runs out!",
+    "specs": {
+      "storage": "825GB SSD",
+      "features": "4K Gaming, Ray Tracing",
+      "warranty": "1 year Sony warranty",
+      "controller": "DualSense included"
+    },
+    "images": [
+      "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=500"
+    ],
+    "is_available": true,
+    "created_at": "2025-11-25T22:05:05.197Z",
+    "updated_at": "2025-11-25T22:05:05.197Z",
+    "base_price": "465000",
+    "bulk_upload_id": null,
+    "listing_status": "LIVE",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "557d5bd6-de3d-4a66-a2d5-a7d95b1c4dc3",
+    "shop_id": "80017670-d4b6-4be2-8435-0d7655fc9b1e",
+    "product_id": "dc19472c-ed17-44ee-ac29-1af8bc243a37",
+    "sku": "DW-MBA-M3-256-SG",
+    "price": "799976",
+    "stock_quantity": 4,
+    "condition": "NEW",
+    "shop_description": "Apple MacBook Air M3 - Perfect for students and professionals! Lightweight design, all-day battery life. Special offer: Buy now and get Microsoft Office installed FREE. Authorized Apple reseller.",
+    "specs": {
+      "memory": "8GB",
+      "display": "13.6-inch Liquid Retina",
+      "storage": "256GB SSD",
+      "processor": "Apple M3 8-core"
+    },
+    "images": [
+      "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500"
+    ],
+    "is_available": true,
+    "created_at": "2025-11-25T22:05:04.177Z",
+    "updated_at": "2025-11-25T22:05:04.177Z",
+    "base_price": "760000",
+    "bulk_upload_id": null,
+    "listing_status": "LIVE",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "2c7b3f27-cd4b-413f-ac9c-d68379d5ad4a",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "77240b2f-756f-4938-9395-9b362ee50069",
+    "sku": "CHIFUN-20260203-002",
+    "price": "999970",
+    "stock_quantity": 2,
+    "condition": "NEW",
+    "shop_description": "Ultra-portable laptop with InfinityEdge display",
+    "specs": {
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Graphics": "Intel Iris Xe",
+      "Processor": "Intel Core i7-1355U",
+      "Screen Size": "13.4 inches"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T07:34:58.928Z",
+    "updated_at": "2026-02-03T07:34:58.928Z",
+    "base_price": "950000",
+    "bulk_upload_id": "789a8f16-9d1d-457c-8801-f2b0c5e161aa",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "f794b929-de25-4c84-b88b-b454bac21cb6",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "2681ccd0-f413-475f-aa43-583a2556f7db",
+    "sku": "CHIFUN-20260203-001",
+    "price": "2632",
+    "stock_quantity": 100,
+    "condition": "NEW",
+    "shop_description": "Simple charging cable",
+    "specs": {},
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T08:32:12.371Z",
+    "updated_at": "2026-02-03T08:32:12.371Z",
+    "base_price": "2500",
+    "bulk_upload_id": "cfdf1efb-a7f9-4ff4-af46-1dea584a0e24",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": {}
+  },
+  {
+    "id": "d257286a-4853-4bf0-862d-43e2ddb9379e",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "46cf141a-1c2a-4173-89bb-3b05475e958a",
+    "sku": "CHIFUN-20260203-002",
+    "price": "894710",
+    "stock_quantity": 5,
+    "condition": "NEW",
+    "shop_description": "Latest iPhone - missing RAM and Storage specs",
+    "specs": {},
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T08:48:37.559Z",
+    "updated_at": "2026-02-03T08:48:37.559Z",
+    "base_price": "850000",
+    "bulk_upload_id": "d0c453a3-9419-423e-981d-3525d6027c8e",
+    "listing_status": "NEEDS_SPECS",
+    "rejection_reason": null,
+    "variant_values": {}
+  },
+  {
+    "id": "ff2dbccc-c052-4aa6-b85d-7d814aa07fff",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "96d03936-1921-4b1b-bb36-369c691619ec",
+    "sku": "CHIFUN-20260203-003",
+    "price": "1263120",
+    "stock_quantity": 3,
+    "condition": "NEW",
+    "shop_description": "High-end laptop - missing processor and specs",
+    "specs": {},
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T08:48:39.788Z",
+    "updated_at": "2026-02-03T08:48:39.788Z",
+    "base_price": "1200000",
+    "bulk_upload_id": "d0c453a3-9419-423e-981d-3525d6027c8e",
+    "listing_status": "NEEDS_SPECS",
+    "rejection_reason": null,
+    "variant_values": {}
+  },
+  {
+    "id": "89bdf645-62a2-4cea-8031-4a4967356d3b",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "7596a1e7-392b-4c93-ace6-d372e7766491",
+    "sku": "CHIFUN-20260203-004",
+    "price": "684190",
+    "stock_quantity": 8,
+    "condition": "NEW",
+    "shop_description": "Flagship phone with only screen size",
+    "specs": {},
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T08:48:41.343Z",
+    "updated_at": "2026-02-03T08:48:41.343Z",
+    "base_price": "650000",
+    "bulk_upload_id": "d0c453a3-9419-423e-981d-3525d6027c8e",
+    "listing_status": "NEEDS_SPECS",
+    "rejection_reason": null,
+    "variant_values": {}
+  },
+  {
+    "id": "a74b33a5-d84d-4533-a011-3e600c4c3523",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "c19aec08-8abc-4a1f-8fc6-349050afed80",
+    "sku": "CHIFUN-20260203-005",
+    "price": "1578900",
+    "stock_quantity": 2,
+    "condition": "NEW",
+    "shop_description": "Complete specs - should go to NEEDS_IMAGES",
+    "specs": {},
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T08:48:42.878Z",
+    "updated_at": "2026-02-03T08:48:42.878Z",
+    "base_price": "1500000",
+    "bulk_upload_id": "d0c453a3-9419-423e-981d-3525d6027c8e",
+    "listing_status": "NEEDS_SPECS",
+    "rejection_reason": null,
+    "variant_values": {}
+  },
+  {
+    "id": "55ec3dfb-d37d-4314-b0ea-5daada21b633",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "7cd31475-1ff0-4ed3-9fc2-8b43aa882c9c",
+    "sku": "CHIFUN-20260203-006",
+    "price": "757872",
+    "stock_quantity": 6,
+    "condition": "NEW",
+    "shop_description": "Missing ALL specs - should be NEEDS_SPECS",
+    "specs": {},
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T09:11:50.060Z",
+    "updated_at": "2026-02-03T09:11:50.060Z",
+    "base_price": "720000",
+    "bulk_upload_id": "707f26f7-4e34-44a8-aabd-851b66a31419",
+    "listing_status": "NEEDS_SPECS",
+    "rejection_reason": null,
+    "variant_values": {}
+  },
+  {
+    "id": "0e3732b9-d06d-49f1-9035-7f02282f32a0",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "8fde8214-7192-4003-98ce-b72d61843a87",
+    "sku": "CHIFUN-20260203-007",
+    "price": "1031548",
+    "stock_quantity": 4,
+    "condition": "NEW",
+    "shop_description": "Has RAM only, missing others",
+    "specs": {
+      "RAM": "16GB"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T09:11:53.151Z",
+    "updated_at": "2026-02-03T09:11:53.151Z",
+    "base_price": "980000",
+    "bulk_upload_id": "707f26f7-4e34-44a8-aabd-851b66a31419",
+    "listing_status": "NEEDS_SPECS",
+    "rejection_reason": null,
+    "variant_values": {
+      "RAM": "16GB"
+    }
+  },
+  {
+    "id": "f73b39f9-afe2-4021-af1b-dcb0dee8999f",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "635743cc-0d8c-4233-9a31-a076f0d66689",
+    "sku": "CHIFUN-20260203-008",
+    "price": "1894680",
+    "stock_quantity": 2,
+    "condition": "NEW",
+    "shop_description": "Complete specs - should be NEEDS_IMAGES",
+    "specs": {
+      "RAM": "32GB",
+      "Storage": "1TB SSD",
+      "Processor": "Intel Core i7-1355U",
+      "Screen Size": "14 inches"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T09:11:54.640Z",
+    "updated_at": "2026-02-03T09:11:54.640Z",
+    "base_price": "1800000",
+    "bulk_upload_id": "707f26f7-4e34-44a8-aabd-851b66a31419",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": {
+      "RAM": "32GB",
+      "Storage": "1TB SSD",
+      "Processor": "Intel Core i7-1355U",
+      "Screen Size": "14 inches"
+    }
+  },
+  {
+    "id": "aac29a41-c7e6-455d-9bc5-68f3564e53a2",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "13232941-b9b0-4e8e-8ebd-1383cba2b454",
+    "sku": "CHIFUN-20260203-009",
+    "price": "715768",
+    "stock_quantity": 7,
+    "condition": "NEW",
+    "shop_description": "Missing storage and screen - should be NEEDS_SPECS",
+    "specs": {
+      "RAM": "12GB"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T15:46:16.046Z",
+    "updated_at": "2026-02-03T15:46:16.046Z",
+    "base_price": "680000",
+    "bulk_upload_id": "ab8b44e3-3234-45e9-ba5c-481b90d5103a",
+    "listing_status": "NEEDS_SPECS",
+    "rejection_reason": null,
+    "variant_values": {
+      "RAM": "12GB"
+    }
+  },
+  {
+    "id": "30703621-ffea-40fd-880d-748055015478",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "99b0caae-3dc6-4413-890e-e44e83fbe073",
+    "sku": "CHIFUN-20260203-010",
+    "price": "2210460",
+    "stock_quantity": 3,
+    "condition": "NEW",
+    "shop_description": "Complete specs - should be NEEDS_IMAGES",
+    "specs": {
+      "RAM": "32GB",
+      "Storage": "2TB SSD",
+      "Processor": "AMD Ryzen 9 7945HX",
+      "Screen Size": "16 inches"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T15:46:18.603Z",
+    "updated_at": "2026-02-03T15:46:18.603Z",
+    "base_price": "2100000",
+    "bulk_upload_id": "ab8b44e3-3234-45e9-ba5c-481b90d5103a",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": {
+      "RAM": "32GB",
+      "Storage": "2TB SSD",
+      "Processor": "AMD Ryzen 9 7945HX",
+      "Screen Size": "16 inches"
+    }
+  },
+  {
+    "id": "02ea6a0b-29cb-4486-934f-10d23691d608",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "7b2443c8-ff95-429f-a5c1-7429de19395a",
+    "sku": "CHIFUN-20260203-011",
+    "price": "15789",
+    "stock_quantity": 50,
+    "condition": "NEW",
+    "shop_description": "General product - should be NEEDS_IMAGES",
+    "specs": {
+      "Color": "Brown",
+      "Material": "Genuine Leather"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T15:46:20.313Z",
+    "updated_at": "2026-02-03T15:46:20.313Z",
+    "base_price": "15000",
+    "bulk_upload_id": "ab8b44e3-3234-45e9-ba5c-481b90d5103a",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": {
+      "Color": "Brown",
+      "Material": "Genuine Leather"
+    }
+  },
+  {
+    "id": "12738f52-9654-409f-a78d-1a2943c32f17",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "c39d20a2-36bd-4756-9a5e-a5d1ffbdbd6f",
+    "sku": "CHIFUN-20260203-012",
+    "price": "105260",
+    "stock_quantity": 1,
+    "condition": "NEW",
+    "shop_description": "Testing preview mode",
+    "specs": {
+      "RAM": "4GB"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-03T15:47:12.639Z",
+    "updated_at": "2026-02-03T15:47:12.639Z",
+    "base_price": "100000",
+    "bulk_upload_id": "f035cba7-beba-43d8-992e-5c15faf33d8f",
+    "listing_status": "NEEDS_SPECS",
+    "rejection_reason": null,
+    "variant_values": {
+      "RAM": "4GB"
+    }
+  },
+  {
+    "id": "4ae38341-abc8-42b7-aa79-8d7cfd5aeabe",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "ad815669-7149-4040-8768-8b095aa3cf72",
+    "sku": "SGA55-TEST",
+    "price": "294728",
+    "stock_quantity": 5,
+    "condition": "NEW",
+    "shop_description": "Mid-range Samsung phone",
+    "specs": {
+      "RAM": "8GB",
+      "Color": "Navy Blue",
+      "Storage": "128GB",
+      "Screen Size": "6.6\""
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-04T13:55:49.987Z",
+    "updated_at": "2026-02-04T13:55:49.987Z",
+    "base_price": "280000",
+    "bulk_upload_id": "9e874b4b-5bef-46c1-9a07-420ab3c94d0d",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": {
+      "RAM": "8GB",
+      "Color": "Navy Blue",
+      "Storage": "128GB",
+      "Screen Size": "6.6\""
+    }
+  },
+  {
+    "id": "7fbfabc4-95e1-4f31-978e-5a370db88c12",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "c0002282-e4e6-44ce-ab24-e5148525ec98",
+    "sku": "SKU-LOG-MX3S",
+    "price": "47367",
+    "stock_quantity": 20,
+    "condition": "NEW",
+    "shop_description": "Premium wireless mouse",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:42:05.599Z",
+    "updated_at": "2026-01-28T13:42:05.599Z",
+    "base_price": "45000",
+    "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "d9952426-d7b6-41e2-b2a1-a7051aa941df",
+    "shop_id": "d6e6836b-f12b-4d79-a087-31c9e9a40b1a",
+    "product_id": "c850210d-c59a-4dfd-a1bd-e79f8f838deb",
+    "sku": "ST-ECHO-DOT5-BLK",
+    "price": "50524.8",
+    "stock_quantity": 20,
+    "condition": "NEW",
+    "shop_description": "Amazon Echo Dot (5th Gen) - Transform your home into a smart home! Controls lights, thermostats, and more. Perfect sound quality for music streaming. Great gift idea! Multiple colors in stock.",
+    "specs": {
+      "features": "Smart home hub, Music streaming",
+      "assistant": "Alexa built-in",
+      "connectivity": "Wi-Fi, Bluetooth",
+      "compatibility": "Works with most smart devices"
+    },
+    "images": [
+      "https://images.unsplash.com/photo-1543512214-318c7553f230?w=500"
+    ],
+    "is_available": true,
+    "created_at": "2025-11-25T22:05:05.496Z",
+    "updated_at": "2025-11-25T22:05:05.496Z",
+    "base_price": "48000",
+    "bulk_upload_id": null,
+    "listing_status": "LIVE",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "4f991cfd-006c-4b79-a9d6-9e6a71b85eca",
+    "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "product_id": "f0088958-0333-4cad-ba3d-6093efb694a1",
+    "sku": null,
+    "price": "473670",
+    "stock_quantity": 3,
+    "condition": "NEW",
+    "shop_description": null,
+    "specs": null,
+    "images": [],
+    "is_available": true,
+    "created_at": "2026-01-27T09:57:38.570Z",
+    "updated_at": "2026-01-27T09:57:38.570Z",
+    "base_price": "450000",
+    "bulk_upload_id": null,
+    "listing_status": "LIVE",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "de00c210-1816-4c86-a957-0fe14671d05c",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "d22cb9e0-0458-4985-a79d-5557b4ea497e",
+    "sku": "SKU-JBL-CH5",
+    "price": "68419",
+    "stock_quantity": 12,
+    "condition": "USED_LIKE_NEW",
+    "shop_description": "Portable Bluetooth speaker",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:42:07.880Z",
+    "updated_at": "2026-01-28T13:42:07.880Z",
+    "base_price": "65000",
+    "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "7ab5bf0b-6921-4282-a41d-4ed16d53c61c",
+    "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "product_id": "c850210d-c59a-4dfd-a1bd-e79f8f838deb",
+    "sku": null,
+    "price": "44209.2",
+    "stock_quantity": 2,
+    "condition": "NEW",
+    "shop_description": null,
+    "specs": null,
+    "images": [],
+    "is_available": true,
+    "created_at": "2026-01-27T11:49:16.990Z",
+    "updated_at": "2026-01-27T11:49:16.990Z",
+    "base_price": "42000",
+    "bulk_upload_id": null,
+    "listing_status": "LIVE",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "d2cf33da-522e-4172-a2a9-ea69de02666b",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "a4b89bf8-03a5-4551-9474-2050358c5a0e",
+    "sku": "IP15PM-256-BLK",
+    "price": "1578900",
+    "stock_quantity": 10,
+    "condition": "NEW",
+    "shop_description": "Brand new, sealed in box. 1 year warranty.",
+    "specs": {
+      "ram": "8GB",
+      "color": "Black Titanium",
+      "storage": "256GB"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-29T07:57:24.156Z",
+    "updated_at": "2026-01-29T07:57:24.156Z",
+    "base_price": "1500000",
+    "bulk_upload_id": "f11cae99-e981-4a7d-8fe1-279f5cb8a360",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "b37ab90f-fcad-4a42-86d1-b408b0e832e3",
+    "shop_id": "65389d7e-3bd0-4f61-b975-886cea38a08c",
+    "product_id": "7dc6a38d-c53a-47fa-86fb-071456d1f38a",
+    "sku": "SAM-1769519879845",
+    "price": "578930",
+    "stock_quantity": 9,
+    "condition": "NEW",
+    "shop_description": "Samsung Galaxy A54 5G - Now available at Gadget Palace Mzuzu",
+    "specs": null,
+    "images": [],
+    "is_available": true,
+    "created_at": "2026-01-27T13:17:59.849Z",
+    "updated_at": "2026-01-27T13:21:50.955Z",
+    "base_price": "550000",
+    "bulk_upload_id": null,
+    "listing_status": "LIVE",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "d7c75149-31f1-4e51-b528-991009b0feac",
+    "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "product_id": "d6c20eaa-e5f8-430c-bd25-be86f3779544",
+    "sku": "SKU-IP15PM-001",
+    "price": "473670",
+    "stock_quantity": 5,
+    "condition": "NEW",
+    "shop_description": "Latest iPhone with titanium design",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:27:57.700Z",
+    "updated_at": "2026-01-28T13:27:57.700Z",
+    "base_price": "450000",
+    "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "3ebbe298-b238-4a27-8db8-9eefb4ab567d",
+    "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "product_id": "42279159-8096-402b-848f-1a8ffaaca3cb",
+    "sku": "SKU-SGS24U-001",
+    "price": "399988",
+    "stock_quantity": 8,
+    "condition": "NEW",
+    "shop_description": "Flagship Samsung with S Pen",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:27:59.790Z",
+    "updated_at": "2026-01-28T13:27:59.790Z",
+    "base_price": "380000",
+    "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "f37ab2e0-be35-4329-aa57-0e88f6234afb",
+    "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "product_id": "8e2386b7-ad24-4f2f-b81f-bf0b30eefdd7",
+    "sku": "SKU-MBA-M3-001",
+    "price": "789450",
+    "stock_quantity": 3,
+    "condition": "NEW",
+    "shop_description": "Lightweight laptop with M3 chip",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:28:01.813Z",
+    "updated_at": "2026-01-28T13:28:01.813Z",
+    "base_price": "750000",
+    "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "2ced28f7-25e2-4693-93b4-57a9179ebd5c",
+    "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "product_id": "67c3274d-32b2-4dfc-8d52-34b4ec4b118f",
+    "sku": "SKU-SONY-XM5",
+    "price": "126312",
+    "stock_quantity": 10,
+    "condition": "NEW",
+    "shop_description": "Premium noise cancelling headphones",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:28:03.628Z",
+    "updated_at": "2026-01-28T13:28:03.628Z",
+    "base_price": "120000",
+    "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "198ac188-50b5-4868-9395-594a0570e8d6",
+    "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "product_id": "2b9ba2e9-250c-4b22-86c9-b3923a262c47",
+    "sku": "SKU-IPAD-PRO",
+    "price": "652612",
+    "stock_quantity": 4,
+    "condition": "REFURBISHED",
+    "shop_description": "Refurbished iPad Pro in excellent condition",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:28:05.659Z",
+    "updated_at": "2026-01-28T13:28:05.659Z",
+    "base_price": "620000",
+    "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "07501a10-7516-4b05-a100-6f622da9108e",
+    "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "product_id": "582ba3a0-3a2a-4cea-b8f2-a030daed6118",
+    "sku": "SKU-DELL-XPS15",
+    "price": "936814",
+    "stock_quantity": 2,
+    "condition": "NEW",
+    "shop_description": "15-inch premium Windows laptop",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:28:07.691Z",
+    "updated_at": "2026-01-28T13:28:07.691Z",
+    "base_price": "890000",
+    "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "24701a05-1ba2-424d-ae33-4f960d510867",
+    "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "product_id": "53999564-2145-466f-b6de-d63dff8af0f5",
+    "sku": "SKU-APP2-001",
+    "price": "99997",
+    "stock_quantity": 15,
+    "condition": "NEW",
+    "shop_description": "Wireless earbuds with active noise cancellation",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:28:09.757Z",
+    "updated_at": "2026-01-28T13:28:09.757Z",
+    "base_price": "95000",
+    "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "d24a9769-1d8d-47e1-8f0a-e249d5c04abc",
+    "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "product_id": "f492bb6b-c12e-41a9-af67-f19a3792309a",
+    "sku": "SKU-SAM-TV55",
+    "price": "547352",
+    "stock_quantity": 2,
+    "condition": "NEW",
+    "shop_description": "4K OLED Smart TV",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:28:12.270Z",
+    "updated_at": "2026-01-28T13:28:12.270Z",
+    "base_price": "520000",
+    "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "ee5118e2-3ad8-4495-ad3d-2946ee3b4989",
+    "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "product_id": "0f78b8f8-b255-4703-af76-e6878bf99ac7",
+    "sku": "SKU-LOG-MX3S",
+    "price": "47367",
+    "stock_quantity": 20,
+    "condition": "NEW",
+    "shop_description": "Premium wireless mouse",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:28:13.800Z",
+    "updated_at": "2026-01-28T13:28:13.800Z",
+    "base_price": "45000",
+    "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "4159caf8-502b-4666-94fe-0adf811cd04a",
+    "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+    "product_id": "c0ce0d62-d0e2-4109-8cc6-3b07dcaa3c30",
+    "sku": "SKU-JBL-CH5",
+    "price": "68419",
+    "stock_quantity": 12,
+    "condition": "USED_LIKE_NEW",
+    "shop_description": "Portable Bluetooth speaker",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:28:16.093Z",
+    "updated_at": "2026-01-28T13:28:16.093Z",
+    "base_price": "65000",
+    "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "08422326-57b6-41e4-872e-76bee980a42a",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "30806904-ba56-4715-874e-894f207ede5b",
+    "sku": "SKU-IP15PM-001",
+    "price": "473670",
+    "stock_quantity": 5,
+    "condition": "NEW",
+    "shop_description": "Latest iPhone with titanium design",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:41:48.474Z",
+    "updated_at": "2026-01-28T13:41:48.474Z",
+    "base_price": "450000",
+    "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "de7b06b4-fa47-4fa4-a4fd-e5dc05abbd7e",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "d503a00d-b1c0-46ef-a788-30231b1c5e0f",
+    "sku": "SKU-SGS24U-001",
+    "price": "399988",
+    "stock_quantity": 8,
+    "condition": "NEW",
+    "shop_description": "Flagship Samsung with S Pen",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:41:52.704Z",
+    "updated_at": "2026-01-28T13:41:52.704Z",
+    "base_price": "380000",
+    "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "2571aff5-3ecc-49e0-bc8d-64276254a4e6",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "c336f6ee-be9f-4694-85f8-7a2ef034ec6e",
+    "sku": "SKU-MBA-M3-001",
+    "price": "789450",
+    "stock_quantity": 3,
+    "condition": "NEW",
+    "shop_description": "Lightweight laptop with M3 chip",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:41:54.487Z",
+    "updated_at": "2026-01-28T13:41:54.487Z",
+    "base_price": "750000",
+    "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "64838b30-82f4-4352-a439-55ec1e1dfd64",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "36c9d37f-299f-4518-97b2-495de44fe174",
+    "sku": "SKU-SONY-XM5",
+    "price": "126312",
+    "stock_quantity": 10,
+    "condition": "NEW",
+    "shop_description": "Premium noise cancelling headphones",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:41:56.264Z",
+    "updated_at": "2026-01-28T13:41:56.264Z",
+    "base_price": "120000",
+    "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "dc90daa1-f84d-4b7d-b4d5-37a4eb64affb",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "561f867b-2d0b-495c-a990-be826aa2e6dd",
+    "sku": "SKU-IPAD-PRO",
+    "price": "652612",
+    "stock_quantity": 4,
+    "condition": "REFURBISHED",
+    "shop_description": "Refurbished iPad Pro in excellent condition",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:41:58.291Z",
+    "updated_at": "2026-01-28T13:41:58.291Z",
+    "base_price": "620000",
+    "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "25ba7106-c7f2-4851-9fcc-a655621be477",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "1a722b36-8e5e-4baf-a6a8-4c53c6b7866f",
+    "sku": "SKU-DELL-XPS15",
+    "price": "936814",
+    "stock_quantity": 2,
+    "condition": "NEW",
+    "shop_description": "15-inch premium Windows laptop",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:41:59.773Z",
+    "updated_at": "2026-01-28T13:41:59.773Z",
+    "base_price": "890000",
+    "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "db482b17-bcfd-456d-91d3-183bdec42b63",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "13c48c94-2c6e-4daa-a8bc-7d60e56a4546",
+    "sku": "SKU-APP2-001",
+    "price": "99997",
+    "stock_quantity": 15,
+    "condition": "NEW",
+    "shop_description": "Wireless earbuds with active noise cancellation",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:42:01.542Z",
+    "updated_at": "2026-01-28T13:42:01.542Z",
+    "base_price": "95000",
+    "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "11b605ac-2ad1-4ebb-bda8-be6cebe6c7af",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "cb513a0d-9dfb-49a9-9626-d3360f7df83d",
+    "sku": "SKU-SAM-TV55",
+    "price": "547352",
+    "stock_quantity": 2,
+    "condition": "NEW",
+    "shop_description": "4K OLED Smart TV",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-28T13:42:04.071Z",
+    "updated_at": "2026-01-28T13:42:04.071Z",
+    "base_price": "520000",
+    "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "b69d375f-309e-45ab-9c99-287c317e1c3a",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "d9ffed13-47b2-4fbd-bd9e-223eade70945",
+    "sku": "SGS24U-512-GRY",
+    "price": "1421010",
+    "stock_quantity": 5,
+    "condition": "NEW",
+    "shop_description": "Factory unlocked. Includes S Pen.",
+    "specs": {
+      "ram": "12GB",
+      "color": "Titanium Gray",
+      "storage": "512GB"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-29T07:57:25.922Z",
+    "updated_at": "2026-01-29T07:57:25.922Z",
+    "base_price": "1350000",
+    "bulk_upload_id": "f11cae99-e981-4a7d-8fe1-279f5cb8a360",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "a421fa5a-5a4c-468e-a92a-ed6bab915617",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "65b8aacd-389e-4d7a-a5e5-83cb52e6e4ee",
+    "sku": "HIS-55-4K",
+    "price": "684190",
+    "stock_quantity": 8,
+    "condition": "NEW",
+    "shop_description": null,
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-29T08:10:09.034Z",
+    "updated_at": "2026-01-29T08:10:09.034Z",
+    "base_price": "650000",
+    "bulk_upload_id": "dc17a0b8-a422-444f-ba76-f1b9a82bf5b2",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "63bf1bd2-8ff0-4093-a1cf-43a7515cf53f",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "dabd428d-6a6d-4248-9b56-c6f1b6e1dd2a",
+    "sku": "CHIFUN-20260129-001",
+    "price": "2631.5",
+    "stock_quantity": 100,
+    "condition": "NEW",
+    "shop_description": "Simple charging cable",
+    "specs": null,
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-29T08:10:12.161Z",
+    "updated_at": "2026-01-29T08:10:12.161Z",
+    "base_price": "2500",
+    "bulk_upload_id": "dc17a0b8-a422-444f-ba76-f1b9a82bf5b2",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "f9124107-11ad-42d3-a097-d08b1163a136",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "971c72c5-7fe7-4e7a-bfff-0a8d3fa19efd",
+    "sku": "MW-WIFI-4G",
+    "price": "26315",
+    "stock_quantity": 50,
+    "condition": "NEW",
+    "shop_description": "Fast mobile internet for home or office.",
+    "specs": {
+      "network": "4G LTE"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-29T08:10:14.241Z",
+    "updated_at": "2026-01-29T08:10:14.241Z",
+    "base_price": "25000",
+    "bulk_upload_id": "dc17a0b8-a422-444f-ba76-f1b9a82bf5b2",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "314453e4-f245-47e9-8b9a-c8810d0fd5be",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "26e219b7-82ba-43ef-b28b-5fb06c1c5d42",
+    "sku": "CHIFUN-20260129-002",
+    "price": "2210460",
+    "stock_quantity": 3,
+    "condition": "REFURBISHED",
+    "shop_description": "Certified refurbished. 90-day warranty.",
+    "specs": {
+      "cpu": "M3 Chip",
+      "ram": "16GB"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-29T09:13:01.436Z",
+    "updated_at": "2026-01-29T09:13:01.436Z",
+    "base_price": "2100000",
+    "bulk_upload_id": "7572ca36-187e-48a4-9e7a-7354000c265e",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "801217d8-2038-4380-b85d-bec010124e73",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "11d9399a-d009-43fd-814a-1cf34c3f2f30",
+    "sku": "CHIFUN-20260129-003",
+    "price": "2210460",
+    "stock_quantity": 3,
+    "condition": "REFURBISHED",
+    "shop_description": "Certified refurbished. 90-day warranty.",
+    "specs": {
+      "cpu": "M3 Chip",
+      "ram": "16GB"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-29T09:19:19.391Z",
+    "updated_at": "2026-01-29T09:19:19.391Z",
+    "base_price": "2100000",
+    "bulk_upload_id": "e86bab85-afd4-4ebf-8b6e-1dbcd3404cb0",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "f1175539-115e-4d35-bb04-2bc7919ea45e",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "427767e6-542e-4ed9-86ec-5fb2880f7e50",
+    "sku": "CHIFUN-20260129-004",
+    "price": "2210460",
+    "stock_quantity": 3,
+    "condition": "REFURBISHED",
+    "shop_description": "Certified refurbished. 90-day warranty.",
+    "specs": {
+      "cpu": "M3 Chip",
+      "ram": "16GB"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-01-29T09:20:14.719Z",
+    "updated_at": "2026-01-29T09:20:14.719Z",
+    "base_price": "2100000",
+    "bulk_upload_id": "bbf1530c-5a32-4e24-b11d-f5f110d5122c",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": null
+  },
+  {
+    "id": "e29514c8-5e45-4012-87c4-4685d5ea238f",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "43638392-be96-46b7-9597-e8561d60664d",
+    "sku": "IP14P-TEST",
+    "price": "789450",
+    "stock_quantity": 3,
+    "condition": "NEW",
+    "shop_description": "Apple flagship",
+    "specs": {
+      "RAM": "6GB",
+      "Color": "Space Black",
+      "Storage": "256GB",
+      "Screen Size": "6.1\""
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-04T13:55:58.002Z",
+    "updated_at": "2026-02-04T13:55:58.002Z",
+    "base_price": "750000",
+    "bulk_upload_id": "9e874b4b-5bef-46c1-9a07-420ab3c94d0d",
+    "listing_status": "NEEDS_IMAGES",
+    "rejection_reason": null,
+    "variant_values": {
+      "RAM": "6GB",
+      "Color": "Space Black",
+      "Storage": "256GB",
+      "Screen Size": "6.1\""
+    }
+  },
+  {
+    "id": "a08ef48a-18a2-474a-a338-f105925435ce",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "9422a9af-8747-4066-8294-b094fab75808",
+    "sku": "JBL520-TEST",
+    "price": "47367",
+    "stock_quantity": 10,
+    "condition": "NEW",
+    "shop_description": "Wireless headphones",
+    "specs": {
+      "Color": "Blue"
+    },
+    "images": [],
+    "is_available": false,
+    "created_at": "2026-02-06T13:37:21.070Z",
+    "updated_at": "2026-02-06T13:37:21.070Z",
+    "base_price": "45000",
+    "bulk_upload_id": "0ab063c4-f9dc-421e-95fa-bb42f15919d0",
+    "listing_status": "NEEDS_SPECS",
+    "rejection_reason": null,
+    "variant_values": {
+      "Color": "Blue"
+    }
+  },
+  {
+    "id": "e726b7af-a221-4566-9e85-29444c56b050",
+    "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+    "product_id": "c2a6a61a-6260-4c49-8d70-2e0e00bc2691",
+    "sku": "XIA-1770134086587",
+    "price": "399988",
+    "stock_quantity": 0,
+    "condition": "NEW",
+    "shop_description": "Xiaomi Redmi Note 13 Pro Admin Test - Now available at Chifundo Tech Store",
+    "specs": null,
+    "images": [],
+    "is_available": true,
+    "created_at": "2026-02-03T15:54:48.333Z",
+    "updated_at": "2026-02-18T09:48:07.718Z",
+    "base_price": "380000",
+    "bulk_upload_id": null,
+    "listing_status": "LIVE",
+    "rejection_reason": null,
+    "variant_values": null
+  }
+], skipDuplicates: true });
+  console.log('Done.');
 }
-
-main()
-  .catch(e => {
-    console.error("❌ Seeding failed:", e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main().catch(e=>{console.error(e);process.exit(1)}).finally(()=>process.exit(0));
