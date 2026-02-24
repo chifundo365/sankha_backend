@@ -87,7 +87,8 @@ export const addToCart = async (req: Request, res: Response) => {
       return errorResponse(res, "Shop product not found", 404);
     }
 
-    if (!shopProduct.is_available) {
+    const available = shopProduct.listing_status === 'LIVE' && shopProduct.stock_quantity > 0;
+    if (!available) {
       return errorResponse(res, "This product is currently unavailable", 400);
     }
 
@@ -248,7 +249,7 @@ export const getCart = async (req: Request, res: Response) => {
           unit_price: Number(item.unit_price),
           total_price: Number(item.quantity) * Number(item.unit_price),
           stock_available: item.shop_products?.stock_quantity || 0,
-          is_available: item.shop_products?.is_available || false,
+          is_available: (item.shop_products?.listing_status === 'LIVE' && (item.shop_products?.stock_quantity || 0) > 0) || false,
         }));
         const subtotal = items.reduce((sum, item) => sum + item.total_price, 0);
         return {

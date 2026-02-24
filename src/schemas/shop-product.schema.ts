@@ -40,7 +40,6 @@ export const addShopProductSchema = z.object({
       .max(10, "Maximum 10 images allowed")
       .default([]),
 
-    is_available: z.boolean().default(true)
   })
 });
 
@@ -89,7 +88,6 @@ export const updateShopProductSchema = z.object({
         .max(10, "Maximum 10 images allowed")
         .optional(),
 
-      is_available: z.boolean().optional()
     })
     .refine(data => Object.keys(data).length > 0, {
       message: "At least one field must be provided for update"

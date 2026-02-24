@@ -638,7 +638,6 @@ export const bulkUploadStagingService = {
             specs: row.variant_values as Prisma.InputJsonValue || Prisma.JsonNull,
             variant_values: row.variant_values as Prisma.InputJsonValue || Prisma.JsonNull,
             images: [],
-            is_available: false,
             listing_status: row.target_listing_status || 'NEEDS_IMAGES',
             bulk_upload_id: bulkUpload.id
           }

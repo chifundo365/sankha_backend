@@ -115,7 +115,8 @@ export const checkout = async (req: Request, res: Response) => {
           continue;
         }
 
-        if (!item.shop_products.is_available) {
+        const derivedAvailable = item.shop_products.listing_status === 'LIVE' && item.shop_products.stock_quantity > 0;
+        if (!derivedAvailable) {
           stockIssues.push({
             product: item.product_name,
             issue: "Product is currently unavailable",

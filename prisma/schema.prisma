@@ -291,7 +291,7 @@ model shop_products {
   shop_description  String?
   specs             Json?
   images            String[]
-  is_available      Boolean?            @default(true)
+  // is_available removed 2026-02-24: availability is derived from listing_status = 'LIVE' AND stock_quantity > 0
   created_at        DateTime?           @default(now()) @db.Timestamp(6)
   updated_at        DateTime?           @default(now()) @db.Timestamp(6)
   base_price        Decimal?            @db.Decimal(10, 2)

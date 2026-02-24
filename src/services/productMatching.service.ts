@@ -481,8 +481,7 @@ export async function approveProduct(
               `${product.name} - Now available at ${sellerShop.name}`,
             specs: specs as any,
             images: images as any,
-            listing_status: listingStatus,
-            is_available: listingStatus === 'LIVE' ? true : false
+            listing_status: listingStatus
           },
           include: {
             shops: {

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../prismaClient";
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../generated/prisma';
 
 // Types for response shaping
 type ShopEntry = {
@@ -54,42 +54,51 @@ export const search = async (req: Request, res: Response) => {
     const minPrice = req.query.min_price ? Number(req.query.min_price) : null;
     const maxPrice = req.query.max_price ? Number(req.query.max_price) : null;
     const categoryId = typeof req.query.category_id === 'string' ? req.query.category_id : null;
-
-    // Build WHERE clauses dynamically using Prisma.sql runtime helpers.
-    // Use `any` for fragment arrays and cast `Prisma` to `any` to avoid TypeScript helper-type mismatches in this environment.
-    const whereProductFragments: any[] = [
-      (Prisma as any).sql`p.status = 'APPROVED'`,
-      (Prisma as any).sql`coalesce(p.is_active,false) = true`,
-      (Prisma as any).sql`p.merged_into_id IS NULL`
-    ];
-    if (q) {
-      const searchParam = `%${q.toLowerCase()}%`;
-      whereProductFragments.push((Prisma as any).sql`(lower(p.normalized_name) LIKE ${searchParam} OR lower(p.name) LIKE ${searchParam} OR lower(p.brand) LIKE ${searchParam})`);
-    }
-    if (categoryId) {
-      whereProductFragments.push((Prisma as any).sql`p.category_id = ${categoryId}`);
+    // Specs filter: URL-encoded JSON object, e.g. ?specs={"Storage":"256GB"}
+    let specsObj: any = null;
+    if (typeof req.query.specs === 'string' && req.query.specs.trim() !== '') {
+      try {
+        specsObj = JSON.parse(req.query.specs as string);
+        if (typeof specsObj !== 'object' || Array.isArray(specsObj)) {
+          return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_SPECS', message: 'Spec filter must be a JSON object' } });
+        }
+      } catch (e) {
+        return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_SPECS', message: 'Spec filter must be valid JSON' } });
+      }
     }
 
-    const whereListingFragments: any[] = [
-      (Prisma as any).sql`sp.listing_status = 'LIVE'`,
-      (Prisma as any).sql`coalesce(sp.is_available,false) = true`,
-      (Prisma as any).sql`sp.stock_quantity > 0`
-    ];
-    if (condition) whereListingFragments.push((Prisma as any).sql`sp.condition = ${condition}`);
-    if (minPrice !== null) whereListingFragments.push((Prisma as any).sql`sp.price >= ${Number(minPrice)}`);
-    if (maxPrice !== null) whereListingFragments.push((Prisma as any).sql`sp.price <= ${Number(maxPrice)}`);
+    // Build a single parameterized SQL template using prisma.$queryRaw tagged template
+    const searchParam = `%${q.toLowerCase()}%`;
 
-    // Distance expression (parameterized)
-    const distanceFragment: any = buyerHasCoords
-      ? (Prisma as any).sql`ST_Distance(s.location::geography, ST_SetSRID(ST_MakePoint(${lng}, ${lat}),4326)::geography)/1000.0`
-      : (Prisma as any).sql`NULL`;
+    // Build specs SQL fragment: case-insensitive key match + value ILIKE
+    let specsSqlFragment: any = null;
+    if (specsObj) {
+      const parts: any[] = [];
+      for (const [k, v] of Object.entries(specsObj)) {
+        const valPattern = `%${String(v)}%`;
+        parts.push(Prisma.sql`(
+          EXISTS (
+            SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(sp.specs::jsonb) = 'object' THEN sp.specs::jsonb ELSE '{}'::jsonb END) e
+            WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern})
+          )
+          OR EXISTS (
+            SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(sp.variant_values::jsonb) = 'object' THEN sp.variant_values::jsonb ELSE '{}'::jsonb END) e
+            WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern})
+          )
+        )`);
+      }
+      specsSqlFragment = parts.reduce((a, b) => Prisma.sql`${a} AND ${b}`);
+    }
 
-    // Build parameterized SQL using Prisma.sql runtime helpers (cast to any for TS compatibility)
-    const sql = (Prisma as any).sql`
+    const rows: any[] = await prisma.$queryRaw<any[]>`
 WITH canonical_products AS (
   SELECT p.id, p.name, p.brand, p.normalized_name, p.model, p.category_id, p.images, p.gtin, p.mpn
   FROM products p
-  WHERE ${(Prisma as any).join(whereProductFragments, (Prisma as any).sql` AND `)}
+  WHERE p.status = 'APPROVED'
+    AND coalesce(p.is_active,false) = true
+    AND p.merged_into_id IS NULL
+    AND (lower(p.normalized_name) LIKE ${searchParam} OR lower(p.name) LIKE ${searchParam} OR lower(p.brand) LIKE ${searchParam})
+    AND (${categoryId}::uuid IS NULL OR p.category_id = ${categoryId}::uuid)
 ),
 active_listings AS (
   SELECT
@@ -105,7 +114,7 @@ active_listings AS (
     s.logo AS shop_logo,
     s.delivery_zones,
     s.free_delivery_threshold,
-    ${distanceFragment} AS distance_km,
+    (CASE WHEN ${buyerHasCoords}::boolean THEN ST_Distance(s.location::geography, ST_SetSRID(ST_MakePoint(${lng}::numeric, ${lat}::numeric),4326)::geography)/1000.0 ELSE NULL END) AS distance_km,
     (CASE WHEN s.free_delivery_threshold IS NOT NULL AND sp.price >= s.free_delivery_threshold THEN true ELSE false END) AS is_free_delivery,
     r.avg_rating AS avg_rating,
     COALESCE(r.review_count, 0) AS review_count
@@ -116,7 +125,14 @@ active_listings AS (
     FROM reviews
     GROUP BY shop_product_id
   ) r ON r.shop_product_id = sp.id
-  WHERE ${(Prisma as any).join(whereListingFragments, (Prisma as any).sql` AND `)}
+  WHERE sp.listing_status = 'LIVE'
+    AND sp.stock_quantity > 0
+    AND (${condition}::text IS NULL OR sp.condition::text = ${condition}::text)
+    AND (${minPrice}::numeric IS NULL OR sp.price >= ${minPrice}::numeric)
+    AND (${maxPrice}::numeric IS NULL OR sp.price <= ${maxPrice}::numeric)
+    AND (
+      ${specsSqlFragment === null ? Prisma.sql`TRUE` : Prisma.sql`${specsSqlFragment}`}
+    )
 ),
 linked_listings AS (
   -- Listings whose product is canonical
@@ -198,10 +214,6 @@ JOIN aggregated agg ON agg.canonical_product_id = cp.id
 ORDER BY agg.min_price ASC NULLS LAST
 LIMIT ${limit} OFFSET ${offset};
 `;
-
-    // Execute raw SQL
-    // Execute safe parameterized query (Fix 1)
-    const rows: any[] = await prisma.$queryRaw(sql);
 
     // Format results
     const results: ProductResult[] = (rows || []).map((r) => {

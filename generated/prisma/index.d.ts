@@ -17580,7 +17580,6 @@ export namespace Prisma {
     stock_quantity: number | null
     condition: $Enums.product_condition | null
     shop_description: string | null
-    is_available: boolean | null
     created_at: Date | null
     updated_at: Date | null
     base_price: Decimal | null
@@ -17598,7 +17597,6 @@ export namespace Prisma {
     stock_quantity: number | null
     condition: $Enums.product_condition | null
     shop_description: string | null
-    is_available: boolean | null
     created_at: Date | null
     updated_at: Date | null
     base_price: Decimal | null
@@ -17618,7 +17616,6 @@ export namespace Prisma {
     shop_description: number
     specs: number
     images: number
-    is_available: number
     created_at: number
     updated_at: number
     base_price: number
@@ -17651,7 +17648,6 @@ export namespace Prisma {
     stock_quantity?: true
     condition?: true
     shop_description?: true
-    is_available?: true
     created_at?: true
     updated_at?: true
     base_price?: true
@@ -17669,7 +17665,6 @@ export namespace Prisma {
     stock_quantity?: true
     condition?: true
     shop_description?: true
-    is_available?: true
     created_at?: true
     updated_at?: true
     base_price?: true
@@ -17689,7 +17684,6 @@ export namespace Prisma {
     shop_description?: true
     specs?: true
     images?: true
-    is_available?: true
     created_at?: true
     updated_at?: true
     base_price?: true
@@ -17797,7 +17791,6 @@ export namespace Prisma {
     shop_description: string | null
     specs: JsonValue | null
     images: string[]
-    is_available: boolean | null
     created_at: Date | null
     updated_at: Date | null
     base_price: Decimal | null
@@ -17837,7 +17830,6 @@ export namespace Prisma {
     shop_description?: boolean
     specs?: boolean
     images?: boolean
-    is_available?: boolean
     created_at?: boolean
     updated_at?: boolean
     base_price?: boolean
@@ -17865,7 +17857,6 @@ export namespace Prisma {
     shop_description?: boolean
     specs?: boolean
     images?: boolean
-    is_available?: boolean
     created_at?: boolean
     updated_at?: boolean
     base_price?: boolean
@@ -17889,7 +17880,6 @@ export namespace Prisma {
     shop_description?: boolean
     specs?: boolean
     images?: boolean
-    is_available?: boolean
     created_at?: boolean
     updated_at?: boolean
     base_price?: boolean
@@ -17913,7 +17903,6 @@ export namespace Prisma {
     shop_description?: boolean
     specs?: boolean
     images?: boolean
-    is_available?: boolean
     created_at?: boolean
     updated_at?: boolean
     base_price?: boolean
@@ -17923,7 +17912,7 @@ export namespace Prisma {
     variant_values?: boolean
   }
 
-  export type shop_productsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shop_id" | "product_id" | "sku" | "price" | "stock_quantity" | "condition" | "shop_description" | "specs" | "images" | "is_available" | "created_at" | "updated_at" | "base_price" | "bulk_upload_id" | "listing_status" | "rejection_reason" | "variant_values", ExtArgs["result"]["shop_products"]>
+  export type shop_productsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shop_id" | "product_id" | "sku" | "price" | "stock_quantity" | "condition" | "shop_description" | "specs" | "images" | "created_at" | "updated_at" | "base_price" | "bulk_upload_id" | "listing_status" | "rejection_reason" | "variant_values", ExtArgs["result"]["shop_products"]>
   export type shop_productsInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     order_items?: boolean | shop_products$order_itemsArgs<ExtArgs>
     reviews?: boolean | shop_products$reviewsArgs<ExtArgs>
@@ -17965,7 +17954,6 @@ export namespace Prisma {
       shop_description: string | null
       specs: Prisma.JsonValue | null
       images: string[]
-      is_available: boolean | null
       created_at: Date | null
       updated_at: Date | null
       base_price: Prisma.Decimal | null
@@ -18412,7 +18400,6 @@ export namespace Prisma {
     readonly shop_description: FieldRef<"shop_products", 'String'>
     readonly specs: FieldRef<"shop_products", 'Json'>
     readonly images: FieldRef<"shop_products", 'String[]'>
-    readonly is_available: FieldRef<"shop_products", 'Boolean'>
     readonly created_at: FieldRef<"shop_products", 'DateTime'>
     readonly updated_at: FieldRef<"shop_products", 'DateTime'>
     readonly base_price: FieldRef<"shop_products", 'Decimal'>
@@ -28803,7 +28790,6 @@ export namespace Prisma {
     shop_description: 'shop_description',
     specs: 'specs',
     images: 'images',
-    is_available: 'is_available',
     created_at: 'created_at',
     updated_at: 'updated_at',
     base_price: 'base_price',
@@ -30645,7 +30631,6 @@ export namespace Prisma {
     shop_description?: StringNullableFilter<"shop_products"> | string | null
     specs?: JsonNullableFilter<"shop_products">
     images?: StringNullableListFilter<"shop_products">
-    is_available?: BoolNullableFilter<"shop_products"> | boolean | null
     created_at?: DateTimeNullableFilter<"shop_products"> | Date | string | null
     updated_at?: DateTimeNullableFilter<"shop_products"> | Date | string | null
     base_price?: DecimalNullableFilter<"shop_products"> | Decimal | DecimalJsLike | number | string | null
@@ -30672,7 +30657,6 @@ export namespace Prisma {
     shop_description?: SortOrderInput | SortOrder
     specs?: SortOrderInput | SortOrder
     images?: SortOrder
-    is_available?: SortOrderInput | SortOrder
     created_at?: SortOrderInput | SortOrder
     updated_at?: SortOrderInput | SortOrder
     base_price?: SortOrderInput | SortOrder
@@ -30702,7 +30686,6 @@ export namespace Prisma {
     shop_description?: StringNullableFilter<"shop_products"> | string | null
     specs?: JsonNullableFilter<"shop_products">
     images?: StringNullableListFilter<"shop_products">
-    is_available?: BoolNullableFilter<"shop_products"> | boolean | null
     created_at?: DateTimeNullableFilter<"shop_products"> | Date | string | null
     updated_at?: DateTimeNullableFilter<"shop_products"> | Date | string | null
     base_price?: DecimalNullableFilter<"shop_products"> | Decimal | DecimalJsLike | number | string | null
@@ -30729,7 +30712,6 @@ export namespace Prisma {
     shop_description?: SortOrderInput | SortOrder
     specs?: SortOrderInput | SortOrder
     images?: SortOrder
-    is_available?: SortOrderInput | SortOrder
     created_at?: SortOrderInput | SortOrder
     updated_at?: SortOrderInput | SortOrder
     base_price?: SortOrderInput | SortOrder
@@ -30758,7 +30740,6 @@ export namespace Prisma {
     shop_description?: StringNullableWithAggregatesFilter<"shop_products"> | string | null
     specs?: JsonNullableWithAggregatesFilter<"shop_products">
     images?: StringNullableListFilter<"shop_products">
-    is_available?: BoolNullableWithAggregatesFilter<"shop_products"> | boolean | null
     created_at?: DateTimeNullableWithAggregatesFilter<"shop_products"> | Date | string | null
     updated_at?: DateTimeNullableWithAggregatesFilter<"shop_products"> | Date | string | null
     base_price?: DecimalNullableWithAggregatesFilter<"shop_products"> | Decimal | DecimalJsLike | number | string | null
@@ -33031,7 +33012,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -33057,7 +33037,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -33079,7 +33058,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -33105,7 +33083,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -33129,7 +33106,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -33148,7 +33124,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -33168,7 +33143,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -35486,7 +35460,6 @@ export namespace Prisma {
     shop_description?: SortOrder
     specs?: SortOrder
     images?: SortOrder
-    is_available?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
     base_price?: SortOrder
@@ -35511,7 +35484,6 @@ export namespace Prisma {
     stock_quantity?: SortOrder
     condition?: SortOrder
     shop_description?: SortOrder
-    is_available?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
     base_price?: SortOrder
@@ -35529,7 +35501,6 @@ export namespace Prisma {
     stock_quantity?: SortOrder
     condition?: SortOrder
     shop_description?: SortOrder
-    is_available?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
     base_price?: SortOrder
@@ -38926,7 +38897,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -38951,7 +38921,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -39071,7 +39040,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -39096,7 +39064,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -40392,7 +40359,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -40416,7 +40382,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -40715,7 +40680,6 @@ export namespace Prisma {
     shop_description?: StringNullableFilter<"shop_products"> | string | null
     specs?: JsonNullableFilter<"shop_products">
     images?: StringNullableListFilter<"shop_products">
-    is_available?: BoolNullableFilter<"shop_products"> | boolean | null
     created_at?: DateTimeNullableFilter<"shop_products"> | Date | string | null
     updated_at?: DateTimeNullableFilter<"shop_products"> | Date | string | null
     base_price?: DecimalNullableFilter<"shop_products"> | Decimal | DecimalJsLike | number | string | null
@@ -40930,7 +40894,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -40954,7 +40917,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -42567,7 +42529,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -42592,7 +42553,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -42763,7 +42723,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -42788,7 +42747,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -43319,7 +43277,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -43344,7 +43301,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -43381,7 +43337,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -43406,7 +43361,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -43566,7 +43520,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -43591,7 +43544,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -45150,7 +45102,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -45245,7 +45196,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -45269,7 +45219,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -45292,7 +45241,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -45388,7 +45336,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -45688,7 +45635,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -45712,7 +45658,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -45735,7 +45680,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -46837,7 +46781,6 @@ export namespace Prisma {
     shop_description?: string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsCreateimagesInput | string[]
-    is_available?: boolean | null
     created_at?: Date | string | null
     updated_at?: Date | string | null
     base_price?: Decimal | DecimalJsLike | number | string | null
@@ -46939,7 +46882,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -46964,7 +46906,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -46987,7 +46928,6 @@ export namespace Prisma {
     shop_description?: NullableStringFieldUpdateOperationsInput | string | null
     specs?: NullableJsonNullValueInput | InputJsonValue
     images?: shop_productsUpdateimagesInput | string[]
-    is_available?: NullableBoolFieldUpdateOperationsInput | boolean | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     base_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null

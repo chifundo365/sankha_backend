@@ -330,7 +330,6 @@ exports.Prisma.Shop_productsScalarFieldEnum = {
   shop_description: 'shop_description',
   specs: 'specs',
   images: 'images',
-  is_available: 'is_available',
   created_at: 'created_at',
   updated_at: 'updated_at',
   base_price: 'base_price',

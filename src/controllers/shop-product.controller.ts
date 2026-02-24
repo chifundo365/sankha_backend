@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import prisma from "../prismaClient";
 import { errorResponse, successResponse } from "../utils/response";
 import { Prisma } from "../../generated/prisma";
+import { setListingStatus, isListingAvailable } from "../helpers/listingStatus.helper";
 import { CloudinaryService } from "../services/cloudinary.service";
 import { PRICE_MARKUP_MULTIPLIER, FEES } from "../utils/constants";
 
@@ -103,7 +104,17 @@ export const shopProductController = {
       };
 
       if (is_available !== undefined) {
-        where.is_available = is_available === "true";
+        // Map legacy `is_available` query param to listing_status + stock rules
+        if (is_available === "true") {
+          where.listing_status = 'LIVE' as any;
+          where.stock_quantity = { gt: 0 } as any;
+        } else {
+          // false => not live OR out of stock
+          where.OR = [
+            { listing_status: { not: 'LIVE' } } as any,
+            { stock_quantity: { lte: 0 } } as any
+          ];
+        }
       }
 
       if (condition) {
@@ -128,36 +139,38 @@ export const shopProductController = {
           where,
           skip,
           take,
-          include: {
+          select: {
+            id: true,
+            sku: true,
+            price: true,
+            stock_quantity: true,
+            condition: true,
+            listing_status: true,
+            shops: { select: { id: true, name: true, city: true } },
             products: {
               select: {
                 id: true,
                 name: true,
                 brand: true,
                 description: true,
-                base_price: true,
-                categories: {
-                  select: {
-                    id: true,
-                    name: true
-                  }
-                }
+                categories: { select: { id: true, name: true } }
               }
-            }
+            },
+            images: true,
+            created_at: true
           },
-          orderBy: {
-            created_at: "desc"
-          }
+          orderBy: { created_at: "desc" }
         }),
         prisma.shop_products.count({ where })
       ]);
 
-      // Add review statistics to each product
+      // Add review statistics and derived availability to each product
       const productsWithReviews = await Promise.all(
         shopProducts.map(async (product) => {
           const reviewStats = await getReviewStats(product.id);
           return {
             ...product,
+            is_available: isListingAvailable(product as any),
             reviews: reviewStats
           };
         })
@@ -198,26 +211,21 @@ export const shopProductController = {
       const { shopId, shopProductId } = req.params;
 
       const shopProduct = await prisma.shop_products.findFirst({
-        where: {
-          id: shopProductId,
-          shop_id: shopId
-        },
-        include: {
-          products: {
-            include: {
-              categories: true
-            }
-          },
-          shops: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              city: true,
-              phone: true,
-              address_line1: true
-            }
-          }
+        where: { id: shopProductId, shop_id: shopId },
+        select: {
+          id: true,
+          sku: true,
+          price: true,
+          stock_quantity: true,
+          condition: true,
+          listing_status: true,
+          shop_description: true,
+          specs: true,
+          images: true,
+          created_at: true,
+          updated_at: true,
+          products: { select: { id: true, name: true, brand: true, description: true, categories: true } },
+          shops: { select: { id: true, name: true, description: true, city: true, phone: true, address_line1: true } }
         }
       });
 
@@ -225,7 +233,7 @@ export const shopProductController = {
         return errorResponse(res, "Shop product not found", null, 404);
       }
 
-      // Add review statistics
+      // Add review statistics and derived availability
       const reviewStats = await getReviewStats(shopProduct.id);
 
       return successResponse(
@@ -233,6 +241,7 @@ export const shopProductController = {
         "Shop product retrieved successfully",
         {
           ...shopProduct,
+          is_available: isListingAvailable(shopProduct as any),
           reviews: reviewStats
         },
         200
@@ -334,8 +343,7 @@ export const shopProductController = {
           condition: condition || "NEW",
           shop_description,
           specs,
-          images: images || [],
-          is_available: is_available ?? true
+          images: images || []
         },
         include: {
           products: {
@@ -351,6 +359,7 @@ export const shopProductController = {
         "Product added to shop successfully",
         {
           ...shopProduct,
+          is_available: isListingAvailable(shopProduct as any),
           pricing_info: {
             base_price: shopProduct.base_price,
             display_price: shopProduct.price,
@@ -412,6 +421,11 @@ export const shopProductController = {
         updateData.price = calculateDisplayPrice(updateData.base_price);
       }
 
+      // Ensure we never write `is_available` directly (deprecated)
+      if ((updateData as any).is_available !== undefined) {
+        delete (updateData as any).is_available;
+      }
+
       // Update shop product (trigger handles stock change logging with custom reason)
       let updatedShopProduct;
       if (updateData.stock_quantity !== undefined && updateData.stock_quantity !== existingShopProduct.stock_quantity) {
@@ -457,6 +471,7 @@ export const shopProductController = {
         "Shop product updated successfully",
         {
           ...updatedShopProduct,
+          is_available: isListingAvailable(updatedShopProduct as any),
           pricing_info: {
             base_price: updatedShopProduct.base_price,
             display_price: updatedShopProduct.price,
@@ -508,14 +523,8 @@ export const shopProductController = {
         return errorResponse(res, "Shop product not found", null, 404);
       }
 
-      // Soft delete by setting is_available to false
-      await prisma.shop_products.update({
-        where: { id: shopProductId },
-        data: {
-          is_available: false,
-          updated_at: new Date()
-        }
-      });
+      // Soft delete by pausing the listing (use helper to update listing_status)
+      await setListingStatus(shopProductId, 'PAUSED' as any);
 
       return successResponse(
         res,

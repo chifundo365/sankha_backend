@@ -277,7 +277,7 @@ export const categoryController = {
           // Build where clause for shop products
           const shopProductWhere: Prisma.shop_productsWhereInput = {
             product_id: baseProduct.id,
-            is_available: true,
+            listing_status: 'LIVE' as any,
             stock_quantity: { gt: 0 } // Only show products in stock
           };
 

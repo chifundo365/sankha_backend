@@ -80,19 +80,25 @@ export const productController = {
           skip,
           take,
           orderBy,
-          include: {
+          select: {
+            id: true,
+            name: true,
+            brand: true,
+            description: true,
+            images: true,
+            is_active: true,
+            created_at: true,
+            updated_at: true,
+            aliases: true,
+            gtin: true,
+            model: true,
+            mpn: true,
+            normalized_name: true,
+            status: true,
             categories: {
-              select: {
-                id: true,
-                name: true,
-                description: true
-              }
+              select: { id: true, name: true, description: true }
             },
-            _count: {
-              select: {
-                shop_products: true
-              }
-            }
+            _count: { select: { shop_products: true } }
           }
         }),
         prisma.products.count({ where })
@@ -136,14 +142,22 @@ export const productController = {
 
       const product = await prisma.products.findUnique({
         where: { id },
-        include: {
-          categories: {
-            select: {
-              id: true,
-              name: true,
-              description: true
-            }
-          },
+        select: {
+          id: true,
+          name: true,
+          brand: true,
+          description: true,
+          images: true,
+          is_active: true,
+          created_at: true,
+          updated_at: true,
+          aliases: true,
+          gtin: true,
+          model: true,
+          mpn: true,
+          normalized_name: true,
+          status: true,
+          categories: { select: { id: true, name: true, description: true } },
           shop_products: {
             select: {
               id: true,
@@ -151,33 +165,25 @@ export const productController = {
               price: true,
               stock_quantity: true,
               condition: true,
-              is_available: true,
-              shops: {
-                select: {
-                  id: true,
-                  name: true,
-                  city: true,
-                  phone: true
-                }
-              }
+              listing_status: true,
+              shops: { select: { id: true, name: true, city: true, phone: true } }
             },
-            where: {
-              is_available: true,
-              stock_quantity: {
-                gt: 0
-              }
-            }
+            where: { listing_status: 'LIVE' as any, stock_quantity: { gt: 0 } }
           },
-          _count: {
-            select: {
-              shop_products: true
-            }
-          }
+          _count: { select: { shop_products: true } }
         }
       });
 
       if (!product) {
         return errorResponse(res, "Product not found", null, 404);
+      }
+
+      // Compute derived is_available for backward-compatible API
+      if (product.shop_products && Array.isArray(product.shop_products)) {
+        product.shop_products = product.shop_products.map(sp => ({
+          ...sp,
+          is_available: sp.listing_status === 'LIVE' && (sp.stock_quantity || 0) > 0
+        }));
       }
 
       return successResponse(

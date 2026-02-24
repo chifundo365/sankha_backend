@@ -304,7 +304,7 @@ export const bulkUploadController = {
         data: {
           images: [...shopProduct.images, uploadResult.url],
           listing_status: 'PENDING_REVIEW', // Move to pending review
-          is_available: false, // Still not available until approved
+          // is_available removed: availability derived from listing_status + stock
           updated_at: new Date()
         }
       });

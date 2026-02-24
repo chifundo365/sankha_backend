@@ -5,6 +5,14 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# script folder
+scripts/
+
+
+# gnerated files
+generated/
+
+
 # Environment variables
 .env
 .env.*

@@ -520,7 +520,6 @@ export const bulkUploadService = {
             shop_description: row.shop_description || null,
             specs: row.specs ? (row.specs as Prisma.InputJsonValue) : Prisma.JsonNull,
             images: [],
-            is_available: false,
             listing_status: 'NEEDS_IMAGES' as listing_status,
             bulk_upload_id: bulkUpload.id
           }
