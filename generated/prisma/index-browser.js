@@ -222,7 +222,9 @@ exports.Prisma.ProductsScalarFieldEnum = {
   mpn: 'mpn',
   normalized_name: 'normalized_name',
   rejection_reason: 'rejection_reason',
-  status: 'status'
+  status: 'status',
+  specs: 'specs',
+  variant_values: 'variant_values'
 };
 
 exports.Prisma.ShopsScalarFieldEnum = {
@@ -330,6 +332,7 @@ exports.Prisma.Shop_productsScalarFieldEnum = {
   shop_description: 'shop_description',
   specs: 'specs',
   images: 'images',
+  is_available: 'is_available',
   created_at: 'created_at',
   updated_at: 'updated_at',
   base_price: 'base_price',

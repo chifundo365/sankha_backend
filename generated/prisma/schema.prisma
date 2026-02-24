@@ -137,6 +137,8 @@ model products {
   normalized_name  String?         @db.VarChar(255)
   rejection_reason String?
   status           product_status? @default(PENDING)
+  specs            Json?
+  variant_values   Json?
   approved_by_user users?          @relation("ProductApprover", fields: [approved_by], references: [id], onUpdate: NoAction)
   categories       categories?     @relation(fields: [category_id], references: [id], onUpdate: NoAction)
   created_by_user  users?          @relation("ProductCreator", fields: [created_by], references: [id], onUpdate: NoAction)
@@ -150,6 +152,8 @@ model products {
   @@index([gtin], map: "idx_products_gtin")
   @@index([status], map: "idx_products_status")
   @@index([normalized_name(ops: raw("gin_trgm_ops"))], map: "idx_products_normalized_name_trgm", type: Gin)
+  @@index([specs], map: "idx_products_specs_gin", type: Gin)
+  @@index([variant_values], map: "idx_products_variant_values_gin", type: Gin)
 }
 
 model shops {
@@ -291,7 +295,7 @@ model shop_products {
   shop_description  String?
   specs             Json?
   images            String[]
-  // is_available removed 2026-02-24: availability is derived from listing_status = 'LIVE' AND stock_quantity > 0
+  is_available      Boolean?            @default(true)
   created_at        DateTime?           @default(now()) @db.Timestamp(6)
   updated_at        DateTime?           @default(now()) @db.Timestamp(6)
   base_price        Decimal?            @db.Decimal(10, 2)
@@ -310,6 +314,8 @@ model shop_products {
   @@index([product_id], map: "idx_shop_products_product_id")
   @@index([listing_status], map: "idx_shop_products_listing_status")
   @@index([bulk_upload_id], map: "idx_shop_products_bulk_upload_id")
+  @@index([specs], map: "idx_shop_products_specs_gin", type: Gin)
+  @@index([variant_values], map: "idx_shop_products_variant_values_gin", type: Gin)
 }
 
 model shop_products_log {

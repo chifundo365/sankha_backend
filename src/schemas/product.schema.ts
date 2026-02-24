@@ -211,6 +211,8 @@ export const searchSchema = z.object({
       .refine(val => /^\d+$/.test(val), "radiusKm must be an integer")
       .transform(Number),
     city: z.string().max(100).optional(),
+    brand: z.string().max(100).optional(),
+    model: z.string().max(100).optional(),
     condition: z.enum(["NEW", "REFURBISHED", "USED_LIKE_NEW", "USED_GOOD", "USED_FAIR"]).optional(),
     minPrice: z
       .string()

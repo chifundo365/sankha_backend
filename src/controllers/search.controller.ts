@@ -33,6 +33,8 @@ export const search = async (req: Request, res: Response) => {
   const start = Date.now();
   try {
     const qRaw = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    const brandRaw = typeof req.query.brand === 'string' ? req.query.brand.trim() : '';
+    const modelRaw = typeof req.query.model === 'string' ? req.query.model.trim() : '';
     // Fix 5: explicit validation for query length (must be 2-100 chars)
     if (qRaw.length < 2) {
       return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_QUERY', message: 'Search query must be at least 2 characters' } });
@@ -41,6 +43,8 @@ export const search = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_QUERY', message: 'Search query must not exceed 100 characters' } });
     }
     const q = qRaw; // validated
+    const brand = brandRaw === '' ? null : brandRaw;
+    const model = modelRaw === '' ? null : modelRaw;
     const page = req.query.page ? Math.max(1, Number(req.query.page)) : 1;
     const rawLimit = req.query.limit ? Number(req.query.limit) : 20;
     const limit = Math.min(Math.max(1, rawLimit || 20), 50);
@@ -69,21 +73,38 @@ export const search = async (req: Request, res: Response) => {
 
     // Build a single parameterized SQL template using prisma.$queryRaw tagged template
     const searchParam = `%${q.toLowerCase()}%`;
+    const qPlain = q.toLowerCase();
+    const similarityThreshold = Number(process.env.SEARCH_SIMILARITY || '0.28');
+    const brandParam = brand ? `%${brand.toLowerCase()}%` : null;
+    const modelParam = model ? `%${model.toLowerCase()}%` : null;
 
-    // Build specs SQL fragment: case-insensitive key match + value ILIKE
+    // Build specs SQL fragment: match either listing-level (`sp`) OR product-level (`p`) specs/variant_values
     let specsSqlFragment: any = null;
     if (specsObj) {
       const parts: any[] = [];
       for (const [k, v] of Object.entries(specsObj)) {
         const valPattern = `%${String(v)}%`;
         parts.push(Prisma.sql`(
-          EXISTS (
-            SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(sp.specs::jsonb) = 'object' THEN sp.specs::jsonb ELSE '{}'::jsonb END) e
-            WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern})
+          (
+            EXISTS (
+              SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(sp.specs::jsonb) = 'object' THEN sp.specs::jsonb ELSE '{}'::jsonb END) e
+              WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern})
+            )
+            OR EXISTS (
+              SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(sp.variant_values::jsonb) = 'object' THEN sp.variant_values::jsonb ELSE '{}'::jsonb END) e
+              WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern})
+            )
           )
-          OR EXISTS (
-            SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(sp.variant_values::jsonb) = 'object' THEN sp.variant_values::jsonb ELSE '{}'::jsonb END) e
-            WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern})
+          OR
+          (
+            EXISTS (
+              SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(p.specs::jsonb) = 'object' THEN p.specs::jsonb ELSE '{}'::jsonb END) e
+              WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern})
+            )
+            OR EXISTS (
+              SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(p.variant_values::jsonb) = 'object' THEN p.variant_values::jsonb ELSE '{}'::jsonb END) e
+              WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern})
+            )
           )
         )`);
       }
@@ -97,8 +118,17 @@ WITH canonical_products AS (
   WHERE p.status = 'APPROVED'
     AND coalesce(p.is_active,false) = true
     AND p.merged_into_id IS NULL
-    AND (lower(p.normalized_name) LIKE ${searchParam} OR lower(p.name) LIKE ${searchParam} OR lower(p.brand) LIKE ${searchParam})
-    AND (${categoryId}::uuid IS NULL OR p.category_id = ${categoryId}::uuid)
+    AND (
+      lower(p.normalized_name) LIKE ${searchParam}
+      OR lower(p.name) LIKE ${searchParam}
+      OR lower(p.brand) LIKE ${searchParam}
+      OR (lower(coalesce(p.name,'')) % ${qPlain} OR similarity(lower(coalesce(p.name,'')), ${qPlain}) > ${similarityThreshold})
+      OR (lower(coalesce(p.normalized_name,'')) % ${qPlain} OR similarity(lower(coalesce(p.normalized_name,'')), ${qPlain}) > ${similarityThreshold})
+      OR (lower(coalesce(p.brand,'')) % ${qPlain} OR similarity(lower(coalesce(p.brand,'')), ${qPlain}) > ${similarityThreshold})
+    )
+      AND (${categoryId}::uuid IS NULL OR p.category_id = ${categoryId}::uuid)
+      AND (${brandParam}::text IS NULL OR lower(coalesce(p.brand, '')) LIKE ${brandParam})
+      AND (${modelParam}::text IS NULL OR lower(coalesce(p.model, '')) LIKE ${modelParam})
 ),
 active_listings AS (
   SELECT
@@ -120,6 +150,7 @@ active_listings AS (
     COALESCE(r.review_count, 0) AS review_count
   FROM shop_products sp
   JOIN shops s ON s.id = sp.shop_id
+  LEFT JOIN products p ON p.id = sp.product_id
   LEFT JOIN (
     SELECT shop_product_id, AVG(rating) AS avg_rating, COUNT(*) AS review_count
     FROM reviews
