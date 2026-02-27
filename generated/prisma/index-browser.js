@@ -271,6 +271,18 @@ exports.Prisma.User_addressesScalarFieldEnum = {
   updated_at: 'updated_at'
 };
 
+exports.Prisma.SearchLogScalarFieldEnum = {
+  id: 'id',
+  query: 'query',
+  results_count: 'results_count',
+  filters: 'filters',
+  buyer_has_coords: 'buyer_has_coords',
+  response_time_ms: 'response_time_ms',
+  page: 'page',
+  limit_per_page: 'limit_per_page',
+  created_at: 'created_at'
+};
+
 exports.Prisma.UsersScalarFieldEnum = {
   id: 'id',
   first_name: 'first_name',
@@ -638,6 +650,7 @@ exports.Prisma.ModelName = {
   products: 'products',
   shops: 'shops',
   user_addresses: 'user_addresses',
+  SearchLog: 'SearchLog',
   users: 'users',
   categories: 'categories',
   order_messages: 'order_messages',

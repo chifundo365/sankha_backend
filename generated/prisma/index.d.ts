@@ -49,6 +49,11 @@ export type shops = $Result.DefaultSelection<Prisma.$shopsPayload>
  */
 export type user_addresses = $Result.DefaultSelection<Prisma.$user_addressesPayload>
 /**
+ * Model SearchLog
+ * 
+ */
+export type SearchLog = $Result.DefaultSelection<Prisma.$SearchLogPayload>
+/**
  * Model users
  * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
  */
@@ -610,6 +615,16 @@ export class PrismaClient<
     * ```
     */
   get user_addresses(): Prisma.user_addressesDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.searchLog`: Exposes CRUD operations for the **SearchLog** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SearchLogs
+    * const searchLogs = await prisma.searchLog.findMany()
+    * ```
+    */
+  get searchLog(): Prisma.SearchLogDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.users`: Exposes CRUD operations for the **users** model.
@@ -1187,6 +1202,7 @@ export namespace Prisma {
     products: 'products',
     shops: 'shops',
     user_addresses: 'user_addresses',
+    SearchLog: 'SearchLog',
     users: 'users',
     categories: 'categories',
     order_messages: 'order_messages',
@@ -1218,7 +1234,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "order_items" | "orders" | "payments" | "payment_reports" | "products" | "shops" | "user_addresses" | "users" | "categories" | "order_messages" | "reviews" | "shop_products" | "shop_products_log" | "bulk_uploads" | "bulk_upload_staging" | "tech_spec_rules" | "transactions" | "withdrawals" | "password_resets" | "spatial_ref_sys"
+      modelProps: "order_items" | "orders" | "payments" | "payment_reports" | "products" | "shops" | "user_addresses" | "searchLog" | "users" | "categories" | "order_messages" | "reviews" | "shop_products" | "shop_products_log" | "bulk_uploads" | "bulk_upload_staging" | "tech_spec_rules" | "transactions" | "withdrawals" | "password_resets" | "spatial_ref_sys"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1737,6 +1753,80 @@ export namespace Prisma {
           count: {
             args: Prisma.user_addressesCountArgs<ExtArgs>
             result: $Utils.Optional<User_addressesCountAggregateOutputType> | number
+          }
+        }
+      }
+      SearchLog: {
+        payload: Prisma.$SearchLogPayload<ExtArgs>
+        fields: Prisma.SearchLogFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SearchLogFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SearchLogPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SearchLogFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SearchLogPayload>
+          }
+          findFirst: {
+            args: Prisma.SearchLogFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SearchLogPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SearchLogFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SearchLogPayload>
+          }
+          findMany: {
+            args: Prisma.SearchLogFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SearchLogPayload>[]
+          }
+          create: {
+            args: Prisma.SearchLogCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SearchLogPayload>
+          }
+          createMany: {
+            args: Prisma.SearchLogCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SearchLogCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SearchLogPayload>[]
+          }
+          delete: {
+            args: Prisma.SearchLogDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SearchLogPayload>
+          }
+          update: {
+            args: Prisma.SearchLogUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SearchLogPayload>
+          }
+          deleteMany: {
+            args: Prisma.SearchLogDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SearchLogUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SearchLogUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SearchLogPayload>[]
+          }
+          upsert: {
+            args: Prisma.SearchLogUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SearchLogPayload>
+          }
+          aggregate: {
+            args: Prisma.SearchLogAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSearchLog>
+          }
+          groupBy: {
+            args: Prisma.SearchLogGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SearchLogGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SearchLogCountArgs<ExtArgs>
+            result: $Utils.Optional<SearchLogCountAggregateOutputType> | number
           }
         }
       }
@@ -2805,6 +2895,7 @@ export namespace Prisma {
     products?: productsOmit
     shops?: shopsOmit
     user_addresses?: user_addressesOmit
+    searchLog?: SearchLogOmit
     users?: usersOmit
     categories?: categoriesOmit
     order_messages?: order_messagesOmit
@@ -12831,6 +12922,1095 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: user_addressesInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model SearchLog
+   */
+
+  export type AggregateSearchLog = {
+    _count: SearchLogCountAggregateOutputType | null
+    _avg: SearchLogAvgAggregateOutputType | null
+    _sum: SearchLogSumAggregateOutputType | null
+    _min: SearchLogMinAggregateOutputType | null
+    _max: SearchLogMaxAggregateOutputType | null
+  }
+
+  export type SearchLogAvgAggregateOutputType = {
+    results_count: number | null
+    response_time_ms: number | null
+    page: number | null
+    limit_per_page: number | null
+  }
+
+  export type SearchLogSumAggregateOutputType = {
+    results_count: number | null
+    response_time_ms: number | null
+    page: number | null
+    limit_per_page: number | null
+  }
+
+  export type SearchLogMinAggregateOutputType = {
+    id: string | null
+    query: string | null
+    results_count: number | null
+    buyer_has_coords: boolean | null
+    response_time_ms: number | null
+    page: number | null
+    limit_per_page: number | null
+    created_at: Date | null
+  }
+
+  export type SearchLogMaxAggregateOutputType = {
+    id: string | null
+    query: string | null
+    results_count: number | null
+    buyer_has_coords: boolean | null
+    response_time_ms: number | null
+    page: number | null
+    limit_per_page: number | null
+    created_at: Date | null
+  }
+
+  export type SearchLogCountAggregateOutputType = {
+    id: number
+    query: number
+    results_count: number
+    filters: number
+    buyer_has_coords: number
+    response_time_ms: number
+    page: number
+    limit_per_page: number
+    created_at: number
+    _all: number
+  }
+
+
+  export type SearchLogAvgAggregateInputType = {
+    results_count?: true
+    response_time_ms?: true
+    page?: true
+    limit_per_page?: true
+  }
+
+  export type SearchLogSumAggregateInputType = {
+    results_count?: true
+    response_time_ms?: true
+    page?: true
+    limit_per_page?: true
+  }
+
+  export type SearchLogMinAggregateInputType = {
+    id?: true
+    query?: true
+    results_count?: true
+    buyer_has_coords?: true
+    response_time_ms?: true
+    page?: true
+    limit_per_page?: true
+    created_at?: true
+  }
+
+  export type SearchLogMaxAggregateInputType = {
+    id?: true
+    query?: true
+    results_count?: true
+    buyer_has_coords?: true
+    response_time_ms?: true
+    page?: true
+    limit_per_page?: true
+    created_at?: true
+  }
+
+  export type SearchLogCountAggregateInputType = {
+    id?: true
+    query?: true
+    results_count?: true
+    filters?: true
+    buyer_has_coords?: true
+    response_time_ms?: true
+    page?: true
+    limit_per_page?: true
+    created_at?: true
+    _all?: true
+  }
+
+  export type SearchLogAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SearchLog to aggregate.
+     */
+    where?: SearchLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SearchLogs to fetch.
+     */
+    orderBy?: SearchLogOrderByWithRelationInput | SearchLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SearchLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SearchLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SearchLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SearchLogs
+    **/
+    _count?: true | SearchLogCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: SearchLogAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: SearchLogSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SearchLogMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SearchLogMaxAggregateInputType
+  }
+
+  export type GetSearchLogAggregateType<T extends SearchLogAggregateArgs> = {
+        [P in keyof T & keyof AggregateSearchLog]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSearchLog[P]>
+      : GetScalarType<T[P], AggregateSearchLog[P]>
+  }
+
+
+
+
+  export type SearchLogGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SearchLogWhereInput
+    orderBy?: SearchLogOrderByWithAggregationInput | SearchLogOrderByWithAggregationInput[]
+    by: SearchLogScalarFieldEnum[] | SearchLogScalarFieldEnum
+    having?: SearchLogScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SearchLogCountAggregateInputType | true
+    _avg?: SearchLogAvgAggregateInputType
+    _sum?: SearchLogSumAggregateInputType
+    _min?: SearchLogMinAggregateInputType
+    _max?: SearchLogMaxAggregateInputType
+  }
+
+  export type SearchLogGroupByOutputType = {
+    id: string
+    query: string
+    results_count: number
+    filters: JsonValue | null
+    buyer_has_coords: boolean
+    response_time_ms: number
+    page: number
+    limit_per_page: number
+    created_at: Date
+    _count: SearchLogCountAggregateOutputType | null
+    _avg: SearchLogAvgAggregateOutputType | null
+    _sum: SearchLogSumAggregateOutputType | null
+    _min: SearchLogMinAggregateOutputType | null
+    _max: SearchLogMaxAggregateOutputType | null
+  }
+
+  type GetSearchLogGroupByPayload<T extends SearchLogGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SearchLogGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SearchLogGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SearchLogGroupByOutputType[P]>
+            : GetScalarType<T[P], SearchLogGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SearchLogSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    query?: boolean
+    results_count?: boolean
+    filters?: boolean
+    buyer_has_coords?: boolean
+    response_time_ms?: boolean
+    page?: boolean
+    limit_per_page?: boolean
+    created_at?: boolean
+  }, ExtArgs["result"]["searchLog"]>
+
+  export type SearchLogSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    query?: boolean
+    results_count?: boolean
+    filters?: boolean
+    buyer_has_coords?: boolean
+    response_time_ms?: boolean
+    page?: boolean
+    limit_per_page?: boolean
+    created_at?: boolean
+  }, ExtArgs["result"]["searchLog"]>
+
+  export type SearchLogSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    query?: boolean
+    results_count?: boolean
+    filters?: boolean
+    buyer_has_coords?: boolean
+    response_time_ms?: boolean
+    page?: boolean
+    limit_per_page?: boolean
+    created_at?: boolean
+  }, ExtArgs["result"]["searchLog"]>
+
+  export type SearchLogSelectScalar = {
+    id?: boolean
+    query?: boolean
+    results_count?: boolean
+    filters?: boolean
+    buyer_has_coords?: boolean
+    response_time_ms?: boolean
+    page?: boolean
+    limit_per_page?: boolean
+    created_at?: boolean
+  }
+
+  export type SearchLogOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "query" | "results_count" | "filters" | "buyer_has_coords" | "response_time_ms" | "page" | "limit_per_page" | "created_at", ExtArgs["result"]["searchLog"]>
+
+  export type $SearchLogPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SearchLog"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      query: string
+      results_count: number
+      filters: Prisma.JsonValue | null
+      buyer_has_coords: boolean
+      response_time_ms: number
+      page: number
+      limit_per_page: number
+      created_at: Date
+    }, ExtArgs["result"]["searchLog"]>
+    composites: {}
+  }
+
+  type SearchLogGetPayload<S extends boolean | null | undefined | SearchLogDefaultArgs> = $Result.GetResult<Prisma.$SearchLogPayload, S>
+
+  type SearchLogCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SearchLogFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SearchLogCountAggregateInputType | true
+    }
+
+  export interface SearchLogDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SearchLog'], meta: { name: 'SearchLog' } }
+    /**
+     * Find zero or one SearchLog that matches the filter.
+     * @param {SearchLogFindUniqueArgs} args - Arguments to find a SearchLog
+     * @example
+     * // Get one SearchLog
+     * const searchLog = await prisma.searchLog.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SearchLogFindUniqueArgs>(args: SelectSubset<T, SearchLogFindUniqueArgs<ExtArgs>>): Prisma__SearchLogClient<$Result.GetResult<Prisma.$SearchLogPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one SearchLog that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SearchLogFindUniqueOrThrowArgs} args - Arguments to find a SearchLog
+     * @example
+     * // Get one SearchLog
+     * const searchLog = await prisma.searchLog.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SearchLogFindUniqueOrThrowArgs>(args: SelectSubset<T, SearchLogFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SearchLogClient<$Result.GetResult<Prisma.$SearchLogPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SearchLog that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SearchLogFindFirstArgs} args - Arguments to find a SearchLog
+     * @example
+     * // Get one SearchLog
+     * const searchLog = await prisma.searchLog.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SearchLogFindFirstArgs>(args?: SelectSubset<T, SearchLogFindFirstArgs<ExtArgs>>): Prisma__SearchLogClient<$Result.GetResult<Prisma.$SearchLogPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SearchLog that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SearchLogFindFirstOrThrowArgs} args - Arguments to find a SearchLog
+     * @example
+     * // Get one SearchLog
+     * const searchLog = await prisma.searchLog.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SearchLogFindFirstOrThrowArgs>(args?: SelectSubset<T, SearchLogFindFirstOrThrowArgs<ExtArgs>>): Prisma__SearchLogClient<$Result.GetResult<Prisma.$SearchLogPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more SearchLogs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SearchLogFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SearchLogs
+     * const searchLogs = await prisma.searchLog.findMany()
+     * 
+     * // Get first 10 SearchLogs
+     * const searchLogs = await prisma.searchLog.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const searchLogWithIdOnly = await prisma.searchLog.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SearchLogFindManyArgs>(args?: SelectSubset<T, SearchLogFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SearchLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a SearchLog.
+     * @param {SearchLogCreateArgs} args - Arguments to create a SearchLog.
+     * @example
+     * // Create one SearchLog
+     * const SearchLog = await prisma.searchLog.create({
+     *   data: {
+     *     // ... data to create a SearchLog
+     *   }
+     * })
+     * 
+     */
+    create<T extends SearchLogCreateArgs>(args: SelectSubset<T, SearchLogCreateArgs<ExtArgs>>): Prisma__SearchLogClient<$Result.GetResult<Prisma.$SearchLogPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many SearchLogs.
+     * @param {SearchLogCreateManyArgs} args - Arguments to create many SearchLogs.
+     * @example
+     * // Create many SearchLogs
+     * const searchLog = await prisma.searchLog.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SearchLogCreateManyArgs>(args?: SelectSubset<T, SearchLogCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SearchLogs and returns the data saved in the database.
+     * @param {SearchLogCreateManyAndReturnArgs} args - Arguments to create many SearchLogs.
+     * @example
+     * // Create many SearchLogs
+     * const searchLog = await prisma.searchLog.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SearchLogs and only return the `id`
+     * const searchLogWithIdOnly = await prisma.searchLog.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SearchLogCreateManyAndReturnArgs>(args?: SelectSubset<T, SearchLogCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SearchLogPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a SearchLog.
+     * @param {SearchLogDeleteArgs} args - Arguments to delete one SearchLog.
+     * @example
+     * // Delete one SearchLog
+     * const SearchLog = await prisma.searchLog.delete({
+     *   where: {
+     *     // ... filter to delete one SearchLog
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SearchLogDeleteArgs>(args: SelectSubset<T, SearchLogDeleteArgs<ExtArgs>>): Prisma__SearchLogClient<$Result.GetResult<Prisma.$SearchLogPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one SearchLog.
+     * @param {SearchLogUpdateArgs} args - Arguments to update one SearchLog.
+     * @example
+     * // Update one SearchLog
+     * const searchLog = await prisma.searchLog.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SearchLogUpdateArgs>(args: SelectSubset<T, SearchLogUpdateArgs<ExtArgs>>): Prisma__SearchLogClient<$Result.GetResult<Prisma.$SearchLogPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more SearchLogs.
+     * @param {SearchLogDeleteManyArgs} args - Arguments to filter SearchLogs to delete.
+     * @example
+     * // Delete a few SearchLogs
+     * const { count } = await prisma.searchLog.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SearchLogDeleteManyArgs>(args?: SelectSubset<T, SearchLogDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SearchLogs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SearchLogUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SearchLogs
+     * const searchLog = await prisma.searchLog.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SearchLogUpdateManyArgs>(args: SelectSubset<T, SearchLogUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SearchLogs and returns the data updated in the database.
+     * @param {SearchLogUpdateManyAndReturnArgs} args - Arguments to update many SearchLogs.
+     * @example
+     * // Update many SearchLogs
+     * const searchLog = await prisma.searchLog.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more SearchLogs and only return the `id`
+     * const searchLogWithIdOnly = await prisma.searchLog.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SearchLogUpdateManyAndReturnArgs>(args: SelectSubset<T, SearchLogUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SearchLogPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one SearchLog.
+     * @param {SearchLogUpsertArgs} args - Arguments to update or create a SearchLog.
+     * @example
+     * // Update or create a SearchLog
+     * const searchLog = await prisma.searchLog.upsert({
+     *   create: {
+     *     // ... data to create a SearchLog
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SearchLog we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SearchLogUpsertArgs>(args: SelectSubset<T, SearchLogUpsertArgs<ExtArgs>>): Prisma__SearchLogClient<$Result.GetResult<Prisma.$SearchLogPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of SearchLogs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SearchLogCountArgs} args - Arguments to filter SearchLogs to count.
+     * @example
+     * // Count the number of SearchLogs
+     * const count = await prisma.searchLog.count({
+     *   where: {
+     *     // ... the filter for the SearchLogs we want to count
+     *   }
+     * })
+    **/
+    count<T extends SearchLogCountArgs>(
+      args?: Subset<T, SearchLogCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SearchLogCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SearchLog.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SearchLogAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SearchLogAggregateArgs>(args: Subset<T, SearchLogAggregateArgs>): Prisma.PrismaPromise<GetSearchLogAggregateType<T>>
+
+    /**
+     * Group by SearchLog.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SearchLogGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SearchLogGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SearchLogGroupByArgs['orderBy'] }
+        : { orderBy?: SearchLogGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SearchLogGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSearchLogGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SearchLog model
+   */
+  readonly fields: SearchLogFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SearchLog.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SearchLogClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SearchLog model
+   */
+  interface SearchLogFieldRefs {
+    readonly id: FieldRef<"SearchLog", 'String'>
+    readonly query: FieldRef<"SearchLog", 'String'>
+    readonly results_count: FieldRef<"SearchLog", 'Int'>
+    readonly filters: FieldRef<"SearchLog", 'Json'>
+    readonly buyer_has_coords: FieldRef<"SearchLog", 'Boolean'>
+    readonly response_time_ms: FieldRef<"SearchLog", 'Int'>
+    readonly page: FieldRef<"SearchLog", 'Int'>
+    readonly limit_per_page: FieldRef<"SearchLog", 'Int'>
+    readonly created_at: FieldRef<"SearchLog", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SearchLog findUnique
+   */
+  export type SearchLogFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SearchLog
+     */
+    select?: SearchLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SearchLog
+     */
+    omit?: SearchLogOmit<ExtArgs> | null
+    /**
+     * Filter, which SearchLog to fetch.
+     */
+    where: SearchLogWhereUniqueInput
+  }
+
+  /**
+   * SearchLog findUniqueOrThrow
+   */
+  export type SearchLogFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SearchLog
+     */
+    select?: SearchLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SearchLog
+     */
+    omit?: SearchLogOmit<ExtArgs> | null
+    /**
+     * Filter, which SearchLog to fetch.
+     */
+    where: SearchLogWhereUniqueInput
+  }
+
+  /**
+   * SearchLog findFirst
+   */
+  export type SearchLogFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SearchLog
+     */
+    select?: SearchLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SearchLog
+     */
+    omit?: SearchLogOmit<ExtArgs> | null
+    /**
+     * Filter, which SearchLog to fetch.
+     */
+    where?: SearchLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SearchLogs to fetch.
+     */
+    orderBy?: SearchLogOrderByWithRelationInput | SearchLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SearchLogs.
+     */
+    cursor?: SearchLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SearchLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SearchLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SearchLogs.
+     */
+    distinct?: SearchLogScalarFieldEnum | SearchLogScalarFieldEnum[]
+  }
+
+  /**
+   * SearchLog findFirstOrThrow
+   */
+  export type SearchLogFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SearchLog
+     */
+    select?: SearchLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SearchLog
+     */
+    omit?: SearchLogOmit<ExtArgs> | null
+    /**
+     * Filter, which SearchLog to fetch.
+     */
+    where?: SearchLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SearchLogs to fetch.
+     */
+    orderBy?: SearchLogOrderByWithRelationInput | SearchLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SearchLogs.
+     */
+    cursor?: SearchLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SearchLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SearchLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SearchLogs.
+     */
+    distinct?: SearchLogScalarFieldEnum | SearchLogScalarFieldEnum[]
+  }
+
+  /**
+   * SearchLog findMany
+   */
+  export type SearchLogFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SearchLog
+     */
+    select?: SearchLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SearchLog
+     */
+    omit?: SearchLogOmit<ExtArgs> | null
+    /**
+     * Filter, which SearchLogs to fetch.
+     */
+    where?: SearchLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SearchLogs to fetch.
+     */
+    orderBy?: SearchLogOrderByWithRelationInput | SearchLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SearchLogs.
+     */
+    cursor?: SearchLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SearchLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SearchLogs.
+     */
+    skip?: number
+    distinct?: SearchLogScalarFieldEnum | SearchLogScalarFieldEnum[]
+  }
+
+  /**
+   * SearchLog create
+   */
+  export type SearchLogCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SearchLog
+     */
+    select?: SearchLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SearchLog
+     */
+    omit?: SearchLogOmit<ExtArgs> | null
+    /**
+     * The data needed to create a SearchLog.
+     */
+    data: XOR<SearchLogCreateInput, SearchLogUncheckedCreateInput>
+  }
+
+  /**
+   * SearchLog createMany
+   */
+  export type SearchLogCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SearchLogs.
+     */
+    data: SearchLogCreateManyInput | SearchLogCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SearchLog createManyAndReturn
+   */
+  export type SearchLogCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SearchLog
+     */
+    select?: SearchLogSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SearchLog
+     */
+    omit?: SearchLogOmit<ExtArgs> | null
+    /**
+     * The data used to create many SearchLogs.
+     */
+    data: SearchLogCreateManyInput | SearchLogCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SearchLog update
+   */
+  export type SearchLogUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SearchLog
+     */
+    select?: SearchLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SearchLog
+     */
+    omit?: SearchLogOmit<ExtArgs> | null
+    /**
+     * The data needed to update a SearchLog.
+     */
+    data: XOR<SearchLogUpdateInput, SearchLogUncheckedUpdateInput>
+    /**
+     * Choose, which SearchLog to update.
+     */
+    where: SearchLogWhereUniqueInput
+  }
+
+  /**
+   * SearchLog updateMany
+   */
+  export type SearchLogUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SearchLogs.
+     */
+    data: XOR<SearchLogUpdateManyMutationInput, SearchLogUncheckedUpdateManyInput>
+    /**
+     * Filter which SearchLogs to update
+     */
+    where?: SearchLogWhereInput
+    /**
+     * Limit how many SearchLogs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SearchLog updateManyAndReturn
+   */
+  export type SearchLogUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SearchLog
+     */
+    select?: SearchLogSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SearchLog
+     */
+    omit?: SearchLogOmit<ExtArgs> | null
+    /**
+     * The data used to update SearchLogs.
+     */
+    data: XOR<SearchLogUpdateManyMutationInput, SearchLogUncheckedUpdateManyInput>
+    /**
+     * Filter which SearchLogs to update
+     */
+    where?: SearchLogWhereInput
+    /**
+     * Limit how many SearchLogs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SearchLog upsert
+   */
+  export type SearchLogUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SearchLog
+     */
+    select?: SearchLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SearchLog
+     */
+    omit?: SearchLogOmit<ExtArgs> | null
+    /**
+     * The filter to search for the SearchLog to update in case it exists.
+     */
+    where: SearchLogWhereUniqueInput
+    /**
+     * In case the SearchLog found by the `where` argument doesn't exist, create a new SearchLog with this data.
+     */
+    create: XOR<SearchLogCreateInput, SearchLogUncheckedCreateInput>
+    /**
+     * In case the SearchLog was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SearchLogUpdateInput, SearchLogUncheckedUpdateInput>
+  }
+
+  /**
+   * SearchLog delete
+   */
+  export type SearchLogDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SearchLog
+     */
+    select?: SearchLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SearchLog
+     */
+    omit?: SearchLogOmit<ExtArgs> | null
+    /**
+     * Filter which SearchLog to delete.
+     */
+    where: SearchLogWhereUniqueInput
+  }
+
+  /**
+   * SearchLog deleteMany
+   */
+  export type SearchLogDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SearchLogs to delete
+     */
+    where?: SearchLogWhereInput
+    /**
+     * Limit how many SearchLogs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * SearchLog without action
+   */
+  export type SearchLogDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SearchLog
+     */
+    select?: SearchLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SearchLog
+     */
+    omit?: SearchLogOmit<ExtArgs> | null
   }
 
 
@@ -28750,6 +29930,21 @@ export namespace Prisma {
   export type User_addressesScalarFieldEnum = (typeof User_addressesScalarFieldEnum)[keyof typeof User_addressesScalarFieldEnum]
 
 
+  export const SearchLogScalarFieldEnum: {
+    id: 'id',
+    query: 'query',
+    results_count: 'results_count',
+    filters: 'filters',
+    buyer_has_coords: 'buyer_has_coords',
+    response_time_ms: 'response_time_ms',
+    page: 'page',
+    limit_per_page: 'limit_per_page',
+    created_at: 'created_at'
+  };
+
+  export type SearchLogScalarFieldEnum = (typeof SearchLogScalarFieldEnum)[keyof typeof SearchLogScalarFieldEnum]
+
+
   export const UsersScalarFieldEnum: {
     id: 'id',
     first_name: 'first_name',
@@ -30319,6 +31514,80 @@ export namespace Prisma {
     created_at?: DateTimeNullableWithAggregatesFilter<"user_addresses"> | Date | string | null
     phone_number?: StringNullableWithAggregatesFilter<"user_addresses"> | string | null
     updated_at?: DateTimeNullableWithAggregatesFilter<"user_addresses"> | Date | string | null
+  }
+
+  export type SearchLogWhereInput = {
+    AND?: SearchLogWhereInput | SearchLogWhereInput[]
+    OR?: SearchLogWhereInput[]
+    NOT?: SearchLogWhereInput | SearchLogWhereInput[]
+    id?: UuidFilter<"SearchLog"> | string
+    query?: StringFilter<"SearchLog"> | string
+    results_count?: IntFilter<"SearchLog"> | number
+    filters?: JsonNullableFilter<"SearchLog">
+    buyer_has_coords?: BoolFilter<"SearchLog"> | boolean
+    response_time_ms?: IntFilter<"SearchLog"> | number
+    page?: IntFilter<"SearchLog"> | number
+    limit_per_page?: IntFilter<"SearchLog"> | number
+    created_at?: DateTimeFilter<"SearchLog"> | Date | string
+  }
+
+  export type SearchLogOrderByWithRelationInput = {
+    id?: SortOrder
+    query?: SortOrder
+    results_count?: SortOrder
+    filters?: SortOrderInput | SortOrder
+    buyer_has_coords?: SortOrder
+    response_time_ms?: SortOrder
+    page?: SortOrder
+    limit_per_page?: SortOrder
+    created_at?: SortOrder
+  }
+
+  export type SearchLogWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: SearchLogWhereInput | SearchLogWhereInput[]
+    OR?: SearchLogWhereInput[]
+    NOT?: SearchLogWhereInput | SearchLogWhereInput[]
+    query?: StringFilter<"SearchLog"> | string
+    results_count?: IntFilter<"SearchLog"> | number
+    filters?: JsonNullableFilter<"SearchLog">
+    buyer_has_coords?: BoolFilter<"SearchLog"> | boolean
+    response_time_ms?: IntFilter<"SearchLog"> | number
+    page?: IntFilter<"SearchLog"> | number
+    limit_per_page?: IntFilter<"SearchLog"> | number
+    created_at?: DateTimeFilter<"SearchLog"> | Date | string
+  }, "id">
+
+  export type SearchLogOrderByWithAggregationInput = {
+    id?: SortOrder
+    query?: SortOrder
+    results_count?: SortOrder
+    filters?: SortOrderInput | SortOrder
+    buyer_has_coords?: SortOrder
+    response_time_ms?: SortOrder
+    page?: SortOrder
+    limit_per_page?: SortOrder
+    created_at?: SortOrder
+    _count?: SearchLogCountOrderByAggregateInput
+    _avg?: SearchLogAvgOrderByAggregateInput
+    _max?: SearchLogMaxOrderByAggregateInput
+    _min?: SearchLogMinOrderByAggregateInput
+    _sum?: SearchLogSumOrderByAggregateInput
+  }
+
+  export type SearchLogScalarWhereWithAggregatesInput = {
+    AND?: SearchLogScalarWhereWithAggregatesInput | SearchLogScalarWhereWithAggregatesInput[]
+    OR?: SearchLogScalarWhereWithAggregatesInput[]
+    NOT?: SearchLogScalarWhereWithAggregatesInput | SearchLogScalarWhereWithAggregatesInput[]
+    id?: UuidWithAggregatesFilter<"SearchLog"> | string
+    query?: StringWithAggregatesFilter<"SearchLog"> | string
+    results_count?: IntWithAggregatesFilter<"SearchLog"> | number
+    filters?: JsonNullableWithAggregatesFilter<"SearchLog">
+    buyer_has_coords?: BoolWithAggregatesFilter<"SearchLog"> | boolean
+    response_time_ms?: IntWithAggregatesFilter<"SearchLog"> | number
+    page?: IntWithAggregatesFilter<"SearchLog"> | number
+    limit_per_page?: IntWithAggregatesFilter<"SearchLog"> | number
+    created_at?: DateTimeWithAggregatesFilter<"SearchLog"> | Date | string
   }
 
   export type usersWhereInput = {
@@ -32682,6 +33951,90 @@ export namespace Prisma {
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     phone_number?: NullableStringFieldUpdateOperationsInput | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type SearchLogCreateInput = {
+    id?: string
+    query: string
+    results_count?: number
+    filters?: NullableJsonNullValueInput | InputJsonValue
+    buyer_has_coords?: boolean
+    response_time_ms?: number
+    page?: number
+    limit_per_page?: number
+    created_at?: Date | string
+  }
+
+  export type SearchLogUncheckedCreateInput = {
+    id?: string
+    query: string
+    results_count?: number
+    filters?: NullableJsonNullValueInput | InputJsonValue
+    buyer_has_coords?: boolean
+    response_time_ms?: number
+    page?: number
+    limit_per_page?: number
+    created_at?: Date | string
+  }
+
+  export type SearchLogUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    query?: StringFieldUpdateOperationsInput | string
+    results_count?: IntFieldUpdateOperationsInput | number
+    filters?: NullableJsonNullValueInput | InputJsonValue
+    buyer_has_coords?: BoolFieldUpdateOperationsInput | boolean
+    response_time_ms?: IntFieldUpdateOperationsInput | number
+    page?: IntFieldUpdateOperationsInput | number
+    limit_per_page?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SearchLogUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    query?: StringFieldUpdateOperationsInput | string
+    results_count?: IntFieldUpdateOperationsInput | number
+    filters?: NullableJsonNullValueInput | InputJsonValue
+    buyer_has_coords?: BoolFieldUpdateOperationsInput | boolean
+    response_time_ms?: IntFieldUpdateOperationsInput | number
+    page?: IntFieldUpdateOperationsInput | number
+    limit_per_page?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SearchLogCreateManyInput = {
+    id?: string
+    query: string
+    results_count?: number
+    filters?: NullableJsonNullValueInput | InputJsonValue
+    buyer_has_coords?: boolean
+    response_time_ms?: number
+    page?: number
+    limit_per_page?: number
+    created_at?: Date | string
+  }
+
+  export type SearchLogUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    query?: StringFieldUpdateOperationsInput | string
+    results_count?: IntFieldUpdateOperationsInput | number
+    filters?: NullableJsonNullValueInput | InputJsonValue
+    buyer_has_coords?: BoolFieldUpdateOperationsInput | boolean
+    response_time_ms?: IntFieldUpdateOperationsInput | number
+    page?: IntFieldUpdateOperationsInput | number
+    limit_per_page?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SearchLogUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    query?: StringFieldUpdateOperationsInput | string
+    results_count?: IntFieldUpdateOperationsInput | number
+    filters?: NullableJsonNullValueInput | InputJsonValue
+    buyer_has_coords?: BoolFieldUpdateOperationsInput | boolean
+    response_time_ms?: IntFieldUpdateOperationsInput | number
+    page?: IntFieldUpdateOperationsInput | number
+    limit_per_page?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type usersCreateInput = {
@@ -35233,6 +36586,79 @@ export namespace Prisma {
     longitude?: SortOrder
   }
 
+  export type DateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
+  export type SearchLogCountOrderByAggregateInput = {
+    id?: SortOrder
+    query?: SortOrder
+    results_count?: SortOrder
+    filters?: SortOrder
+    buyer_has_coords?: SortOrder
+    response_time_ms?: SortOrder
+    page?: SortOrder
+    limit_per_page?: SortOrder
+    created_at?: SortOrder
+  }
+
+  export type SearchLogAvgOrderByAggregateInput = {
+    results_count?: SortOrder
+    response_time_ms?: SortOrder
+    page?: SortOrder
+    limit_per_page?: SortOrder
+  }
+
+  export type SearchLogMaxOrderByAggregateInput = {
+    id?: SortOrder
+    query?: SortOrder
+    results_count?: SortOrder
+    buyer_has_coords?: SortOrder
+    response_time_ms?: SortOrder
+    page?: SortOrder
+    limit_per_page?: SortOrder
+    created_at?: SortOrder
+  }
+
+  export type SearchLogMinOrderByAggregateInput = {
+    id?: SortOrder
+    query?: SortOrder
+    results_count?: SortOrder
+    buyer_has_coords?: SortOrder
+    response_time_ms?: SortOrder
+    page?: SortOrder
+    limit_per_page?: SortOrder
+    created_at?: SortOrder
+  }
+
+  export type SearchLogSumOrderByAggregateInput = {
+    results_count?: SortOrder
+    response_time_ms?: SortOrder
+    page?: SortOrder
+    limit_per_page?: SortOrder
+  }
+
+  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
   export type Enumuser_roleFilter<$PrismaModel = never> = {
     equals?: $Enums.user_role | Enumuser_roleFieldRefInput<$PrismaModel>
     in?: $Enums.user_role[] | ListEnumuser_roleFieldRefInput<$PrismaModel>
@@ -35669,17 +37095,6 @@ export namespace Prisma {
     not?: NestedEnumupload_statusFilter<$PrismaModel> | $Enums.upload_status
   }
 
-  export type DateTimeFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
-  }
-
   export type Enumtemplate_typeNullableFilter<$PrismaModel = never> = {
     equals?: $Enums.template_type | Enumtemplate_typeFieldRefInput<$PrismaModel> | null
     in?: $Enums.template_type[] | ListEnumtemplate_typeFieldRefInput<$PrismaModel> | null
@@ -35765,20 +37180,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumupload_statusFilter<$PrismaModel>
     _max?: NestedEnumupload_statusFilter<$PrismaModel>
-  }
-
-  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedDateTimeFilter<$PrismaModel>
-    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
   export type Enumtemplate_typeNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -37252,6 +38653,10 @@ export namespace Prisma {
     deleteMany?: ordersScalarWhereInput | ordersScalarWhereInput[]
   }
 
+  export type DateTimeFieldUpdateOperationsInput = {
+    set?: Date | string
+  }
+
   export type ordersCreateNestedManyWithoutUsersInput = {
     create?: XOR<ordersCreateWithoutUsersInput, ordersUncheckedCreateWithoutUsersInput> | ordersCreateWithoutUsersInput[] | ordersUncheckedCreateWithoutUsersInput[]
     connectOrCreate?: ordersCreateOrConnectWithoutUsersInput | ordersCreateOrConnectWithoutUsersInput[]
@@ -37931,10 +39336,6 @@ export namespace Prisma {
     set?: $Enums.upload_status
   }
 
-  export type DateTimeFieldUpdateOperationsInput = {
-    set?: Date | string
-  }
-
   export type NullableEnumtemplate_typeFieldUpdateOperationsInput = {
     set?: $Enums.template_type | null
   }
@@ -38601,6 +40002,31 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
+  export type NestedDateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
+  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
   export type NestedEnumuser_roleFilter<$PrismaModel = never> = {
     equals?: $Enums.user_role | Enumuser_roleFieldRefInput<$PrismaModel>
     in?: $Enums.user_role[] | ListEnumuser_roleFieldRefInput<$PrismaModel>
@@ -38710,17 +40136,6 @@ export namespace Prisma {
     not?: NestedEnumupload_statusFilter<$PrismaModel> | $Enums.upload_status
   }
 
-  export type NestedDateTimeFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
-  }
-
   export type NestedEnumtemplate_typeNullableFilter<$PrismaModel = never> = {
     equals?: $Enums.template_type | Enumtemplate_typeFieldRefInput<$PrismaModel> | null
     in?: $Enums.template_type[] | ListEnumtemplate_typeFieldRefInput<$PrismaModel> | null
@@ -38736,20 +40151,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumupload_statusFilter<$PrismaModel>
     _max?: NestedEnumupload_statusFilter<$PrismaModel>
-  }
-
-  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedDateTimeFilter<$PrismaModel>
-    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
   export type NestedEnumtemplate_typeNullableWithAggregatesFilter<$PrismaModel = never> = {

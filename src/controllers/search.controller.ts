@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import prisma from "../prismaClient";
 import { Prisma } from '../../generated/prisma';
 
+
 // Types for response shaping
 type ShopEntry = {
   shop_product_id: string;
@@ -111,9 +112,14 @@ export const search = async (req: Request, res: Response) => {
       specsSqlFragment = parts.reduce((a, b) => Prisma.sql`${a} AND ${b}`);
     }
 
-    const rows: any[] = await prisma.$queryRaw<any[]>`
+    const rawRows: any = await prisma.$queryRaw<any[]>`
 WITH canonical_products AS (
-  SELECT p.id, p.name, p.brand, p.normalized_name, p.model, p.category_id, p.images, p.gtin, p.mpn
+  SELECT p.id, p.name, p.brand, p.normalized_name, p.model, p.category_id, p.images, p.gtin, p.mpn,
+         GREATEST(
+           similarity(lower(coalesce(p.name,'')), ${qPlain}),
+           similarity(lower(coalesce(p.normalized_name,'')), ${qPlain}),
+           similarity(lower(coalesce(p.brand,'')), ${qPlain})
+         ) AS match_score
   FROM products p
   WHERE p.status = 'APPROVED'
     AND coalesce(p.is_active,false) = true
@@ -188,6 +194,7 @@ aggregated AS (
     MIN(al.price) AS min_price,
     MAX(al.price) AS max_price,
     ROUND(AVG(al.price)::numeric, 2) AS avg_price,
+    cp.match_score,
     COUNT(DISTINCT al.shop_id) AS total_active_shops,
     ARRAY_REMOVE(ARRAY_AGG(DISTINCT al.condition) FILTER (WHERE al.condition IS NOT NULL), NULL) AS conditions_available,
     COUNT(*) AS total_shops,
@@ -220,7 +227,47 @@ aggregated AS (
     ) AS shops
   FROM canonical_products cp
   JOIN linked_listings al ON al.canonical_product_id = cp.id
-  GROUP BY cp.id
+  GROUP BY cp.id, cp.match_score
+)
+,
+facets_cte AS (
+  SELECT json_build_object(
+    'conditions', (
+      SELECT COALESCE(JSON_AGG(JSON_BUILD_OBJECT('value', condition, 'count', cnt) ORDER BY cnt DESC), '[]'::json)
+      FROM (
+        SELECT al.condition AS condition, COUNT(*) AS cnt
+        FROM linked_listings al
+        WHERE al.condition IS NOT NULL
+          AND al.canonical_product_id IN (SELECT id FROM canonical_products)
+        GROUP BY al.condition
+        ORDER BY cnt DESC
+      ) t
+    ),
+    'brands', (
+      SELECT COALESCE(JSON_AGG(JSON_BUILD_OBJECT('value', b.brand, 'count', b.cnt) ORDER BY b.cnt DESC), '[]'::json)
+      FROM (
+        SELECT cp.brand AS brand, COUNT(*) AS cnt
+        FROM canonical_products cp
+        GROUP BY cp.brand
+        ORDER BY cnt DESC
+      ) b
+    ),
+    'models', (
+      SELECT COALESCE(JSON_AGG(JSON_BUILD_OBJECT('value', m.model, 'count', m.cnt) ORDER BY m.cnt DESC), '[]'::json)
+      FROM (
+        SELECT cp.model AS model, COUNT(*) AS cnt
+        FROM canonical_products cp
+        WHERE cp.model IS NOT NULL AND trim(cp.model) <> ''
+        GROUP BY cp.model
+        ORDER BY cnt DESC
+      ) m
+    ),
+    'price_range', (
+      SELECT json_build_object('min', MIN(al.price), 'max', MAX(al.price), 'currency', 'MWK')
+      FROM linked_listings al
+      WHERE al.canonical_product_id IN (SELECT id FROM canonical_products)
+    )
+  ) AS facets
 )
 SELECT
   cp.id AS product_id,
@@ -239,15 +286,46 @@ SELECT
   agg.conditions_available,
   agg.total_shops,
   agg.shops,
+  agg.match_score,
+  facets_cte.facets,
   COUNT(*) OVER() AS total_count
 FROM canonical_products cp
 JOIN aggregated agg ON agg.canonical_product_id = cp.id
-ORDER BY agg.min_price ASC NULLS LAST
+JOIN facets_cte ON true
+ORDER BY agg.min_price ASC NULLS LAST, cp.match_score DESC
 LIMIT ${limit} OFFSET ${offset};
 `;
 
-    // Format results
-    const results: ProductResult[] = (rows || []).map((r) => {
+  // Ensure rows is always an array (Prisma may sometimes return an object)
+  let rows: any[] = Array.isArray(rawRows) ? rawRows : (rawRows ? [rawRows] : []);
+
+  // Prisma sometimes returns a wrapper like { data: [ ... ] } when using certain drivers.
+  // If so, unwrap it to get the actual array of result rows.
+  if (
+    rows.length === 1 &&
+    rows[0] &&
+    typeof rows[0] === 'object' &&
+    Array.isArray((rows[0] as any).data) &&
+    (rows[0] as any).data.length > 0 &&
+    typeof (rows[0] as any).data[0].product_id !== 'undefined'
+  ) {
+    rows = (rows[0] as any).data;
+  }
+
+  // Extract facets if the query attached facets to each row (facets_cte was joined)
+  let facets: any = { conditions: [], brands: [], models: [], price_range: { min: null, max: null, currency: 'MWK' } };
+  if (rows.length > 0 && rows[0].facets) {
+    facets = rows[0].facets;
+    // remove facets from individual rows to avoid duplication
+    rows = rows.map((r: any) => {
+      const copy = { ...r };
+      delete copy.facets;
+      return copy;
+    });
+  }
+
+  // Format results
+  const results: ProductResult[] = (rows || []).map((r) => {
       const shopsRaw = r.shops || [];
       const shops: ShopEntry[] = (shopsRaw as any[]).map((s: any) => ({
         shop_product_id: s.shop_product_id,
@@ -278,7 +356,8 @@ LIMIT ${limit} OFFSET ${offset};
           thumbnail_url: Array.isArray(r.images) && r.images.length ? r.images[0] : null,
           images: r.images || [],
           gtin: r.gtin ?? null,
-          mpn: r.mpn ?? null
+          mpn: r.mpn ?? null,
+          match_score: r.match_score !== null && typeof r.match_score !== 'undefined' ? Number(Number(r.match_score).toFixed(4)) : null
         },
         market_stats: {
           min_price: r.min_price !== null ? Number(r.min_price) : null,
@@ -296,6 +375,45 @@ LIMIT ${limit} OFFSET ${offset};
     const responseTime = Date.now() - start;
     // Fix 4: compute total_results from windowed total_count
     const totalCount = rows.length > 0 ? Number(rows[0].total_count ?? 0) : 0;
+
+    // Zero-results suggestions: if no results, query for up to 5 similar approved products
+    let suggestions: string[] = [];
+    if (totalCount === 0) {
+      try {
+        const sugRows: any[] = await prisma.$queryRaw<any[]>`
+          SELECT DISTINCT p.name, p.brand, GREATEST(
+            similarity(lower(coalesce(p.name,'')), ${qPlain}),
+            similarity(lower(coalesce(p.brand,'')), ${qPlain})
+          ) AS score
+          FROM products p
+          WHERE p.status = 'APPROVED'
+            AND coalesce(p.is_active,false) = true
+            AND p.merged_into_id IS NULL
+            AND (
+              similarity(lower(coalesce(p.name,'')), ${qPlain}) > 0.1
+              OR similarity(lower(coalesce(p.brand,'')), ${qPlain}) > 0.1
+            )
+          ORDER BY score DESC
+          LIMIT 5
+        `;
+        const seen = new Set<string>();
+        for (const s of (sugRows || [])) {
+          const name = s.name ? String(s.name).trim() : '';
+          const brandVal = s.brand ? String(s.brand).trim() : '';
+          const txt = [name, brandVal].filter(Boolean).join(' ').trim();
+          if (txt && !seen.has(txt)) {
+            seen.add(txt);
+            suggestions.push(txt);
+          }
+        }
+      } catch (e) {
+        // don't fail the search on suggestion errors
+        // eslint-disable-next-line no-console
+        console.error('SEARCH_SUGGESTIONS_ERROR', e);
+        suggestions = [];
+      }
+    }
+
     const metadata = {
       query: qRaw,
       page,
@@ -303,12 +421,43 @@ LIMIT ${limit} OFFSET ${offset};
       total_results: totalCount,
       returned_results: results.length,
       has_next_page: offset + results.length < totalCount,
+      has_prev_page: page > 1,
+      total_pages: totalCount > 0 ? Math.ceil(totalCount / limit) : 0,
+      from: totalCount > 0 && results.length > 0 ? offset + 1 : 0,
+      to: totalCount > 0 && results.length > 0 ? offset + results.length : 0,
       currency: 'MWK',
       buyer_location_provided: buyerHasCoords,
-      response_time_ms: responseTime
+      response_time_ms: responseTime,
+      suggestions
     };
 
-    return res.json({ success: true, metadata, results, error: null });
+    // Send response (facets computed in SQL and extracted earlier)
+    res.json({ success: true, metadata, facets, results, error: null });
+
+    // Fire-and-forget: log search to search_logs table asynchronously
+    try {
+      const filtersObj = {
+        brand: brand || null,
+        model: model || null,
+        condition: condition || null,
+        category_id: categoryId || null,
+        min_price: minPrice,
+        max_price: maxPrice,
+        specs: specsObj || null
+      };
+      prisma.$executeRaw`
+        INSERT INTO search_logs (query, results_count, filters, buyer_has_coords, response_time_ms, page, limit_per_page)
+        VALUES (${qRaw}, ${totalCount}, ${JSON.stringify(filtersObj)}::jsonb, ${buyerHasCoords}, ${responseTime}, ${page}, ${limit})
+      `.catch((e) => {
+        // eslint-disable-next-line no-console
+        console.error('SEARCH_LOG_ERROR', e);
+      });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('SEARCH_LOG_PREP_ERROR', e);
+    }
+
+    return;
   } catch (err) {
     console.error('Search error:', err);
     return res.status(500).json({ success: false, metadata: null, results: [], error: { code: 'SEARCH_FAILED', message: (err as any)?.message ?? 'Search failed' } });
