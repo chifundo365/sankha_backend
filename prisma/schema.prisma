@@ -114,6 +114,7 @@ model payment_reports {
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model products {
   id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name             String          @db.VarChar(255)
@@ -221,7 +222,7 @@ model SearchLog {
   response_time_ms Int      @default(0)
   page             Int      @default(1)
   limit_per_page   Int      @default(20)
-  created_at       DateTime @default(now()) @db.Timestamptz
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([query])
   @@index([created_at])
@@ -301,6 +302,7 @@ model reviews {
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model shop_products {
   id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   shop_id           String              @db.Uuid

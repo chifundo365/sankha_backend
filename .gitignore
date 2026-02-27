@@ -8,6 +8,9 @@ pnpm-debug.log*
 # script folder
 scripts/
 
+# Ignore the custom generated Prisma folder
+generated/prisma/
+
 
 # gnerated files
 generated/
