@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import prisma from "../prismaClient";
 import { Prisma } from '../../generated/prisma';
 
-
 // Types for response shaping
 type ShopEntry = {
   shop_product_id: string;
@@ -28,22 +27,21 @@ type ProductResult = {
   shops: ShopEntry[];
 };
 
-// Removed escapeLike: we use parameterized queries (Prisma.sql) to avoid SQL injection
-
 export const search = async (req: Request, res: Response) => {
   const start = Date.now();
   try {
     const qRaw = typeof req.query.q === 'string' ? req.query.q.trim() : '';
     const brandRaw = typeof req.query.brand === 'string' ? req.query.brand.trim() : '';
     const modelRaw = typeof req.query.model === 'string' ? req.query.model.trim() : '';
-    // Fix 5: explicit validation for query length (must be 2-100 chars)
+    
     if (qRaw.length < 2) {
       return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_QUERY', message: 'Search query must be at least 2 characters' } });
     }
     if (qRaw.length > 100) {
       return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_QUERY', message: 'Search query must not exceed 100 characters' } });
     }
-    const q = qRaw; // validated
+
+    const q = qRaw;
     const brand = brandRaw === '' ? null : brandRaw;
     const model = modelRaw === '' ? null : modelRaw;
     const page = req.query.page ? Math.max(1, Number(req.query.page)) : 1;
@@ -59,7 +57,7 @@ export const search = async (req: Request, res: Response) => {
     const minPrice = req.query.min_price ? Number(req.query.min_price) : null;
     const maxPrice = req.query.max_price ? Number(req.query.max_price) : null;
     const categoryId = typeof req.query.category_id === 'string' ? req.query.category_id : null;
-    // Specs filter: URL-encoded JSON object, e.g. ?specs={"Storage":"256GB"}
+
     let specsObj: any = null;
     if (typeof req.query.specs === 'string' && req.query.specs.trim() !== '') {
       try {
@@ -72,14 +70,12 @@ export const search = async (req: Request, res: Response) => {
       }
     }
 
-    // Build a single parameterized SQL template using prisma.$queryRaw tagged template
     const searchParam = `%${q.toLowerCase()}%`;
     const qPlain = q.toLowerCase();
-    const similarityThreshold = Number(process.env.SEARCH_SIMILARITY || '0.28');
+    const similarityThreshold = Number(process.env.SEARCH_SIMILARITY || '0.2');
     const brandParam = brand ? `%${brand.toLowerCase()}%` : null;
     const modelParam = model ? `%${model.toLowerCase()}%` : null;
 
-    // Build specs SQL fragment: match either listing-level (`sp`) OR product-level (`p`) specs/variant_values
     let specsSqlFragment: any = null;
     if (specsObj) {
       const parts: any[] = [];
@@ -115,11 +111,11 @@ export const search = async (req: Request, res: Response) => {
     const rawRows: any = await prisma.$queryRaw<any[]>`
 WITH canonical_products AS (
   SELECT p.id, p.name, p.brand, p.normalized_name, p.model, p.category_id, p.images, p.gtin, p.mpn,
-         GREATEST(
-           similarity(lower(coalesce(p.name,'')), ${qPlain}),
-           similarity(lower(coalesce(p.normalized_name,'')), ${qPlain}),
-           similarity(lower(coalesce(p.brand,'')), ${qPlain})
-         ) AS match_score
+          GREATEST(
+            similarity(lower(coalesce(p.name,'')), ${qPlain}),
+            similarity(lower(coalesce(p.normalized_name,'')), ${qPlain}),
+            similarity(lower(coalesce(p.brand,'')), ${qPlain})
+          ) AS match_score
   FROM products p
   WHERE p.status = 'APPROVED'
     AND coalesce(p.is_active,false) = true
@@ -172,21 +168,15 @@ active_listings AS (
     )
 ),
 linked_listings AS (
-  -- Listings whose product is canonical
   SELECT al.*, al.product_id AS canonical_product_id
   FROM active_listings al
   JOIN products p ON p.id = al.product_id
-  WHERE p.merged_into_id IS NULL
-    AND p.status = 'APPROVED'
-
+  WHERE p.merged_into_id IS NULL AND p.status = 'APPROVED'
   UNION ALL
-
-  -- Listings whose product has been merged into a canonical product
   SELECT al.*, p2.merged_into_id AS canonical_product_id
   FROM active_listings al
   JOIN products p2 ON p2.id = al.product_id
-  WHERE p2.merged_into_id IS NOT NULL
-    AND p2.status = 'MERGED'
+  WHERE p2.merged_into_id IS NOT NULL AND p2.status = 'MERGED'
 ),
 aggregated AS (
   SELECT
@@ -228,8 +218,7 @@ aggregated AS (
   FROM canonical_products cp
   JOIN linked_listings al ON al.canonical_product_id = cp.id
   GROUP BY cp.id, cp.match_score
-)
-,
+),
 facets_cte AS (
   SELECT json_build_object(
     'conditions', (
@@ -240,26 +229,25 @@ facets_cte AS (
         WHERE al.condition IS NOT NULL
           AND al.canonical_product_id IN (SELECT id FROM canonical_products)
         GROUP BY al.condition
-        ORDER BY cnt DESC
       ) t
     ),
     'brands', (
-      SELECT COALESCE(JSON_AGG(JSON_BUILD_OBJECT('value', b.brand, 'count', b.cnt) ORDER BY b.cnt DESC), '[]'::json)
+      SELECT COALESCE(JSON_AGG(JSON_BUILD_OBJECT('value', brand, 'count', cnt) ORDER BY cnt DESC), '[]'::json)
       FROM (
-        SELECT cp.brand AS brand, COUNT(*) AS cnt
+        SELECT cp.brand AS brand, COUNT(DISTINCT cp.id) AS cnt
         FROM canonical_products cp
+        JOIN linked_listings al ON al.canonical_product_id = cp.id
         GROUP BY cp.brand
-        ORDER BY cnt DESC
       ) b
     ),
     'models', (
-      SELECT COALESCE(JSON_AGG(JSON_BUILD_OBJECT('value', m.model, 'count', m.cnt) ORDER BY m.cnt DESC), '[]'::json)
+      SELECT COALESCE(JSON_AGG(JSON_BUILD_OBJECT('value', model, 'count', cnt) ORDER BY cnt DESC), '[]'::json)
       FROM (
-        SELECT cp.model AS model, COUNT(*) AS cnt
+        SELECT cp.model AS model, COUNT(DISTINCT cp.id) AS cnt
         FROM canonical_products cp
+        JOIN linked_listings al ON al.canonical_product_id = cp.id
         WHERE cp.model IS NOT NULL AND trim(cp.model) <> ''
         GROUP BY cp.model
-        ORDER BY cnt DESC
       ) m
     ),
     'price_range', (
@@ -271,22 +259,8 @@ facets_cte AS (
 )
 SELECT
   cp.id AS product_id,
-  cp.name,
-  cp.brand,
-  cp.normalized_name,
-  cp.model,
-  cp.category_id,
-  cp.images,
-  cp.gtin,
-  cp.mpn,
-  agg.min_price,
-  agg.max_price,
-  agg.avg_price,
-  agg.total_active_shops,
-  agg.conditions_available,
-  agg.total_shops,
-  agg.shops,
-  agg.match_score,
+  cp.name, cp.brand, cp.normalized_name, cp.model, cp.category_id, cp.images, cp.gtin, cp.mpn,
+  agg.min_price, agg.max_price, agg.avg_price, agg.total_active_shops, agg.conditions_available, agg.total_shops, agg.shops, agg.match_score,
   facets_cte.facets,
   COUNT(*) OVER() AS total_count
 FROM canonical_products cp
@@ -296,53 +270,27 @@ ORDER BY agg.min_price ASC NULLS LAST, cp.match_score DESC
 LIMIT ${limit} OFFSET ${offset};
 `;
 
-  // Ensure rows is always an array (Prisma may sometimes return an object)
-  let rows: any[] = Array.isArray(rawRows) ? rawRows : (rawRows ? [rawRows] : []);
+    let rows: any[] = Array.isArray(rawRows) ? rawRows : (rawRows ? [rawRows] : []);
+    if (rows.length === 1 && rows[0] && typeof rows[0] === 'object' && Array.isArray((rows[0] as any).data)) {
+      rows = (rows[0] as any).data;
+    }
 
-  // Prisma sometimes returns a wrapper like { data: [ ... ] } when using certain drivers.
-  // If so, unwrap it to get the actual array of result rows.
-  if (
-    rows.length === 1 &&
-    rows[0] &&
-    typeof rows[0] === 'object' &&
-    Array.isArray((rows[0] as any).data) &&
-    (rows[0] as any).data.length > 0 &&
-    typeof (rows[0] as any).data[0].product_id !== 'undefined'
-  ) {
-    rows = (rows[0] as any).data;
-  }
+    let facets: any = { conditions: [], brands: [], models: [], price_range: { min: null, max: null, currency: 'MWK' } };
+    if (rows.length > 0 && rows[0].facets) {
+      facets = rows[0].facets;
+      rows = rows.map((r: any) => {
+        const copy = { ...r };
+        delete copy.facets;
+        return copy;
+      });
+    }
 
-  // Extract facets if the query attached facets to each row (facets_cte was joined)
-  let facets: any = { conditions: [], brands: [], models: [], price_range: { min: null, max: null, currency: 'MWK' } };
-  if (rows.length > 0 && rows[0].facets) {
-    facets = rows[0].facets;
-    // remove facets from individual rows to avoid duplication
-    rows = rows.map((r: any) => {
-      const copy = { ...r };
-      delete copy.facets;
-      return copy;
-    });
-  }
-
-  // Format results
-  const results: ProductResult[] = (rows || []).map((r) => {
-      const shopsRaw = r.shops || [];
-      const shops: ShopEntry[] = (shopsRaw as any[]).map((s: any) => ({
-        shop_product_id: s.shop_product_id,
-        shop_id: s.shop_id,
-        shop_name: s.shop_name ?? null,
-        shop_logo: s.shop_logo ?? null,
+    const results: ProductResult[] = (rows || []).map((r) => {
+      const shops: ShopEntry[] = (r.shops || []).map((s: any) => ({
+        ...s,
         distance_km: s.distance_km === null ? null : Number(s.distance_km),
-        price: s.price !== null ? Number(s.price) : 0,
-        currency: 'MWK',
-        condition: s.condition ?? null,
-        stock_quantity: s.stock_quantity ?? 0,
-        is_free_delivery: !!s.is_free_delivery,
-        delivery_zones: s.delivery_zones ?? null,
-        listing_status: s.listing_status ?? null,
-        variant_values: s.variant_values ?? null,
-        avg_rating: s.avg_rating === null ? null : Number(s.avg_rating),
-        review_count: s.review_count ?? 0
+        price: Number(s.price),
+        avg_rating: s.avg_rating === null ? null : Number(s.avg_rating)
       }));
 
       return {
@@ -357,7 +305,7 @@ LIMIT ${limit} OFFSET ${offset};
           images: r.images || [],
           gtin: r.gtin ?? null,
           mpn: r.mpn ?? null,
-          match_score: r.match_score !== null && typeof r.match_score !== 'undefined' ? Number(Number(r.match_score).toFixed(4)) : null
+          match_score: r.match_score !== null ? Number(Number(r.match_score).toFixed(4)) : null
         },
         market_stats: {
           min_price: r.min_price !== null ? Number(r.min_price) : null,
@@ -373,93 +321,37 @@ LIMIT ${limit} OFFSET ${offset};
     });
 
     const responseTime = Date.now() - start;
-    // Fix 4: compute total_results from windowed total_count
     const totalCount = rows.length > 0 ? Number(rows[0].total_count ?? 0) : 0;
 
-    // Zero-results suggestions: if no results, query for up to 5 similar approved products
     let suggestions: string[] = [];
     if (totalCount === 0) {
-      try {
-        const sugRows: any[] = await prisma.$queryRaw<any[]>`
-          SELECT DISTINCT p.name, p.brand, GREATEST(
-            similarity(lower(coalesce(p.name,'')), ${qPlain}),
-            similarity(lower(coalesce(p.brand,'')), ${qPlain})
-          ) AS score
-          FROM products p
-          WHERE p.status = 'APPROVED'
-            AND coalesce(p.is_active,false) = true
-            AND p.merged_into_id IS NULL
-            AND (
-              similarity(lower(coalesce(p.name,'')), ${qPlain}) > 0.1
-              OR similarity(lower(coalesce(p.brand,'')), ${qPlain}) > 0.1
-            )
-          ORDER BY score DESC
-          LIMIT 5
-        `;
-        const seen = new Set<string>();
-        for (const s of (sugRows || [])) {
-          const name = s.name ? String(s.name).trim() : '';
-          const brandVal = s.brand ? String(s.brand).trim() : '';
-          const txt = [name, brandVal].filter(Boolean).join(' ').trim();
-          if (txt && !seen.has(txt)) {
-            seen.add(txt);
-            suggestions.push(txt);
-          }
-        }
-      } catch (e) {
-        // don't fail the search on suggestion errors
-        // eslint-disable-next-line no-console
-        console.error('SEARCH_SUGGESTIONS_ERROR', e);
-        suggestions = [];
-      }
+      const sugRows: any[] = await prisma.$queryRaw`
+        SELECT DISTINCT p.name, p.brand, similarity(lower(coalesce(p.name,'')), ${qPlain}) AS score
+        FROM products p
+        WHERE p.status = 'APPROVED' AND p.is_active = true AND p.merged_into_id IS NULL
+        AND similarity(lower(coalesce(p.name,'')), ${qPlain}) > 0.1
+        ORDER BY score DESC LIMIT 5`;
+      suggestions = sugRows.map(s => `${s.name} ${s.brand || ''}`.trim());
     }
 
     const metadata = {
-      query: qRaw,
-      page,
-      limit,
-      total_results: totalCount,
-      returned_results: results.length,
-      has_next_page: offset + results.length < totalCount,
-      has_prev_page: page > 1,
-      total_pages: totalCount > 0 ? Math.ceil(totalCount / limit) : 0,
-      from: totalCount > 0 && results.length > 0 ? offset + 1 : 0,
-      to: totalCount > 0 && results.length > 0 ? offset + results.length : 0,
-      currency: 'MWK',
-      buyer_location_provided: buyerHasCoords,
-      response_time_ms: responseTime,
-      suggestions
+      query: qRaw, page, limit, total_results: totalCount, returned_results: results.length,
+      has_next_page: offset + results.length < totalCount, has_prev_page: page > 1,
+      total_pages: Math.ceil(totalCount / limit), from: offset + 1, to: offset + results.length,
+      currency: 'MWK', buyer_location_provided: buyerHasCoords, response_time_ms: responseTime, suggestions
     };
 
-    // Send response (facets computed in SQL and extracted earlier)
     res.json({ success: true, metadata, facets, results, error: null });
 
-    // Fire-and-forget: log search to search_logs table asynchronously
-    try {
-      const filtersObj = {
-        brand: brand || null,
-        model: model || null,
-        condition: condition || null,
-        category_id: categoryId || null,
-        min_price: minPrice,
-        max_price: maxPrice,
-        specs: specsObj || null
-      };
-      prisma.$executeRaw`
-        INSERT INTO search_logs (query, results_count, filters, buyer_has_coords, response_time_ms, page, limit_per_page)
-        VALUES (${qRaw}, ${totalCount}, ${JSON.stringify(filtersObj)}::jsonb, ${buyerHasCoords}, ${responseTime}, ${page}, ${limit})
-      `.catch((e) => {
-        // eslint-disable-next-line no-console
-        console.error('SEARCH_LOG_ERROR', e);
-      });
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('SEARCH_LOG_PREP_ERROR', e);
-    }
+    // Fire-and-forget logging
+    const filtersObj = { brand, model, condition, category_id: categoryId, minPrice, maxPrice, specs: specsObj };
+    prisma.$executeRaw`
+      INSERT INTO search_logs (query, results_count, filters, buyer_has_coords, response_time_ms, page, limit_per_page)
+      VALUES (${qRaw}, ${totalCount}, ${JSON.stringify(filtersObj)}::jsonb, ${buyerHasCoords}, ${responseTime}, ${page}, ${limit})
+    `.catch(() => {});
 
-    return;
   } catch (err) {
     console.error('Search error:', err);
-    return res.status(500).json({ success: false, metadata: null, results: [], error: { code: 'SEARCH_FAILED', message: (err as any)?.message ?? 'Search failed' } });
+    res.status(500).json({ success: false, metadata: null, results: [], error: { code: 'SEARCH_FAILED', message: 'Search failed' } });
   }
 };
