@@ -23,9 +23,6 @@ generated/
 # Logs
 logs/
 *.log
-prisma/.env
-prisma/migrations/
-prisma/dev.db
 generated/
 # OS generated files
 .DS_Store
