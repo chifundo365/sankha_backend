@@ -26,6 +26,17 @@ const validateResource = (schema: ZodType) => {
             return errorResponse(res, 'Validation failed', formattedErrors, 400);
         }
 
+        // Write transformed/defaulted values back so controllers receive parsed data
+        const parsed = result.data as Record<string, any>;
+        if (parsed.body) req.body = parsed.body;
+        if (parsed.query) {
+            // req.query is a getter in some Express versions, so mutate in-place
+            const q = req.query;
+            for (const key of Object.keys(q)) delete q[key];
+            Object.assign(q, parsed.query);
+        }
+        if (parsed.params) Object.assign(req.params, parsed.params);
+
         next();
     };
 }

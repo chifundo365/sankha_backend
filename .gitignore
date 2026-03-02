@@ -51,3 +51,9 @@ coverage/
 
 # Local development files
 *.local
+
+# temporary files
+tmp/
+*.tmp
+*.temp
+

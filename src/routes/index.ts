@@ -17,7 +17,7 @@ import { rateLimiter } from "../middleware/rateLimiter.middleware";
 import { ipBlocker } from "../middleware/ipBlocker.middleware";
 import validateResource from "../middleware/validateResource";
 import { search as searchController } from "../controllers/search.controller";
-import { searchSchema } from "../schemas/product.schema";
+import { searchQuerySchema } from "../schemas/search.schema";
 
 const router = Router();
 
@@ -54,6 +54,6 @@ router.use("/seller/inventory", sellerInventoryRoutes);
 // They handle /shops/:shopId/products
 
 // Top-level unified search route (Logistics-aware)
-router.get("/search", validateResource(searchSchema), searchController);
+router.get("/search", validateResource(searchQuerySchema), searchController);
 
 export default router;
