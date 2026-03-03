@@ -110,8 +110,6 @@ export const search = async (req: Request, res: Response) => {
       specsSqlFragment = parts.reduce((a, b) => Prisma.sql`${a} AND ${b}`);
     }
 
-    console.log('[SEARCH DEBUG]', { q, qPlain, searchParam, buyerHasCoords, lat, lng, radiusKm, similarityThreshold, categoryId, brandParam, modelParam, condition, minPrice, maxPrice, specsObj });
-
     // Radius filter: restrict to nearby shops when buyer provides coordinates
     const withinRadiusFilter = buyerHasCoords
       ? Prisma.sql`(s.location IS NULL OR ST_DWithin(s.location, ST_SetSRID(ST_MakePoint(${lng}::numeric, ${lat}::numeric), 4326)::geography, ${radiusMeters}::double precision))`
@@ -290,8 +288,6 @@ LIMIT ${limit} OFFSET ${offset};
       radiusExpanded = true;
     }
 
-    console.log('[SEARCH DEBUG rawRows]', { type: typeof rawRows, isArray: Array.isArray(rawRows), length: rawRows?.length, firstRow: rawRows?.[0] ? Object.keys(rawRows[0]) : 'none' });
-
     let rows: any[] = Array.isArray(rawRows) ? rawRows : (rawRows ? [rawRows] : []);
     if (rows.length === 1 && rows[0] && typeof rows[0] === 'object' && Array.isArray((rows[0] as any).data)) {
       rows = (rows[0] as any).data;
@@ -366,8 +362,7 @@ LIMIT ${limit} OFFSET ${offset};
       response_time_ms: responseTime, suggestions
     };
 
-    res.json({ success: true, metadata, facets, results, error: null,
-      _debug: { rawRowCount: Array.isArray(rawRows) ? rawRows.length : 'not-array', rowsCount: rows.length, totalCount, q, qPlain, searchParam, buyerHasCoords, lat, lng, similarityThreshold } });
+    res.json({ success: true, metadata, facets, results, error: null });
 
     // Fire-and-forget logging
     const filtersObj = { brand, model, condition, category_id: categoryId, minPrice, maxPrice, specs: specsObj };
