@@ -1,13 +1,8 @@
 import { Request, Response } from "express";
 import prisma from "../prismaClient";
-import { Prisma } from "../../generated/prisma";
-import { SearchQuery } from "../schemas/search.schema";
-import { errorResponse } from "../utils/response";
+import { Prisma } from '../../generated/prisma';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
+// Types for response shaping
 type ShopEntry = {
   shop_product_id: string;
   shop_id: string;
@@ -21,168 +16,114 @@ type ShopEntry = {
   is_free_delivery: boolean;
   delivery_zones: string[] | null;
   listing_status: string | null;
-  variant_values: unknown;
+  variant_values: any;
   avg_rating: number | null;
   review_count: number;
 };
 
 type ProductResult = {
-  product: Record<string, unknown>;
-  market_stats: Record<string, unknown>;
+  product: any;
+  market_stats: any;
   shops: ShopEntry[];
 };
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Build a Prisma.sql fragment that ANDs together per-key JSONB spec filters.
- * Keys and values have already been sanitised + length-capped by the Zod
- * schema so we only need to parameterise them here.
- */
-function buildSpecsFragment(specs: Record<string, string>) {
-  const parts = Object.entries(specs).map(([k, v]) => {
-    const valPattern = `%${v}%`;
-    return Prisma.sql`(
-      (
-        EXISTS (
-          SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(sp.specs::jsonb) = 'object' THEN sp.specs::jsonb ELSE '{}'::jsonb END) e
-          WHERE lower(e.key) = lower(${k}) AND lower(e.value) LIKE lower(${valPattern})
-        )
-        OR EXISTS (
-          SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(sp.variant_values::jsonb) = 'object' THEN sp.variant_values::jsonb ELSE '{}'::jsonb END) e
-          WHERE lower(e.key) = lower(${k}) AND lower(e.value) LIKE lower(${valPattern})
-        )
-      )
-      OR
-      (
-        EXISTS (
-          SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(p.specs::jsonb) = 'object' THEN p.specs::jsonb ELSE '{}'::jsonb END) e
-          WHERE lower(e.key) = lower(${k}) AND lower(e.value) LIKE lower(${valPattern})
-        )
-        OR EXISTS (
-          SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(p.variant_values::jsonb) = 'object' THEN p.variant_values::jsonb ELSE '{}'::jsonb END) e
-          WHERE lower(e.key) = lower(${k}) AND lower(e.value) LIKE lower(${valPattern})
-        )
-      )
-    )`;
-  });
-
-  return parts.reduce((a, b) => Prisma.sql`${a} AND ${b}`);
-}
-
-function mapRowToResult(r: any): ProductResult {
-  const shops: ShopEntry[] = (r.shops || []).map((s: any) => ({
-    ...s,
-    distance_km: s.distance_km === null ? null : Number(s.distance_km),
-    price: Number(s.price),
-    avg_rating: s.avg_rating === null ? null : Number(s.avg_rating),
-  }));
-
-  return {
-    product: {
-      id: r.product_id,
-      name: r.name,
-      brand: r.brand ?? null,
-      normalized_name: r.normalized_name ?? null,
-      model: r.model ?? null,
-      category_id: r.category_id ?? null,
-      thumbnail_url:
-        Array.isArray(r.images) && r.images.length ? r.images[0] : null,
-      images: r.images || [],
-      gtin: r.gtin ?? null,
-      mpn: r.mpn ?? null,
-      match_score:
-        r.match_score !== null
-          ? Number(Number(r.match_score).toFixed(4))
-          : null,
-    },
-    market_stats: {
-      min_price: r.min_price !== null ? Number(r.min_price) : null,
-      max_price: r.max_price !== null ? Number(r.max_price) : null,
-      avg_price: r.avg_price !== null ? Number(r.avg_price) : null,
-      currency: "MWK",
-      total_active_shops: Number(r.total_active_shops || 0),
-      conditions_available: r.conditions_available || [],
-      total_shops: Number(r.total_shops || 0),
-    },
-    shops,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Controller
-// ---------------------------------------------------------------------------
-
 export const search = async (req: Request, res: Response) => {
   const start = Date.now();
-
   try {
-    // ── Validated & transformed query params (Zod schema runs in middleware) ──
-    const {
-      q,
-      brand: brandInput,
-      model: modelInput,
-      page,
-      limit,
-      lat,
-      lng,
-      radius_km: radiusKm,
-      condition,
-      min_price: minPrice,
-      max_price: maxPrice,
-      category_id: categoryId,
-      specs: specsObj,
-    } = req.query as unknown as SearchQuery;
+    const qRaw = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    const brandRaw = typeof req.query.brand === 'string' ? req.query.brand.trim() : '';
+    const modelRaw = typeof req.query.model === 'string' ? req.query.model.trim() : '';
+    
+    if (qRaw.length < 2) {
+      return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_QUERY', message: 'Search query must be at least 2 characters' } });
+    }
+    if (qRaw.length > 100) {
+      return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_QUERY', message: 'Search query must not exceed 100 characters' } });
+    }
 
-    const safePage = Number(page) || 1;
-    const safeLimit = Number(limit) || 20;
-    const offset = (safePage - 1) * safeLimit;
+    const q = qRaw;
+    const brand = brandRaw === '' ? null : brandRaw;
+    const model = modelRaw === '' ? null : modelRaw;
+    const page = req.query.page ? Math.max(1, Number(req.query.page)) : 1;
+    const rawLimit = req.query.limit ? Number(req.query.limit) : 20;
+    const limit = Math.min(Math.max(1, rawLimit || 20), 50);
+    const offset = (page - 1) * limit;
+
+    const lat = req.query.lat !== undefined ? Number(req.query.lat) : null;
+    const lng = req.query.lng !== undefined ? Number(req.query.lng) : null;
+    const buyerHasCoords = lat !== null && lng !== null && !Number.isNaN(lat) && !Number.isNaN(lng);
+    const radiusKm = req.query.radius_km ? Math.min(Math.max(Number(req.query.radius_km) || 15, 1), 500) : 15;
+    const radiusMeters = radiusKm * 1000;
+
+    const condition = typeof req.query.condition === 'string' ? req.query.condition : null;
+    const minPrice = req.query.min_price ? Number(req.query.min_price) : null;
+    const maxPrice = req.query.max_price ? Number(req.query.max_price) : null;
+    const categoryId = typeof req.query.category_id === 'string' ? req.query.category_id : null;
+
+    let specsObj: any = null;
+    if (typeof req.query.specs === 'string' && req.query.specs.trim() !== '') {
+      try {
+        specsObj = JSON.parse(req.query.specs as string);
+        if (typeof specsObj !== 'object' || Array.isArray(specsObj)) {
+          return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_SPECS', message: 'Spec filter must be a JSON object' } });
+        }
+      } catch (e) {
+        return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_SPECS', message: 'Spec filter must be valid JSON' } });
+      }
+    }
+
+    const searchParam = `%${q.toLowerCase()}%`;
     const qPlain = q.toLowerCase();
-    const searchParam = `%${qPlain}%`;
-
-    // Dynamic similarity threshold: short queries produce inflated trigram
-    // scores so we require a higher match quality for them.
-    const baseSimilarity = Number(process.env.SEARCH_SIMILARITY || "0.2");
-    const similarityThreshold = qPlain.length <= 3
-      ? Math.max(baseSimilarity, 0.5)   // short query → require ≥ 0.5
-      : qPlain.length <= 5
-        ? Math.max(baseSimilarity, 0.35) // medium query → require ≥ 0.35
-        : baseSimilarity;                // normal query → use configured value
-
-    const brand = brandInput || null;
-    const model = modelInput || null;
+    const similarityThreshold = Number(process.env.SEARCH_SIMILARITY || '0.2');
     const brandParam = brand ? `%${brand.toLowerCase()}%` : null;
     const modelParam = model ? `%${model.toLowerCase()}%` : null;
 
-    const buyerHasCoords =
-      lat !== undefined &&
-      lng !== undefined &&
-      !Number.isNaN(lat) &&
-      !Number.isNaN(lng);
-    const safeLat = buyerHasCoords ? lat : 0;
-    const safeLng = buyerHasCoords ? lng : 0;
-    const radiusMeters = radiusKm * 1000; // ST_DWithin uses metres
+    let specsSqlFragment: any = null;
+    if (specsObj) {
+      const parts: any[] = [];
+      for (const [k, v] of Object.entries(specsObj)) {
+        const valPattern = `%${String(v)}%`;
+        parts.push(Prisma.sql`(
+          (
+            EXISTS (
+              SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(sp.specs::jsonb) = 'object' THEN sp.specs::jsonb ELSE '{}'::jsonb END) e
+              WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern})
+            )
+            OR EXISTS (
+              SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(sp.variant_values::jsonb) = 'object' THEN sp.variant_values::jsonb ELSE '{}'::jsonb END) e
+              WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern})
+            )
+          )
+          OR
+          (
+            EXISTS (
+              SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(p.specs::jsonb) = 'object' THEN p.specs::jsonb ELSE '{}'::jsonb END) e
+              WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern})
+            )
+            OR EXISTS (
+              SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(p.variant_values::jsonb) = 'object' THEN p.variant_values::jsonb ELSE '{}'::jsonb END) e
+              WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern})
+            )
+          )
+        )`);
+      }
+      specsSqlFragment = parts.reduce((a, b) => Prisma.sql`${a} AND ${b}`);
+    }
 
-    const conditionParam = condition ?? null;
-    const minPriceParam = minPrice ?? null;
-    const maxPriceParam = maxPrice ?? null;
-    const categoryIdParam = categoryId ?? null;
+    console.log('[SEARCH DEBUG]', { q, qPlain, searchParam, buyerHasCoords, lat, lng, radiusKm, similarityThreshold, categoryId, brandParam, modelParam, condition, minPrice, maxPrice, specsObj });
 
-    // Build specs SQL fragment (keys/values already sanitised by Zod)
-    const specsSqlFragment = specsObj
-      ? buildSpecsFragment(specsObj)
-      : null;
+    // Radius filter: restrict to nearby shops when buyer provides coordinates
+    const withinRadiusFilter = buyerHasCoords
+      ? Prisma.sql`(s.location IS NULL OR ST_DWithin(s.location, ST_SetSRID(ST_MakePoint(${lng}::numeric, ${lat}::numeric), 4326)::geography, ${radiusMeters}::double precision))`
+      : Prisma.sql`TRUE`;
 
-    // ── Main search query ──────────────────────────────────────────────────
-    const rawRows: any[] = await prisma.$queryRaw<any[]>`
+    const runSearchQuery = (radiusFilter: Prisma.Sql) => prisma.$queryRaw<any[]>`
 WITH canonical_products AS (
   SELECT p.id, p.name, p.brand, p.normalized_name, p.model, p.category_id, p.images, p.gtin, p.mpn,
           GREATEST(
-            word_similarity(${qPlain}, lower(coalesce(p.name,''))),
-            word_similarity(${qPlain}, lower(coalesce(p.normalized_name,''))),
-            word_similarity(${qPlain}, lower(coalesce(p.brand,'')))
+            similarity(lower(coalesce(p.name,'')), ${qPlain}),
+            similarity(lower(coalesce(p.normalized_name,'')), ${qPlain}),
+            similarity(lower(coalesce(p.brand,'')), ${qPlain})
           ) AS match_score
   FROM products p
   WHERE p.status = 'APPROVED'
@@ -192,11 +133,11 @@ WITH canonical_products AS (
       lower(p.normalized_name) LIKE ${searchParam}
       OR lower(p.name) LIKE ${searchParam}
       OR lower(p.brand) LIKE ${searchParam}
-      OR word_similarity(${qPlain}, lower(coalesce(p.name,''))) > ${similarityThreshold}
-      OR word_similarity(${qPlain}, lower(coalesce(p.normalized_name,''))) > ${similarityThreshold}
-      OR word_similarity(${qPlain}, lower(coalesce(p.brand,''))) > ${similarityThreshold}
+      OR (lower(coalesce(p.name,'')) % ${qPlain} OR similarity(lower(coalesce(p.name,'')), ${qPlain}) > ${similarityThreshold})
+      OR (lower(coalesce(p.normalized_name,'')) % ${qPlain} OR similarity(lower(coalesce(p.normalized_name,'')), ${qPlain}) > ${similarityThreshold})
+      OR (lower(coalesce(p.brand,'')) % ${qPlain} OR similarity(lower(coalesce(p.brand,'')), ${qPlain}) > ${similarityThreshold})
     )
-      AND (${categoryIdParam}::uuid IS NULL OR p.category_id = ${categoryIdParam}::uuid)
+      AND (${categoryId}::uuid IS NULL OR p.category_id = ${categoryId}::uuid)
       AND (${brandParam}::text IS NULL OR lower(coalesce(p.brand, '')) LIKE ${brandParam})
       AND (${modelParam}::text IS NULL OR lower(coalesce(p.model, '')) LIKE ${modelParam})
 ),
@@ -214,7 +155,7 @@ active_listings AS (
     s.logo AS shop_logo,
     s.delivery_zones,
     s.free_delivery_threshold,
-    (CASE WHEN ${buyerHasCoords}::boolean THEN ST_Distance(s.location::geography, ST_SetSRID(ST_MakePoint(${safeLng}::numeric, ${safeLat}::numeric),4326)::geography)/1000.0 ELSE NULL END) AS distance_km,
+    (CASE WHEN ${buyerHasCoords}::boolean THEN ST_Distance(s.location::geography, ST_SetSRID(ST_MakePoint(${lng}::numeric, ${lat}::numeric),4326)::geography)/1000.0 ELSE NULL END) AS distance_km,
     (CASE WHEN s.free_delivery_threshold IS NOT NULL AND sp.price >= s.free_delivery_threshold THEN true ELSE false END) AS is_free_delivery,
     r.avg_rating AS avg_rating,
     COALESCE(r.review_count, 0) AS review_count
@@ -228,20 +169,13 @@ active_listings AS (
   ) r ON r.shop_product_id = sp.id
   WHERE sp.listing_status = 'LIVE'
     AND sp.stock_quantity > 0
-    AND (${conditionParam}::text IS NULL OR sp.condition::text = ${conditionParam}::text)
-    AND (${minPriceParam}::numeric IS NULL OR sp.price >= ${minPriceParam}::numeric)
-    AND (${maxPriceParam}::numeric IS NULL OR sp.price <= ${maxPriceParam}::numeric)
+    AND (${condition}::text IS NULL OR sp.condition::text = ${condition}::text)
+    AND (${minPrice}::numeric IS NULL OR sp.price >= ${minPrice}::numeric)
+    AND (${maxPrice}::numeric IS NULL OR sp.price <= ${maxPrice}::numeric)
     AND (
       ${specsSqlFragment === null ? Prisma.sql`TRUE` : Prisma.sql`${specsSqlFragment}`}
     )
-    AND (
-      ${buyerHasCoords}::boolean = false
-      OR ST_DWithin(
-        s.location,
-        ST_SetSRID(ST_MakePoint(${safeLng}::numeric, ${safeLat}::numeric), 4326)::geography,
-        ${radiusMeters}::double precision
-      )
-    )
+    AND ${radiusFilter}
 ),
 linked_listings AS (
   SELECT al.*, al.product_id AS canonical_product_id
@@ -313,7 +247,6 @@ facets_cte AS (
         SELECT cp.brand AS brand, COUNT(DISTINCT cp.id) AS cnt
         FROM canonical_products cp
         JOIN linked_listings al ON al.canonical_product_id = cp.id
-        WHERE cp.brand IS NOT NULL AND trim(cp.brand) <> ''
         GROUP BY cp.brand
       ) b
     ),
@@ -344,101 +277,111 @@ FROM canonical_products cp
 JOIN aggregated agg ON agg.canonical_product_id = cp.id
 JOIN facets_cte ON true
 ORDER BY agg.min_price ASC NULLS LAST, cp.match_score DESC
-LIMIT ${safeLimit} OFFSET ${offset};
+LIMIT ${limit} OFFSET ${offset};
 `;
 
-    // ── Shape rows ─────────────────────────────────────────────────────────
-    let rows: any[] = Array.isArray(rawRows)
-      ? rawRows
-      : rawRows
-        ? [rawRows]
-        : [];
-    if (
-      rows.length === 1 &&
-      rows[0] &&
-      typeof rows[0] === "object" &&
-      Array.isArray((rows[0] as any).data)
-    ) {
+    // First attempt: search within radius
+    let rawRows: any = await runSearchQuery(withinRadiusFilter);
+    let radiusExpanded = false;
+
+    // Fallback: if buyer has coords but no results within radius, expand to all locations
+    if (buyerHasCoords && Array.isArray(rawRows) && rawRows.length === 0) {
+      rawRows = await runSearchQuery(Prisma.sql`TRUE`);
+      radiusExpanded = true;
+    }
+
+    console.log('[SEARCH DEBUG rawRows]', { type: typeof rawRows, isArray: Array.isArray(rawRows), length: rawRows?.length, firstRow: rawRows?.[0] ? Object.keys(rawRows[0]) : 'none' });
+
+    let rows: any[] = Array.isArray(rawRows) ? rawRows : (rawRows ? [rawRows] : []);
+    if (rows.length === 1 && rows[0] && typeof rows[0] === 'object' && Array.isArray((rows[0] as any).data)) {
       rows = (rows[0] as any).data;
     }
 
-    let facets: any = {
-      conditions: [],
-      brands: [],
-      models: [],
-      price_range: { min: null, max: null, currency: "MWK" },
-    };
+    let facets: any = { conditions: [], brands: [], models: [], price_range: { min: null, max: null, currency: 'MWK' } };
     if (rows.length > 0 && rows[0].facets) {
       facets = rows[0].facets;
       rows = rows.map((r: any) => {
-        const { facets: _f, ...rest } = r;
-        return rest;
+        const copy = { ...r };
+        delete copy.facets;
+        return copy;
       });
     }
 
-    const results: ProductResult[] = rows.map(mapRowToResult);
+    const results: ProductResult[] = (rows || []).map((r) => {
+      const shops: ShopEntry[] = (r.shops || []).map((s: any) => ({
+        ...s,
+        distance_km: s.distance_km === null ? null : Number(s.distance_km),
+        price: Number(s.price),
+        avg_rating: s.avg_rating === null ? null : Number(s.avg_rating)
+      }));
+
+      return {
+        product: {
+          id: r.product_id,
+          name: r.name,
+          brand: r.brand ?? null,
+          normalized_name: r.normalized_name ?? null,
+          model: r.model ?? null,
+          category_id: r.category_id ?? null,
+          thumbnail_url: Array.isArray(r.images) && r.images.length ? r.images[0] : null,
+          images: r.images || [],
+          gtin: r.gtin ?? null,
+          mpn: r.mpn ?? null,
+          match_score: r.match_score !== null ? Number(Number(r.match_score).toFixed(4)) : null
+        },
+        market_stats: {
+          min_price: r.min_price !== null ? Number(r.min_price) : null,
+          max_price: r.max_price !== null ? Number(r.max_price) : null,
+          avg_price: r.avg_price !== null ? Number(r.avg_price) : null,
+          currency: 'MWK',
+          total_active_shops: Number(r.total_active_shops || 0),
+          conditions_available: r.conditions_available || [],
+          total_shops: Number(r.total_shops || 0)
+        },
+        shops
+      };
+    });
 
     const responseTime = Date.now() - start;
-    const totalCount =
-      rows.length > 0 ? Number(rows[0].total_count ?? 0) : 0;
+    const totalCount = rows.length > 0 ? Number(rows[0].total_count ?? 0) : 0;
 
-    // ── "Did you mean?" suggestions when no results ────────────────────────
     let suggestions: string[] = [];
     if (totalCount === 0) {
-      const sugRaw = await prisma.$queryRaw`
-        SELECT DISTINCT p.name, p.brand,
-               word_similarity(${qPlain}, lower(coalesce(p.name,''))) AS score
+      const sugRows: any[] = await prisma.$queryRaw`
+        SELECT DISTINCT p.name, p.brand, similarity(lower(coalesce(p.name,'')), ${qPlain}) AS score
         FROM products p
         WHERE p.status = 'APPROVED' AND p.is_active = true AND p.merged_into_id IS NULL
-          AND word_similarity(${qPlain}, lower(coalesce(p.name,''))) > 0.15
+        AND similarity(lower(coalesce(p.name,'')), ${qPlain}) > 0.1
         ORDER BY score DESC LIMIT 5`;
-      const sugRows: any[] = Array.isArray(sugRaw)
-        ? sugRaw
-        : (sugRaw && typeof sugRaw === "object" && Array.isArray((sugRaw as any).data))
-          ? (sugRaw as any).data
-          : [];
-      suggestions = sugRows.map(
-        (s: any) => `${s.name} ${s.brand || ""}`.trim()
-      );
+      suggestions = sugRows.map(s => `${s.name} ${s.brand || ''}`.trim());
     }
 
-    // ── Response ───────────────────────────────────────────────────────────
     const metadata = {
-      query: q,
-      page: safePage,
-      limit: safeLimit,
-      total_results: totalCount,
-      returned_results: results.length,
-      has_next_page: offset + results.length < totalCount,
-      has_prev_page: safePage > 1,
-      total_pages: Math.ceil(totalCount / safeLimit) || 0,
-      from: totalCount > 0 ? offset + 1 : 0,
-      to: offset + results.length,
-      currency: "MWK",
-      buyer_location_provided: buyerHasCoords,
-      response_time_ms: responseTime,
-      suggestions,
+      query: qRaw, page, limit, total_results: totalCount, returned_results: results.length,
+      has_next_page: offset + results.length < totalCount, has_prev_page: page > 1,
+      total_pages: Math.ceil(totalCount / limit), from: offset + 1, to: offset + results.length,
+      currency: 'MWK', buyer_location_provided: buyerHasCoords,
+      search_radius_km: buyerHasCoords ? radiusKm : null,
+      radius_expanded: radiusExpanded,
+      response_time_ms: responseTime, suggestions
     };
 
-    res.json({ success: true, metadata, facets, results, error: null });
+    res.json({ success: true, metadata, facets, results, error: null,
+      _debug: { rawRowCount: Array.isArray(rawRows) ? rawRows.length : 'not-array', rowsCount: rows.length, totalCount, q, qPlain, searchParam, buyerHasCoords, lat, lng, similarityThreshold } });
 
-    // ── Fire-and-forget analytics logging ──────────────────────────────────
-    const filtersObj = {
-      brand,
-      model,
-      condition: conditionParam,
-      category_id: categoryIdParam,
-      minPrice: minPriceParam,
-      maxPrice: maxPriceParam,
-      specs: specsObj ?? null,
-    };
+    // Fire-and-forget logging
+    const filtersObj = { brand, model, condition, category_id: categoryId, minPrice, maxPrice, specs: specsObj };
+    const logPage = page ?? 1;
+    const logLimit = limit ?? 20;
+    const logResponseTime = responseTime ?? 0;
+    const logResultsCount = totalCount ?? 0;
     prisma.$executeRaw`
       INSERT INTO search_logs (query, results_count, filters, buyer_has_coords, response_time_ms, page, limit_per_page)
-      VALUES (${q}, ${totalCount}, ${JSON.stringify(filtersObj)}::jsonb, ${buyerHasCoords}, ${responseTime}, ${page}, ${limit})
-    `.catch(() => {});
-  } catch (err: unknown) {
-    // Never leak internal error details to the client
-    console.error("Search error:", err);
-    return errorResponse(res, "Search failed", undefined, 500);
+      VALUES (${qRaw}, ${logResultsCount}::int, ${JSON.stringify(filtersObj)}::jsonb, ${buyerHasCoords}, ${logResponseTime}::int, ${logPage}::int, ${logLimit}::int)
+    `.catch((e) => console.error('[SEARCH LOG ERROR]', e.message));
+
+  } catch (err) {
+    console.error('Search error:', err);
+    res.status(500).json({ success: false, metadata: null, results: [], error: { code: 'SEARCH_FAILED', message: 'Search failed' } });
   }
 };

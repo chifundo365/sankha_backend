@@ -1,13 +1,7 @@
--- Drop everything in shadow db before baseline replay
-DROP SCHEMA IF EXISTS public CASCADE;
-CREATE SCHEMA IF NOT EXISTS public;
-GRANT ALL ON SCHEMA public TO PUBLIC;
+-- Extensions (must be pre-installed on the PostgreSQL host)
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
--- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
-
 -- CreateEnum
 CREATE TYPE "public"."address_type" AS ENUM ('HOME', 'WORK', 'BILLING', 'PICKUP_POINT');
 

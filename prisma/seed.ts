@@ -6,16 +6,25 @@ async function main() {
   await prisma.$connect();
   console.log('Clearing existing data (safe order)');
   await prisma.order_items.deleteMany();
+  await prisma.payment_reports.deleteMany();
   await prisma.payments.deleteMany();
-  await prisma.orders.deleteMany();
+  await prisma.order_messages.deleteMany();
   await prisma.reviews.deleteMany();
   await prisma.shop_products_log.deleteMany();
+  await prisma.bulk_upload_staging.deleteMany();
   await prisma.shop_products.deleteMany();
+  await prisma.bulk_uploads.deleteMany();
+  await prisma.withdrawals.deleteMany();
+  await prisma.transactions.deleteMany();
+  await prisma.orders.deleteMany();
   await prisma.products.deleteMany();
+  await prisma.tech_spec_rules.deleteMany();
   await prisma.shops.deleteMany();
   await prisma.user_addresses.deleteMany();
+  await prisma.password_resets.deleteMany();
   await prisma.categories.deleteMany();
   await prisma.users.deleteMany();
+  await prisma.searchLog.deleteMany();
 
   console.log('Seeding users...');
   await prisma.users.createMany({ data: [
@@ -209,7 +218,7 @@ async function main() {
     "mpn": null,
     "normalized_name": null,
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "dc19472c-ed17-44ee-ac29-1af8bc243a37",
@@ -236,7 +245,7 @@ async function main() {
     "mpn": null,
     "normalized_name": null,
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "1090059f-fea2-4972-a82b-95c5ab212a3d",
@@ -263,7 +272,7 @@ async function main() {
     "mpn": null,
     "normalized_name": null,
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "f0088958-0333-4cad-ba3d-6093efb694a1",
@@ -290,7 +299,7 @@ async function main() {
     "mpn": null,
     "normalized_name": null,
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "c850210d-c59a-4dfd-a1bd-e79f8f838deb",
@@ -317,7 +326,7 @@ async function main() {
     "mpn": null,
     "normalized_name": null,
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "7dc6a38d-c53a-47fa-86fb-071456d1f38a",
@@ -365,7 +374,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "iphone 15 pro max 256gb",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "42279159-8096-402b-848f-1a8ffaaca3cb",
@@ -389,7 +398,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "samsung galaxy s24 ultra",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "8e2386b7-ad24-4f2f-b81f-bf0b30eefdd7",
@@ -413,7 +422,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "macbook air m3 13inch",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "67c3274d-32b2-4dfc-8d52-34b4ec4b118f",
@@ -437,7 +446,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "sony wh1000xm5 headphones",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "2b9ba2e9-250c-4b22-86c9-b3923a262c47",
@@ -461,7 +470,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "ipad pro 129 m2",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "582ba3a0-3a2a-4cea-b8f2-a030daed6118",
@@ -485,7 +494,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "dell xps 15 laptop",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "53999564-2145-466f-b6de-d63dff8af0f5",
@@ -509,7 +518,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "airpods pro 2nd gen",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "f492bb6b-c12e-41a9-af67-f19a3792309a",
@@ -533,7 +542,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "samsung 55 inch oled tv",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "0f78b8f8-b255-4703-af76-e6878bf99ac7",
@@ -557,7 +566,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "logitech mx master 3s mouse",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "c0ce0d62-d0e2-4109-8cc6-3b07dcaa3c30",
@@ -581,7 +590,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "jbl charge 5 speaker",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "30806904-ba56-4715-874e-894f207ede5b",
@@ -605,7 +614,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "iphone 15 pro max 256gb",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "d503a00d-b1c0-46ef-a788-30231b1c5e0f",
@@ -629,7 +638,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "samsung galaxy s24 ultra",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "c336f6ee-be9f-4694-85f8-7a2ef034ec6e",
@@ -653,7 +662,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "macbook air m3 13inch",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "36c9d37f-299f-4518-97b2-495de44fe174",
@@ -677,7 +686,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "sony wh1000xm5 headphones",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "561f867b-2d0b-495c-a990-be826aa2e6dd",
@@ -701,7 +710,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "ipad pro 129 m2",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "1a722b36-8e5e-4baf-a6a8-4c53c6b7866f",
@@ -725,7 +734,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "dell xps 15 laptop",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "13c48c94-2c6e-4daa-a8bc-7d60e56a4546",
@@ -749,7 +758,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "airpods pro 2nd gen",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "cb513a0d-9dfb-49a9-9626-d3360f7df83d",
@@ -773,7 +782,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "samsung 55 inch oled tv",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "c0002282-e4e6-44ce-ab24-e5148525ec98",
@@ -797,7 +806,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "logitech mx master 3s mouse",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "d22cb9e0-0458-4985-a79d-5557b4ea497e",
@@ -821,7 +830,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "jbl charge 5 speaker",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "b47e75d9-87a4-4da1-92d0-0833ca4a384d",
@@ -845,7 +854,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "iphone 15 pro max 256gb",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "e82c67a9-884d-4bf7-b70e-07be90177b4f",
@@ -869,7 +878,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "samsung galaxy s24 ultra",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "59cf3713-6bce-4f87-8cf3-db30104389c6",
@@ -893,7 +902,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "macbook air m3 13inch",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "766d6999-e8ba-4756-b393-e5567152f443",
@@ -917,7 +926,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "sony wh1000xm5 headphones",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "19431fed-3f27-4ed2-8d0e-d5dd4bdf15fe",
@@ -941,7 +950,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "ipad pro 129 m2",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "313374ce-a650-4351-ab5d-78ea54f7a0ad",
@@ -965,7 +974,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "dell xps 15 laptop",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "4db93c14-06cd-4b9d-9297-a638ea809a12",
@@ -989,7 +998,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "airpods pro 2nd gen",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "78e47e45-cf6b-4016-b603-585c9d36b80e",
@@ -1013,7 +1022,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "samsung 55 inch oled tv",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "9d42476f-1348-491d-bb03-712d2b2451f9",
@@ -1037,7 +1046,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "logitech mx master 3s mouse",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "028b1974-fe81-4222-87cc-a1319b3f9b46",
@@ -1061,7 +1070,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "jbl charge 5 speaker",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "a4b89bf8-03a5-4551-9474-2050358c5a0e",
@@ -1085,7 +1094,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "iphone 15 pro max 256gb",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "d9ffed13-47b2-4fbd-bd9e-223eade70945",
@@ -1109,7 +1118,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "samsung galaxy s24 ultra",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "7f379b79-7cc0-4fc7-a694-c6dfdb7bbc5a",
@@ -1133,7 +1142,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "iphone 15 pro max 256gb",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "51d233bb-1506-4800-b90f-f0a0acebd54d",
@@ -1157,7 +1166,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "samsung galaxy s24 ultra",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "65b8aacd-389e-4d7a-a5e5-83cb52e6e4ee",
@@ -1181,7 +1190,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "hisense 55 smart tv",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "dabd428d-6a6d-4248-9b56-c6f1b6e1dd2a",
@@ -1205,7 +1214,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "generic usbc cable",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "971c72c5-7fe7-4e7a-bfff-0a8d3fa19efd",
@@ -1229,7 +1238,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "airtel 4g pocket wifi",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "b879dee8-1791-4bc2-8279-50f049e973f1",
@@ -1253,7 +1262,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "iphone 15 pro max 256gb",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "26e219b7-82ba-43ef-b28b-5fb06c1c5d42",
@@ -1277,7 +1286,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "macbook air m3",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "5bbfa284-41d1-4b89-b43d-acc4bed64ac2",
@@ -1301,7 +1310,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "iphone 15 pro max 256gb",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "11d9399a-d009-43fd-814a-1cf34c3f2f30",
@@ -1325,7 +1334,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "macbook air m3",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "dd3af6d2-d4a4-416a-911b-eba9db6db382",
@@ -1349,7 +1358,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "iphone 15 pro max 256gb",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "427767e6-542e-4ed9-86ec-5fb2880f7e50",
@@ -1373,7 +1382,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "macbook air m3",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "77240b2f-756f-4938-9395-9b362ee50069",
@@ -1397,7 +1406,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "dell xps 13 laptop",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "3d3f8e5b-f90b-44d8-a2b5-021ebc2a5ebd",
@@ -1421,7 +1430,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "sony wh-1000xm5 headphones",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "788983ac-5718-4324-90cf-a1c1cafd546b",
@@ -1445,7 +1454,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "samsung galaxy a54",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "e595d57f-5b37-4142-b9ee-9e7ab64f3c40",
@@ -1469,7 +1478,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "macbook air m2",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "1880d387-9e5c-4c31-909b-271b49d803ea",
@@ -1493,7 +1502,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "office desk chair",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "4b277171-5980-40b3-9ef6-c1b1af6f0afd",
@@ -1517,7 +1526,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "plastic phone holder",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "2681ccd0-f413-475f-aa43-583a2556f7db",
@@ -1541,7 +1550,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "generic usb-c cable",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "46cf141a-1c2a-4173-89bb-3b05475e958a",
@@ -1565,7 +1574,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "iphone 15 pro max 2026",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "96d03936-1921-4b1b-bb36-369c691619ec",
@@ -1589,7 +1598,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "dell xps 15 9530 2026",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "7596a1e7-392b-4c93-ace6-d372e7766491",
@@ -1613,7 +1622,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "samsung galaxy s24 ultra 2026",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "c19aec08-8abc-4a1f-8fc6-349050afed80",
@@ -1637,7 +1646,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "macbook air m3 2026",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "7cd31475-1ff0-4ed3-9fc2-8b43aa882c9c",
@@ -1661,7 +1670,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "google pixel 8 pro special edition",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "8fde8214-7192-4003-98ce-b72d61843a87",
@@ -1685,7 +1694,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "hp pavilion gaming laptop 2026",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "635743cc-0d8c-4233-9a31-a076f0d66689",
@@ -1709,7 +1718,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "lenovo thinkpad x1 carbon gen 11",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "13232941-b9b0-4e8e-8ebd-1383cba2b454",
@@ -1733,7 +1742,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "oneplus 12 pro test",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "99b0caae-3dc6-4413-890e-e44e83fbe073",
@@ -1757,7 +1766,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "asus rog laptop test edition",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "7b2443c8-ff95-429f-a5c1-7429de19395a",
@@ -1781,7 +1790,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "premium leather wallet",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "c39d20a2-36bd-4756-9a5e-a5d1ffbdbd6f",
@@ -1805,7 +1814,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "test preview product",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "c2a6a61a-6260-4c49-8d70-2e0e00bc2691",
@@ -1877,7 +1886,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "samsung galaxy a55 5g",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "43638392-be96-46b7-9597-e8561d60664d",
@@ -1901,7 +1910,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "iphone 14 pro",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   },
   {
     "id": "9422a9af-8747-4066-8294-b094fab75808",
@@ -1925,7 +1934,7 @@ async function main() {
     "mpn": null,
     "normalized_name": "jbl tune 520bt",
     "rejection_reason": null,
-    "status": "PENDING"
+    "status": "APPROVED"
   }
 ], skipDuplicates: true });
   console.log('Seeding shops...');
@@ -2188,6 +2197,54 @@ async function main() {
     "intercity_delivery_fee": null
   }
 ], skipDuplicates: true });
+  // Populate PostGIS location column from latitude/longitude text fields
+  await prisma.$executeRaw`UPDATE shops SET location = ST_SetSRID(ST_MakePoint(longitude::double precision, latitude::double precision), 4326)::geography WHERE latitude IS NOT NULL AND longitude IS NOT NULL AND location IS NULL`;
+  console.log('Shop locations populated from lat/lng fields');
+
+  console.log('Seeding tech_spec_rules...');
+  await prisma.tech_spec_rules.createMany({ data: [
+  { "id": "a1b1c1d1-1111-1111-1111-111111111101", "category_id": "47dccdfc-8c5b-4a2e-91d2-2a9ad4643517", "category_name": "Smartphones & Tablets", "required_specs": ["Storage","RAM","Screen Size","Battery"], "optional_specs": ["Color","Camera","OS"], "spec_labels": {"Storage":"Storage Capacity","RAM":"RAM Size","Screen Size":"Display Size","Battery":"Battery Capacity"}, "is_active": true, "created_at": "2026-01-15T10:00:00.000Z", "updated_at": "2026-01-15T10:00:00.000Z" },
+  { "id": "a1b1c1d1-1111-1111-1111-111111111102", "category_id": "cc032534-f744-495f-b060-71619d0aabd6", "category_name": "Laptops & Computers", "required_specs": ["Storage","RAM","Processor","Screen Size"], "optional_specs": ["GPU","OS","Battery Life"], "spec_labels": {"Storage":"Storage Capacity","RAM":"RAM Size","Processor":"CPU","Screen Size":"Display Size"}, "is_active": true, "created_at": "2026-01-15T10:00:00.000Z", "updated_at": "2026-01-15T10:00:00.000Z" },
+  { "id": "a1b1c1d1-1111-1111-1111-111111111103", "category_id": "541e2b6b-7209-41dc-a71b-e07f75e8f695", "category_name": "Gaming & Consoles", "required_specs": ["Storage","Controller Type"], "optional_specs": ["Resolution","Online Capable","Color"], "spec_labels": {"Storage":"Storage Capacity","Controller Type":"Controller"}, "is_active": true, "created_at": "2026-01-15T10:00:00.000Z", "updated_at": "2026-01-15T10:00:00.000Z" },
+  { "id": "a1b1c1d1-1111-1111-1111-111111111104", "category_id": "94225dd0-756c-477e-889d-31480cb815c7", "category_name": "Smart Home & IoT", "required_specs": ["Connectivity","Power Source"], "optional_specs": ["Voice Assistant","Color","Dimensions"], "spec_labels": {"Connectivity":"Connection Type","Power Source":"Power"}, "is_active": true, "created_at": "2026-01-15T10:00:00.000Z", "updated_at": "2026-01-15T10:00:00.000Z" },
+  { "id": "a1b1c1d1-1111-1111-1111-111111111105", "category_id": "d1c67c1d-01b6-4ad9-be7b-ba42151bec96", "category_name": "Audio & Headphones", "required_specs": ["Type","Connectivity"], "optional_specs": ["Battery Life","Driver Size","Noise Cancellation","Color"], "spec_labels": {"Type":"Audio Type","Connectivity":"Connection Type"}, "is_active": true, "created_at": "2026-01-15T10:00:00.000Z", "updated_at": "2026-01-15T10:00:00.000Z" }
+], skipDuplicates: true });
+
+  console.log('Seeding user_addresses...');
+  await prisma.user_addresses.createMany({ data: [
+  { "id": "b2a2c2d2-2222-2222-2222-222222222201", "user_id": "08861fe8-2720-498a-a5c5-fab8d198b487", "contact_name": "Mary Tembo", "address_line1": "Area 47, Sector 4, House 12", "city": "Lilongwe", "country": "Malawi", "latitude": "-13.9626", "longitude": "33.7741", "is_default": true, "phone_number": "+265995432109", "created_at": "2025-12-01T08:00:00.000Z", "updated_at": "2025-12-01T08:00:00.000Z" },
+  { "id": "b2a2c2d2-2222-2222-2222-222222222202", "user_id": "08861fe8-2720-498a-a5c5-fab8d198b487", "contact_name": "Mary Tembo - Work", "address_line1": "City Centre, Capital Hill Office", "city": "Lilongwe", "country": "Malawi", "latitude": "-13.9700", "longitude": "33.7800", "is_default": false, "phone_number": "+265995432109", "created_at": "2025-12-05T09:00:00.000Z", "updated_at": "2025-12-05T09:00:00.000Z" },
+  { "id": "b2a2c2d2-2222-2222-2222-222222222203", "user_id": "684f236e-f76f-48b1-b542-3c1e981c2621", "contact_name": "Alice Banda", "address_line1": "Ndirande, Plot 34", "city": "Blantyre", "country": "Malawi", "latitude": "-15.7864", "longitude": "35.0054", "is_default": true, "phone_number": "+265991234567", "created_at": "2025-12-02T10:00:00.000Z", "updated_at": "2025-12-02T10:00:00.000Z" },
+  { "id": "b2a2c2d2-2222-2222-2222-222222222204", "user_id": "684f236e-f76f-48b1-b542-3c1e981c2621", "contact_name": "Alice Banda - Mum", "address_line1": "Chilomoni, Behind Market", "city": "Blantyre", "country": "Malawi", "latitude": "-15.8000", "longitude": "35.0100", "is_default": false, "phone_number": "+265888654321", "created_at": "2025-12-10T11:00:00.000Z", "updated_at": "2025-12-10T11:00:00.000Z" },
+  { "id": "b2a2c2d2-2222-2222-2222-222222222205", "user_id": "e76d59cb-99c1-4f72-a743-dfb3ba4ed52b", "contact_name": "Chifundo User", "address_line1": "Area 25, Sector 10", "city": "Lilongwe", "country": "Malawi", "latitude": "-13.9500", "longitude": "33.7500", "is_default": true, "phone_number": "265888123456", "created_at": "2026-02-17T08:30:00.000Z", "updated_at": "2026-02-17T08:30:00.000Z" },
+  { "id": "b2a2c2d2-2222-2222-2222-222222222206", "user_id": "a5112786-3197-40d6-b0ff-1381e9569cab", "contact_name": "Grace Mwale", "address_line1": "Chichiri, Near Shopping Centre", "city": "Blantyre", "country": "Malawi", "latitude": "-15.7900", "longitude": "35.0080", "is_default": true, "phone_number": "+265997654321", "created_at": "2025-12-03T07:00:00.000Z", "updated_at": "2025-12-03T07:00:00.000Z" },
+  { "id": "b2a2c2d2-2222-2222-2222-222222222207", "user_id": "e607f7d6-3d08-42c0-a6f2-d66a6231a4ca", "contact_name": "John Phiri", "address_line1": "Area 3, House 45", "city": "Lilongwe", "country": "Malawi", "latitude": "-13.9650", "longitude": "33.7850", "is_default": true, "phone_number": "+265998765432", "created_at": "2025-12-04T12:00:00.000Z", "updated_at": "2025-12-04T12:00:00.000Z" },
+  { "id": "b2a2c2d2-2222-2222-2222-222222222208", "user_id": "50e9b187-5851-46bc-84e9-ab89048c02cd", "contact_name": "Chifundo Biziweck", "address_line1": "Kamuzu Procession Rd, Shop 15", "city": "Lilongwe", "country": "Malawi", "latitude": "-13.9756", "longitude": "33.7698", "is_default": true, "phone_number": "+265991234567", "created_at": "2026-01-28T14:00:00.000Z", "updated_at": "2026-01-28T14:00:00.000Z" },
+  { "id": "b2a2c2d2-2222-2222-2222-222222222209", "user_id": "e76d59cb-99c1-4f72-a743-dfb3ba4ed52b", "contact_name": "Chifundo - Office", "address_line1": "Old Town, Plot 7B", "city": "Lilongwe", "country": "Malawi", "latitude": "-13.9550", "longitude": "33.7600", "is_default": false, "phone_number": "265888123456", "created_at": "2026-02-20T09:00:00.000Z", "updated_at": "2026-02-20T09:00:00.000Z" },
+  { "id": "b2a2c2d2-2222-2222-2222-222222222210", "user_id": "08861fe8-2720-498a-a5c5-fab8d198b487", "contact_name": "Mary Tembo - Zomba", "address_line1": "Zomba Town, Near Chancellor College", "city": "Zomba", "country": "Malawi", "latitude": "-15.3852", "longitude": "35.3187", "is_default": false, "phone_number": "+265995432109", "created_at": "2026-01-10T14:00:00.000Z", "updated_at": "2026-01-10T14:00:00.000Z" }
+], skipDuplicates: true });
+
+  console.log('Seeding bulk_uploads...');
+  await prisma.bulk_uploads.createMany({ data: [
+  { "id": "2c41ac71-c558-4433-bd90-c82d97c210c1", "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6", "file_name": "electronics_batch_jan.xlsx", "total_rows": 10, "successful": 8, "failed": 1, "skipped": 1, "errors": null, "status": "COMPLETED", "created_at": "2026-01-28T14:00:00.000Z", "completed_at": "2026-01-28T14:02:00.000Z", "batch_id": "BATCH-001", "needs_images": 2, "needs_specs": 1, "template_type": "ELECTRONICS" },
+  { "id": "241e2f71-87ad-4eea-bfac-ced919b0faee", "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6", "file_name": "phones_batch_jan.xlsx", "total_rows": 8, "successful": 7, "failed": 1, "skipped": 0, "errors": null, "status": "COMPLETED", "created_at": "2026-01-29T10:00:00.000Z", "completed_at": "2026-01-29T10:03:00.000Z", "batch_id": "BATCH-002", "needs_images": 3, "needs_specs": 0, "template_type": "ELECTRONICS" },
+  { "id": "0ab063c4-f9dc-421e-95fa-bb42f15919d0", "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485", "file_name": "techhub_products.xlsx", "total_rows": 15, "successful": 14, "failed": 0, "skipped": 1, "errors": null, "status": "COMPLETED", "created_at": "2026-02-01T08:00:00.000Z", "completed_at": "2026-02-01T08:05:00.000Z", "batch_id": "BATCH-003", "needs_images": 5, "needs_specs": 2, "template_type": "ELECTRONICS" },
+  { "id": "707f26f7-4e34-44a8-aabd-851b66a31419", "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485", "file_name": "techhub_laptops.xlsx", "total_rows": 6, "successful": 6, "failed": 0, "skipped": 0, "errors": null, "status": "COMPLETED", "created_at": "2026-02-02T09:00:00.000Z", "completed_at": "2026-02-02T09:02:00.000Z", "batch_id": "BATCH-004", "needs_images": 1, "needs_specs": 0, "template_type": "ELECTRONICS" },
+  { "id": "7572ca36-187e-48a4-9e7a-7354000c265e", "shop_id": "80017670-d4b6-4be2-8435-0d7655fc9b1e", "file_name": "digworld_audio.xlsx", "total_rows": 5, "successful": 5, "failed": 0, "skipped": 0, "errors": null, "status": "COMPLETED", "created_at": "2026-02-03T11:00:00.000Z", "completed_at": "2026-02-03T11:01:00.000Z", "batch_id": "BATCH-005", "needs_images": 0, "needs_specs": 0, "template_type": "ELECTRONICS" },
+  { "id": "789a8f16-9d1d-457c-8801-f2b0c5e161aa", "shop_id": "80017670-d4b6-4be2-8435-0d7655fc9b1e", "file_name": "digworld_phones.xlsx", "total_rows": 12, "successful": 10, "failed": 2, "skipped": 0, "errors": [{"row":5,"error":"Invalid price"},{"row":9,"error":"Missing name"}], "status": "COMPLETED", "created_at": "2026-02-05T08:00:00.000Z", "completed_at": "2026-02-05T08:04:00.000Z", "batch_id": "BATCH-006", "needs_images": 4, "needs_specs": 1, "template_type": "ELECTRONICS" },
+  { "id": "9e874b4b-5bef-46c1-9a07-420ab3c94d0d", "shop_id": "65389d7e-3bd0-4f61-b975-886cea38a08c", "file_name": "gadget_palace_all.xlsx", "total_rows": 20, "successful": 18, "failed": 1, "skipped": 1, "errors": null, "status": "COMPLETED", "created_at": "2026-02-06T07:00:00.000Z", "completed_at": "2026-02-06T07:08:00.000Z", "batch_id": "BATCH-007", "needs_images": 6, "needs_specs": 3, "template_type": "GENERAL" },
+  { "id": "a03341e8-682e-45d5-8a51-aaf126d8cbac", "shop_id": "d6e6836b-f12b-4d79-a087-31c9e9a40b1a", "file_name": "smarttech_inventory.xlsx", "total_rows": 10, "successful": 10, "failed": 0, "skipped": 0, "errors": null, "status": "COMPLETED", "created_at": "2026-02-07T06:00:00.000Z", "completed_at": "2026-02-07T06:03:00.000Z", "batch_id": "BATCH-008", "needs_images": 2, "needs_specs": 0, "template_type": "ELECTRONICS" },
+  { "id": "ab8b44e3-3234-45e9-ba5c-481b90d5103a", "shop_id": "b989043d-1b72-400d-ac42-4ab5acf4d0eb", "file_name": "gamezone_consoles.xlsx", "total_rows": 8, "successful": 7, "failed": 1, "skipped": 0, "errors": [{"row":3,"error":"Duplicate SKU"}], "status": "COMPLETED", "created_at": "2026-02-08T10:00:00.000Z", "completed_at": "2026-02-08T10:02:00.000Z", "batch_id": "BATCH-009", "needs_images": 1, "needs_specs": 0, "template_type": "ELECTRONICS" },
+  { "id": "b63bb05f-87d8-471b-9625-10495645bf74", "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6", "file_name": "chifundo_feb_restock.xlsx", "total_rows": 5, "successful": 5, "failed": 0, "skipped": 0, "errors": null, "status": "COMPLETED", "created_at": "2026-02-10T12:00:00.000Z", "completed_at": "2026-02-10T12:01:00.000Z", "batch_id": "BATCH-010", "needs_images": 0, "needs_specs": 0, "template_type": "GENERAL" },
+  { "id": "bbf1530c-5a32-4e24-b11d-f5f110d5122c", "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485", "file_name": "techhub_gaming.xlsx", "total_rows": 7, "successful": 6, "failed": 1, "skipped": 0, "errors": null, "status": "COMPLETED", "created_at": "2026-02-11T09:00:00.000Z", "completed_at": "2026-02-11T09:03:00.000Z", "batch_id": "BATCH-011", "needs_images": 2, "needs_specs": 1, "template_type": "ELECTRONICS" },
+  { "id": "cfdf1efb-a7f9-4ff4-af46-1dea584a0e24", "shop_id": "65389d7e-3bd0-4f61-b975-886cea38a08c", "file_name": "gadget_palace_feb.xlsx", "total_rows": 9, "successful": 9, "failed": 0, "skipped": 0, "errors": null, "status": "COMPLETED", "created_at": "2026-02-12T08:00:00.000Z", "completed_at": "2026-02-12T08:02:00.000Z", "batch_id": "BATCH-012", "needs_images": 3, "needs_specs": 0, "template_type": "GENERAL" },
+  { "id": "d0c453a3-9419-423e-981d-3525d6027c8e", "shop_id": "d6e6836b-f12b-4d79-a087-31c9e9a40b1a", "file_name": "smarttech_phones.xlsx", "total_rows": 4, "successful": 4, "failed": 0, "skipped": 0, "errors": null, "status": "COMPLETED", "created_at": "2026-02-13T10:00:00.000Z", "completed_at": "2026-02-13T10:01:00.000Z", "batch_id": "BATCH-013", "needs_images": 0, "needs_specs": 0, "template_type": "ELECTRONICS" },
+  { "id": "dc17a0b8-a422-444f-ba76-f1b9a82bf5b2", "shop_id": "80017670-d4b6-4be2-8435-0d7655fc9b1e", "file_name": "digworld_laptops.xlsx", "total_rows": 6, "successful": 5, "failed": 1, "skipped": 0, "errors": null, "status": "COMPLETED", "created_at": "2026-02-14T11:00:00.000Z", "completed_at": "2026-02-14T11:03:00.000Z", "batch_id": "BATCH-014", "needs_images": 1, "needs_specs": 1, "template_type": "ELECTRONICS" },
+  { "id": "e86bab85-afd4-4ebf-8b6e-1dbcd3404cb0", "shop_id": "b989043d-1b72-400d-ac42-4ab5acf4d0eb", "file_name": "gamezone_accessories.xlsx", "total_rows": 11, "successful": 10, "failed": 0, "skipped": 1, "errors": null, "status": "COMPLETED", "created_at": "2026-02-15T07:00:00.000Z", "completed_at": "2026-02-15T07:04:00.000Z", "batch_id": "BATCH-015", "needs_images": 2, "needs_specs": 0, "template_type": "GENERAL" },
+  { "id": "f035cba7-beba-43d8-992e-5c15faf33d8f", "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6", "file_name": "chifundo_march.xlsx", "total_rows": 3, "successful": 3, "failed": 0, "skipped": 0, "errors": null, "status": "COMPLETED", "created_at": "2026-02-18T09:00:00.000Z", "completed_at": "2026-02-18T09:01:00.000Z", "batch_id": "BATCH-016", "needs_images": 0, "needs_specs": 0, "template_type": "ELECTRONICS" },
+  { "id": "f11cae99-e981-4a7d-8fe1-279f5cb8a360", "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485", "file_name": "techhub_smart_home.xlsx", "total_rows": 4, "successful": 4, "failed": 0, "skipped": 0, "errors": null, "status": "COMPLETED", "created_at": "2026-02-19T08:00:00.000Z", "completed_at": "2026-02-19T08:01:00.000Z", "batch_id": "BATCH-017", "needs_images": 1, "needs_specs": 0, "template_type": "GENERAL" }
+], skipDuplicates: true });
+
   console.log('Seeding shop_products...');
   await prisma.shop_products.createMany({ data: [
   {
@@ -2211,7 +2268,7 @@ async function main() {
     "updated_at": "2026-02-03T07:43:40.387Z",
     "base_price": "280000",
     "bulk_upload_id": "2c41ac71-c558-4433-bd90-c82d97c210c1",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -2234,7 +2291,7 @@ async function main() {
     "updated_at": "2026-02-03T07:45:39.636Z",
     "base_price": "320000",
     "bulk_upload_id": "241e2f71-87ad-4eea-bfac-ced919b0faee",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -2257,7 +2314,7 @@ async function main() {
     "updated_at": "2026-02-03T07:45:41.727Z",
     "base_price": "1200000",
     "bulk_upload_id": "241e2f71-87ad-4eea-bfac-ced919b0faee",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -2281,7 +2338,7 @@ async function main() {
     "updated_at": "2026-02-03T07:45:43.516Z",
     "base_price": "45000",
     "bulk_upload_id": "241e2f71-87ad-4eea-bfac-ced919b0faee",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -2331,7 +2388,7 @@ async function main() {
     "updated_at": "2026-02-03T07:45:45.883Z",
     "base_price": "2500",
     "bulk_upload_id": "241e2f71-87ad-4eea-bfac-ced919b0faee",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -2438,7 +2495,7 @@ async function main() {
     "updated_at": "2026-02-03T07:34:58.928Z",
     "base_price": "950000",
     "bulk_upload_id": "789a8f16-9d1d-457c-8801-f2b0c5e161aa",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -2458,7 +2515,7 @@ async function main() {
     "updated_at": "2026-02-03T08:32:12.371Z",
     "base_price": "2500",
     "bulk_upload_id": "cfdf1efb-a7f9-4ff4-af46-1dea584a0e24",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {}
   },
@@ -2478,7 +2535,7 @@ async function main() {
     "updated_at": "2026-02-03T08:48:37.559Z",
     "base_price": "850000",
     "bulk_upload_id": "d0c453a3-9419-423e-981d-3525d6027c8e",
-    "listing_status": "NEEDS_SPECS",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {}
   },
@@ -2498,7 +2555,7 @@ async function main() {
     "updated_at": "2026-02-03T08:48:39.788Z",
     "base_price": "1200000",
     "bulk_upload_id": "d0c453a3-9419-423e-981d-3525d6027c8e",
-    "listing_status": "NEEDS_SPECS",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {}
   },
@@ -2518,7 +2575,7 @@ async function main() {
     "updated_at": "2026-02-03T08:48:41.343Z",
     "base_price": "650000",
     "bulk_upload_id": "d0c453a3-9419-423e-981d-3525d6027c8e",
-    "listing_status": "NEEDS_SPECS",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {}
   },
@@ -2538,7 +2595,7 @@ async function main() {
     "updated_at": "2026-02-03T08:48:42.878Z",
     "base_price": "1500000",
     "bulk_upload_id": "d0c453a3-9419-423e-981d-3525d6027c8e",
-    "listing_status": "NEEDS_SPECS",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {}
   },
@@ -2558,7 +2615,7 @@ async function main() {
     "updated_at": "2026-02-03T09:11:50.060Z",
     "base_price": "720000",
     "bulk_upload_id": "707f26f7-4e34-44a8-aabd-851b66a31419",
-    "listing_status": "NEEDS_SPECS",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {}
   },
@@ -2580,7 +2637,7 @@ async function main() {
     "updated_at": "2026-02-03T09:11:53.151Z",
     "base_price": "980000",
     "bulk_upload_id": "707f26f7-4e34-44a8-aabd-851b66a31419",
-    "listing_status": "NEEDS_SPECS",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {
       "RAM": "16GB"
@@ -2607,7 +2664,7 @@ async function main() {
     "updated_at": "2026-02-03T09:11:54.640Z",
     "base_price": "1800000",
     "bulk_upload_id": "707f26f7-4e34-44a8-aabd-851b66a31419",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {
       "RAM": "32GB",
@@ -2634,7 +2691,7 @@ async function main() {
     "updated_at": "2026-02-03T15:46:16.046Z",
     "base_price": "680000",
     "bulk_upload_id": "ab8b44e3-3234-45e9-ba5c-481b90d5103a",
-    "listing_status": "NEEDS_SPECS",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {
       "RAM": "12GB"
@@ -2661,7 +2718,7 @@ async function main() {
     "updated_at": "2026-02-03T15:46:18.603Z",
     "base_price": "2100000",
     "bulk_upload_id": "ab8b44e3-3234-45e9-ba5c-481b90d5103a",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {
       "RAM": "32GB",
@@ -2689,7 +2746,7 @@ async function main() {
     "updated_at": "2026-02-03T15:46:20.313Z",
     "base_price": "15000",
     "bulk_upload_id": "ab8b44e3-3234-45e9-ba5c-481b90d5103a",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {
       "Color": "Brown",
@@ -2714,7 +2771,7 @@ async function main() {
     "updated_at": "2026-02-03T15:47:12.639Z",
     "base_price": "100000",
     "bulk_upload_id": "f035cba7-beba-43d8-992e-5c15faf33d8f",
-    "listing_status": "NEEDS_SPECS",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {
       "RAM": "4GB"
@@ -2741,7 +2798,7 @@ async function main() {
     "updated_at": "2026-02-04T13:55:49.987Z",
     "base_price": "280000",
     "bulk_upload_id": "9e874b4b-5bef-46c1-9a07-420ab3c94d0d",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {
       "RAM": "8GB",
@@ -2766,7 +2823,7 @@ async function main() {
     "updated_at": "2026-01-28T13:42:05.599Z",
     "base_price": "45000",
     "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -2833,7 +2890,7 @@ async function main() {
     "updated_at": "2026-01-28T13:42:07.880Z",
     "base_price": "65000",
     "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -2877,7 +2934,7 @@ async function main() {
     "updated_at": "2026-01-29T07:57:24.156Z",
     "base_price": "1500000",
     "bulk_upload_id": "f11cae99-e981-4a7d-8fe1-279f5cb8a360",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -2917,7 +2974,7 @@ async function main() {
     "updated_at": "2026-01-28T13:27:57.700Z",
     "base_price": "450000",
     "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -2937,7 +2994,7 @@ async function main() {
     "updated_at": "2026-01-28T13:27:59.790Z",
     "base_price": "380000",
     "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -2957,7 +3014,7 @@ async function main() {
     "updated_at": "2026-01-28T13:28:01.813Z",
     "base_price": "750000",
     "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -2977,7 +3034,7 @@ async function main() {
     "updated_at": "2026-01-28T13:28:03.628Z",
     "base_price": "120000",
     "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -2997,7 +3054,7 @@ async function main() {
     "updated_at": "2026-01-28T13:28:05.659Z",
     "base_price": "620000",
     "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3017,7 +3074,7 @@ async function main() {
     "updated_at": "2026-01-28T13:28:07.691Z",
     "base_price": "890000",
     "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3037,7 +3094,7 @@ async function main() {
     "updated_at": "2026-01-28T13:28:09.757Z",
     "base_price": "95000",
     "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3057,7 +3114,7 @@ async function main() {
     "updated_at": "2026-01-28T13:28:12.270Z",
     "base_price": "520000",
     "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3077,7 +3134,7 @@ async function main() {
     "updated_at": "2026-01-28T13:28:13.800Z",
     "base_price": "45000",
     "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3097,7 +3154,7 @@ async function main() {
     "updated_at": "2026-01-28T13:28:16.093Z",
     "base_price": "65000",
     "bulk_upload_id": "a03341e8-682e-45d5-8a51-aaf126d8cbac",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3117,7 +3174,7 @@ async function main() {
     "updated_at": "2026-01-28T13:41:48.474Z",
     "base_price": "450000",
     "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3137,7 +3194,7 @@ async function main() {
     "updated_at": "2026-01-28T13:41:52.704Z",
     "base_price": "380000",
     "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3157,7 +3214,7 @@ async function main() {
     "updated_at": "2026-01-28T13:41:54.487Z",
     "base_price": "750000",
     "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3177,7 +3234,7 @@ async function main() {
     "updated_at": "2026-01-28T13:41:56.264Z",
     "base_price": "120000",
     "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3197,7 +3254,7 @@ async function main() {
     "updated_at": "2026-01-28T13:41:58.291Z",
     "base_price": "620000",
     "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3217,7 +3274,7 @@ async function main() {
     "updated_at": "2026-01-28T13:41:59.773Z",
     "base_price": "890000",
     "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3237,7 +3294,7 @@ async function main() {
     "updated_at": "2026-01-28T13:42:01.542Z",
     "base_price": "95000",
     "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3257,7 +3314,7 @@ async function main() {
     "updated_at": "2026-01-28T13:42:04.071Z",
     "base_price": "520000",
     "bulk_upload_id": "b63bb05f-87d8-471b-9625-10495645bf74",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3281,7 +3338,7 @@ async function main() {
     "updated_at": "2026-01-29T07:57:25.922Z",
     "base_price": "1350000",
     "bulk_upload_id": "f11cae99-e981-4a7d-8fe1-279f5cb8a360",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3301,7 +3358,7 @@ async function main() {
     "updated_at": "2026-01-29T08:10:09.034Z",
     "base_price": "650000",
     "bulk_upload_id": "dc17a0b8-a422-444f-ba76-f1b9a82bf5b2",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3321,7 +3378,7 @@ async function main() {
     "updated_at": "2026-01-29T08:10:12.161Z",
     "base_price": "2500",
     "bulk_upload_id": "dc17a0b8-a422-444f-ba76-f1b9a82bf5b2",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3343,7 +3400,7 @@ async function main() {
     "updated_at": "2026-01-29T08:10:14.241Z",
     "base_price": "25000",
     "bulk_upload_id": "dc17a0b8-a422-444f-ba76-f1b9a82bf5b2",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3366,7 +3423,7 @@ async function main() {
     "updated_at": "2026-01-29T09:13:01.436Z",
     "base_price": "2100000",
     "bulk_upload_id": "7572ca36-187e-48a4-9e7a-7354000c265e",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3389,7 +3446,7 @@ async function main() {
     "updated_at": "2026-01-29T09:19:19.391Z",
     "base_price": "2100000",
     "bulk_upload_id": "e86bab85-afd4-4ebf-8b6e-1dbcd3404cb0",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3412,7 +3469,7 @@ async function main() {
     "updated_at": "2026-01-29T09:20:14.719Z",
     "base_price": "2100000",
     "bulk_upload_id": "bbf1530c-5a32-4e24-b11d-f5f110d5122c",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": null
   },
@@ -3437,7 +3494,7 @@ async function main() {
     "updated_at": "2026-02-04T13:55:58.002Z",
     "base_price": "750000",
     "bulk_upload_id": "9e874b4b-5bef-46c1-9a07-420ab3c94d0d",
-    "listing_status": "NEEDS_IMAGES",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {
       "RAM": "6GB",
@@ -3464,7 +3521,7 @@ async function main() {
     "updated_at": "2026-02-06T13:37:21.070Z",
     "base_price": "45000",
     "bulk_upload_id": "0ab063c4-f9dc-421e-95fa-bb42f15919d0",
-    "listing_status": "NEEDS_SPECS",
+    "listing_status": "LIVE",
     "rejection_reason": null,
     "variant_values": {
       "Color": "Blue"
@@ -3491,6 +3548,164 @@ async function main() {
     "variant_values": null
   }
 ], skipDuplicates: true });
+
+  console.log('Seeding orders...');
+  await prisma.orders.createMany({ data: [
+  { "id": "c3d3e3f3-3333-3333-3333-333333333301", "order_number": "ORD-2026-0001", "buyer_id": "08861fe8-2720-498a-a5c5-fab8d198b487", "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485", "total_amount": "850000", "status": "DELIVERED", "delivery_address_id": "b2a2c2d2-2222-2222-2222-222222222201", "created_at": "2026-01-15T09:00:00.000Z", "updated_at": "2026-01-18T14:00:00.000Z", "release_code": "RC1234", "release_code_expires_at": "2026-01-20T09:00:00.000Z", "release_code_status": "VERIFIED", "release_code_verified_at": "2026-01-18T13:50:00.000Z", "delivery_directions": "Near the blue water tank", "delivery_lat": "-13.9626", "delivery_lng": "33.7741", "recipient_name": "Mary Tembo", "recipient_phone": "+265995432109", "delivery_fee": "5000", "delivery_method": "HOME_DELIVERY" },
+  { "id": "c3d3e3f3-3333-3333-3333-333333333302", "order_number": "ORD-2026-0002", "buyer_id": "684f236e-f76f-48b1-b542-3c1e981c2621", "shop_id": "80017670-d4b6-4be2-8435-0d7655fc9b1e", "total_amount": "185000", "status": "DELIVERED", "delivery_address_id": "b2a2c2d2-2222-2222-2222-222222222203", "created_at": "2026-01-16T11:00:00.000Z", "updated_at": "2026-01-19T10:00:00.000Z", "release_code": "RC5678", "release_code_expires_at": "2026-01-21T11:00:00.000Z", "release_code_status": "VERIFIED", "release_code_verified_at": "2026-01-19T09:30:00.000Z", "delivery_directions": "Next to ESCOM office", "delivery_lat": "-15.7864", "delivery_lng": "35.0054", "recipient_name": "Alice Banda", "recipient_phone": "+265991234567", "delivery_fee": "3500", "delivery_method": "HOME_DELIVERY" },
+  { "id": "c3d3e3f3-3333-3333-3333-333333333303", "order_number": "ORD-2026-0003", "buyer_id": "e76d59cb-99c1-4f72-a743-dfb3ba4ed52b", "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6", "total_amount": "294728", "status": "CONFIRMED", "delivery_address_id": "b2a2c2d2-2222-2222-2222-222222222205", "created_at": "2026-02-20T08:00:00.000Z", "updated_at": "2026-02-20T10:00:00.000Z", "release_code": "RC9012", "release_code_expires_at": "2026-02-25T08:00:00.000Z", "release_code_status": "PENDING", "delivery_directions": "Opposite Total Filling Station", "delivery_lat": "-13.9500", "delivery_lng": "33.7500", "recipient_name": "Chifundo User", "recipient_phone": "265888123456", "delivery_fee": "4000", "delivery_method": "HOME_DELIVERY" },
+  { "id": "c3d3e3f3-3333-3333-3333-333333333304", "order_number": "ORD-2026-0004", "buyer_id": "08861fe8-2720-498a-a5c5-fab8d198b487", "shop_id": "65389d7e-3bd0-4f61-b975-886cea38a08c", "total_amount": "450000", "status": "PREPARING", "delivery_address_id": "b2a2c2d2-2222-2222-2222-222222222201", "created_at": "2026-02-22T14:00:00.000Z", "updated_at": "2026-02-22T15:00:00.000Z", "release_code": "RC3456", "release_code_expires_at": "2026-02-27T14:00:00.000Z", "release_code_status": "PENDING", "delivery_directions": "Ask for Mary at Area 47", "delivery_lat": "-13.9626", "delivery_lng": "33.7741", "recipient_name": "Mary Tembo", "recipient_phone": "+265995432109", "delivery_fee": "6000", "delivery_method": "HOME_DELIVERY" },
+  { "id": "c3d3e3f3-3333-3333-3333-333333333305", "order_number": "ORD-2026-0005", "buyer_id": "684f236e-f76f-48b1-b542-3c1e981c2621", "shop_id": "d6e6836b-f12b-4d79-a087-31c9e9a40b1a", "total_amount": "95000", "status": "PENDING", "delivery_address_id": "b2a2c2d2-2222-2222-2222-222222222204", "created_at": "2026-02-24T09:00:00.000Z", "updated_at": "2026-02-24T09:00:00.000Z", "delivery_directions": "Behind the market, pink house", "delivery_lat": "-15.8000", "delivery_lng": "35.0100", "recipient_name": "Alice Banda", "recipient_phone": "+265888654321", "delivery_fee": "3000", "delivery_method": "HOME_DELIVERY" },
+  { "id": "c3d3e3f3-3333-3333-3333-333333333306", "order_number": "ORD-2026-0006", "buyer_id": "e76d59cb-99c1-4f72-a743-dfb3ba4ed52b", "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485", "total_amount": "750000", "status": "DELIVERED", "delivery_address_id": "b2a2c2d2-2222-2222-2222-222222222205", "created_at": "2026-02-10T10:00:00.000Z", "updated_at": "2026-02-13T16:00:00.000Z", "release_code": "RC7890", "release_code_expires_at": "2026-02-15T10:00:00.000Z", "release_code_status": "VERIFIED", "release_code_verified_at": "2026-02-13T15:45:00.000Z", "delivery_directions": "Area 25 main road", "delivery_lat": "-13.9500", "delivery_lng": "33.7500", "recipient_name": "Chifundo User", "recipient_phone": "265888123456", "delivery_fee": "5000", "delivery_method": "HOME_DELIVERY" },
+  { "id": "c3d3e3f3-3333-3333-3333-333333333307", "order_number": "ORD-2026-0007", "buyer_id": "08861fe8-2720-498a-a5c5-fab8d198b487", "shop_id": "b989043d-1b72-400d-ac42-4ab5acf4d0eb", "total_amount": "45000", "status": "CANCELLED", "delivery_address_id": "b2a2c2d2-2222-2222-2222-222222222210", "created_at": "2026-02-25T07:00:00.000Z", "updated_at": "2026-02-25T12:00:00.000Z", "delivery_directions": "Near Chancellor College gate", "delivery_lat": "-15.3852", "delivery_lng": "35.3187", "recipient_name": "Mary Tembo", "recipient_phone": "+265995432109", "delivery_fee": "7000", "delivery_method": "HOME_DELIVERY" },
+  { "id": "c3d3e3f3-3333-3333-3333-333333333308", "order_number": "ORD-2026-0008", "buyer_id": "684f236e-f76f-48b1-b542-3c1e981c2621", "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485", "total_amount": "520000", "status": "PENDING_PAYMENT", "delivery_address_id": "b2a2c2d2-2222-2222-2222-222222222203", "created_at": "2026-02-26T08:00:00.000Z", "updated_at": "2026-02-26T08:00:00.000Z", "delivery_directions": "Ndirande, ask for Plot 34", "delivery_lat": "-15.7864", "delivery_lng": "35.0054", "recipient_name": "Alice Banda", "recipient_phone": "+265991234567", "delivery_fee": "4500", "delivery_method": "HOME_DELIVERY" },
+  { "id": "c3d3e3f3-3333-3333-3333-333333333309", "order_number": "ORD-2026-0009", "buyer_id": "e76d59cb-99c1-4f72-a743-dfb3ba4ed52b", "shop_id": "80017670-d4b6-4be2-8435-0d7655fc9b1e", "total_amount": "336832", "status": "OUT_FOR_DELIVERY", "delivery_address_id": "b2a2c2d2-2222-2222-2222-222222222209", "created_at": "2026-02-27T11:00:00.000Z", "updated_at": "2026-02-28T09:00:00.000Z", "release_code": "RC4567", "release_code_expires_at": "2026-03-04T11:00:00.000Z", "release_code_status": "PENDING", "delivery_directions": "Old Town, near the post office", "delivery_lat": "-13.9550", "delivery_lng": "33.7600", "recipient_name": "Chifundo", "recipient_phone": "265888123456", "delivery_fee": "3500", "delivery_method": "HOME_DELIVERY" },
+  { "id": "c3d3e3f3-3333-3333-3333-333333333310", "order_number": "ORD-2026-0010", "buyer_id": "08861fe8-2720-498a-a5c5-fab8d198b487", "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6", "total_amount": "1263120", "status": "DELIVERED", "delivery_address_id": "b2a2c2d2-2222-2222-2222-222222222202", "created_at": "2026-02-15T13:00:00.000Z", "updated_at": "2026-02-18T11:00:00.000Z", "release_code": "RC8901", "release_code_expires_at": "2026-02-20T13:00:00.000Z", "release_code_status": "VERIFIED", "release_code_verified_at": "2026-02-18T10:30:00.000Z", "delivery_directions": "Capital Hill Office, 2nd floor", "delivery_lat": "-13.9700", "delivery_lng": "33.7800", "recipient_name": "Mary Tembo", "recipient_phone": "+265995432109", "delivery_fee": "5500", "delivery_method": "HOME_DELIVERY" }
+], skipDuplicates: true });
+
+  console.log('Seeding order_items...');
+  await prisma.order_items.createMany({ data: [
+  { "id": "d4e4f4a4-4444-4444-4444-444444444401", "order_id": "c3d3e3f3-3333-3333-3333-333333333301", "shop_product_id": "f81ed540-ff0d-421b-b91a-b1d60d17feea", "product_name": "Sony WH-1000XM5", "quantity": 1, "unit_price": "294728", "total_price": "294728", "base_price": "280000" },
+  { "id": "d4e4f4a4-4444-4444-4444-444444444402", "order_id": "c3d3e3f3-3333-3333-3333-333333333301", "shop_product_id": "dd91fc83-3372-469d-bf8c-51d8c07a158d", "product_name": "Samsung Galaxy A54 5G", "quantity": 1, "unit_price": "336832", "total_price": "336832", "base_price": "320000" },
+  { "id": "d4e4f4a4-4444-4444-4444-444444444403", "order_id": "c3d3e3f3-3333-3333-3333-333333333302", "shop_product_id": "c00517f4-7110-4201-aee2-d70efd868fb2", "product_name": "MacBook Air M2", "quantity": 1, "unit_price": "1263120", "total_price": "1263120", "base_price": "1200000" },
+  { "id": "d4e4f4a4-4444-4444-4444-444444444404", "order_id": "c3d3e3f3-3333-3333-3333-333333333303", "shop_product_id": "2cdb400d-4675-43ab-bab1-543772228796", "product_name": "iPhone 15 Pro Max 256GB", "quantity": 1, "unit_price": "294728", "total_price": "294728", "base_price": "280000" },
+  { "id": "d4e4f4a4-4444-4444-4444-444444444405", "order_id": "c3d3e3f3-3333-3333-3333-333333333304", "shop_product_id": "b34ffd2f-5b98-42b7-8a78-1038e1b8259c", "product_name": "PlayStation 5", "quantity": 1, "unit_price": "450000", "total_price": "450000", "base_price": "420000" },
+  { "id": "d4e4f4a4-4444-4444-4444-444444444406", "order_id": "c3d3e3f3-3333-3333-3333-333333333305", "shop_product_id": "033b8b66-28fc-4904-a23f-465f020759fd", "product_name": "AirPods Pro 2nd Gen", "quantity": 1, "unit_price": "95000", "total_price": "95000", "base_price": "90000" },
+  { "id": "d4e4f4a4-4444-4444-4444-444444444407", "order_id": "c3d3e3f3-3333-3333-3333-333333333306", "shop_product_id": "b8977bdc-453e-4054-a85a-edd453eea6f7", "product_name": "MacBook Air M3", "quantity": 1, "unit_price": "750000", "total_price": "750000", "base_price": "720000" },
+  { "id": "d4e4f4a4-4444-4444-4444-444444444408", "order_id": "c3d3e3f3-3333-3333-3333-333333333307", "shop_product_id": "c28cb4a5-61cd-4071-aa85-32b0e24ba96f", "product_name": "Amazon Echo Dot", "quantity": 1, "unit_price": "45000", "total_price": "45000", "base_price": "42000" },
+  { "id": "d4e4f4a4-4444-4444-4444-444444444409", "order_id": "c3d3e3f3-3333-3333-3333-333333333308", "shop_product_id": "557d5bd6-de3d-4a66-a2d5-a7d95b1c4dc3", "product_name": "Samsung 55 inch OLED TV", "quantity": 1, "unit_price": "520000", "total_price": "520000", "base_price": "500000" },
+  { "id": "d4e4f4a4-4444-4444-4444-444444444410", "order_id": "c3d3e3f3-3333-3333-3333-333333333309", "shop_product_id": "2c7b3f27-cd4b-413f-ac9c-d68379d5ad4a", "product_name": "Samsung Galaxy S24 Ultra", "quantity": 1, "unit_price": "336832", "total_price": "336832", "base_price": "320000" },
+  { "id": "d4e4f4a4-4444-4444-4444-444444444411", "order_id": "c3d3e3f3-3333-3333-3333-333333333310", "shop_product_id": "c00517f4-7110-4201-aee2-d70efd868fb2", "product_name": "MacBook Air M2", "quantity": 1, "unit_price": "1263120", "total_price": "1263120", "base_price": "1200000" }
+], skipDuplicates: true });
+
+  console.log('Seeding payments...');
+  await prisma.payments.createMany({ data: [
+  { "id": "e5f5a5b5-5555-5555-5555-555555555501", "order_id": "c3d3e3f3-3333-3333-3333-333333333301", "payment_method": "mobile_money", "provider": "paychangu", "amount": "855000", "status": "PAID", "transaction_id": "TXN-PC-001", "payment_reference": "PAY-REF-001", "customer_phone": "+265995432109", "created_at": "2026-01-15T09:05:00.000Z", "updated_at": "2026-01-15T09:10:00.000Z", "currency": "MWK", "customer_email": "mary.tembo@customer.com", "customer_first_name": "Mary", "customer_last_name": "Tembo", "tx_ref": "TX-2026-0001", "verified_at": "2026-01-15T09:10:00.000Z", "verified_by": "WEBHOOK" },
+  { "id": "e5f5a5b5-5555-5555-5555-555555555502", "order_id": "c3d3e3f3-3333-3333-3333-333333333302", "payment_method": "mobile_money", "provider": "paychangu", "amount": "188500", "status": "PAID", "transaction_id": "TXN-PC-002", "payment_reference": "PAY-REF-002", "customer_phone": "+265991234567", "created_at": "2026-01-16T11:05:00.000Z", "updated_at": "2026-01-16T11:12:00.000Z", "currency": "MWK", "customer_email": "alice.banda@gmail.com", "customer_first_name": "Alice", "customer_last_name": "Banda", "tx_ref": "TX-2026-0002", "verified_at": "2026-01-16T11:12:00.000Z", "verified_by": "VERIFY_ENDPOINT" },
+  { "id": "e5f5a5b5-5555-5555-5555-555555555503", "order_id": "c3d3e3f3-3333-3333-3333-333333333303", "payment_method": "mobile_money", "provider": "paychangu", "amount": "298728", "status": "PAID", "transaction_id": "TXN-PC-003", "payment_reference": "PAY-REF-003", "customer_phone": "265888123456", "created_at": "2026-02-20T08:10:00.000Z", "updated_at": "2026-02-20T08:15:00.000Z", "currency": "MWK", "customer_email": "chifundo365@gmail.com", "customer_first_name": "Chifundo", "customer_last_name": "User", "tx_ref": "TX-2026-0003", "verified_at": "2026-02-20T08:15:00.000Z", "verified_by": "WEBHOOK" },
+  { "id": "e5f5a5b5-5555-5555-5555-555555555504", "order_id": "c3d3e3f3-3333-3333-3333-333333333304", "payment_method": "mobile_money", "provider": "paychangu", "amount": "456000", "status": "PAID", "transaction_id": "TXN-PC-004", "payment_reference": "PAY-REF-004", "customer_phone": "+265995432109", "created_at": "2026-02-22T14:10:00.000Z", "updated_at": "2026-02-22T14:18:00.000Z", "currency": "MWK", "customer_email": "mary.tembo@customer.com", "customer_first_name": "Mary", "customer_last_name": "Tembo", "tx_ref": "TX-2026-0004", "verified_at": "2026-02-22T14:18:00.000Z", "verified_by": "BACKGROUND_JOB" },
+  { "id": "e5f5a5b5-5555-5555-5555-555555555505", "order_id": "c3d3e3f3-3333-3333-3333-333333333305", "payment_method": "mobile_money", "provider": "paychangu", "amount": "98000", "status": "PENDING", "customer_phone": "+265888654321", "created_at": "2026-02-24T09:05:00.000Z", "updated_at": "2026-02-24T09:05:00.000Z", "currency": "MWK", "customer_email": "alice.banda@gmail.com", "customer_first_name": "Alice", "customer_last_name": "Banda", "tx_ref": "TX-2026-0005" },
+  { "id": "e5f5a5b5-5555-5555-5555-555555555506", "order_id": "c3d3e3f3-3333-3333-3333-333333333306", "payment_method": "mobile_money", "provider": "paychangu", "amount": "755000", "status": "PAID", "transaction_id": "TXN-PC-006", "payment_reference": "PAY-REF-006", "customer_phone": "265888123456", "created_at": "2026-02-10T10:05:00.000Z", "updated_at": "2026-02-10T10:12:00.000Z", "currency": "MWK", "customer_email": "chifundo365@gmail.com", "customer_first_name": "Chifundo", "customer_last_name": "User", "tx_ref": "TX-2026-0006", "verified_at": "2026-02-10T10:12:00.000Z", "verified_by": "WEBHOOK" },
+  { "id": "e5f5a5b5-5555-5555-5555-555555555507", "order_id": "c3d3e3f3-3333-3333-3333-333333333307", "payment_method": "mobile_money", "provider": "paychangu", "amount": "52000", "status": "CANCELLED", "customer_phone": "+265995432109", "created_at": "2026-02-25T07:05:00.000Z", "updated_at": "2026-02-25T12:00:00.000Z", "currency": "MWK", "customer_email": "mary.tembo@customer.com", "customer_first_name": "Mary", "customer_last_name": "Tembo", "tx_ref": "TX-2026-0007" },
+  { "id": "e5f5a5b5-5555-5555-5555-555555555508", "order_id": "c3d3e3f3-3333-3333-3333-333333333308", "payment_method": "mobile_money", "provider": "paychangu", "amount": "524500", "status": "PENDING", "customer_phone": "+265991234567", "created_at": "2026-02-26T08:05:00.000Z", "updated_at": "2026-02-26T08:05:00.000Z", "currency": "MWK", "customer_email": "alice.banda@gmail.com", "customer_first_name": "Alice", "customer_last_name": "Banda", "tx_ref": "TX-2026-0008" },
+  { "id": "e5f5a5b5-5555-5555-5555-555555555509", "order_id": "c3d3e3f3-3333-3333-3333-333333333309", "payment_method": "mobile_money", "provider": "paychangu", "amount": "340332", "status": "PAID", "transaction_id": "TXN-PC-009", "payment_reference": "PAY-REF-009", "customer_phone": "265888123456", "created_at": "2026-02-27T11:05:00.000Z", "updated_at": "2026-02-27T11:12:00.000Z", "currency": "MWK", "customer_email": "chifundo365@gmail.com", "customer_first_name": "Chifundo", "customer_last_name": "User", "tx_ref": "TX-2026-0009", "verified_at": "2026-02-27T11:12:00.000Z", "verified_by": "WEBHOOK" },
+  { "id": "e5f5a5b5-5555-5555-5555-555555555510", "order_id": "c3d3e3f3-3333-3333-3333-333333333310", "payment_method": "mobile_money", "provider": "paychangu", "amount": "1268620", "status": "PAID", "transaction_id": "TXN-PC-010", "payment_reference": "PAY-REF-010", "customer_phone": "+265995432109", "created_at": "2026-02-15T13:05:00.000Z", "updated_at": "2026-02-15T13:15:00.000Z", "currency": "MWK", "customer_email": "mary.tembo@customer.com", "customer_first_name": "Mary", "customer_last_name": "Tembo", "tx_ref": "TX-2026-0010", "verified_at": "2026-02-15T13:15:00.000Z", "verified_by": "VERIFY_ENDPOINT" }
+], skipDuplicates: true });
+
+  console.log('Seeding payment_reports...');
+  await prisma.payment_reports.createMany({ data: [
+  { "id": "f6a6b6c6-6666-6666-6666-666666666601", "payment_id": "e5f5a5b5-5555-5555-5555-555555555501", "tx_ref": "TX-2026-0001", "email": "mary.tembo@customer.com", "status": "success", "message": "Payment confirmed via mobile money", "created_at": "2026-01-15T09:11:00.000Z" },
+  { "id": "f6a6b6c6-6666-6666-6666-666666666602", "payment_id": "e5f5a5b5-5555-5555-5555-555555555502", "tx_ref": "TX-2026-0002", "email": "alice.banda@gmail.com", "status": "success", "message": "Payment received and verified", "created_at": "2026-01-16T11:13:00.000Z" },
+  { "id": "f6a6b6c6-6666-6666-6666-666666666603", "payment_id": "e5f5a5b5-5555-5555-5555-555555555503", "tx_ref": "TX-2026-0003", "email": "chifundo365@gmail.com", "status": "success", "message": "Mobile money payment successful", "created_at": "2026-02-20T08:16:00.000Z" },
+  { "id": "f6a6b6c6-6666-6666-6666-666666666604", "payment_id": "e5f5a5b5-5555-5555-5555-555555555504", "tx_ref": "TX-2026-0004", "email": "mary.tembo@customer.com", "status": "success", "message": "Payment processed by background job", "created_at": "2026-02-22T14:19:00.000Z" },
+  { "id": "f6a6b6c6-6666-6666-6666-666666666605", "payment_id": "e5f5a5b5-5555-5555-5555-555555555505", "tx_ref": "TX-2026-0005", "email": "alice.banda@gmail.com", "status": "pending", "message": "Awaiting mobile money confirmation", "created_at": "2026-02-24T09:06:00.000Z" },
+  { "id": "f6a6b6c6-6666-6666-6666-666666666606", "payment_id": "e5f5a5b5-5555-5555-5555-555555555506", "tx_ref": "TX-2026-0006", "email": "chifundo365@gmail.com", "status": "success", "message": "Payment confirmed via webhook", "created_at": "2026-02-10T10:13:00.000Z" },
+  { "id": "f6a6b6c6-6666-6666-6666-666666666607", "payment_id": "e5f5a5b5-5555-5555-5555-555555555507", "tx_ref": "TX-2026-0007", "email": "mary.tembo@customer.com", "status": "cancelled", "message": "Order cancelled by buyer", "created_at": "2026-02-25T12:01:00.000Z" },
+  { "id": "f6a6b6c6-6666-6666-6666-666666666608", "payment_id": "e5f5a5b5-5555-5555-5555-555555555508", "tx_ref": "TX-2026-0008", "email": "alice.banda@gmail.com", "status": "pending", "message": "Payment initiated, awaiting confirmation", "created_at": "2026-02-26T08:06:00.000Z" },
+  { "id": "f6a6b6c6-6666-6666-6666-666666666609", "payment_id": "e5f5a5b5-5555-5555-5555-555555555509", "tx_ref": "TX-2026-0009", "email": "chifundo365@gmail.com", "status": "success", "message": "Payment verified successfully", "created_at": "2026-02-27T11:13:00.000Z" },
+  { "id": "f6a6b6c6-6666-6666-6666-666666666610", "payment_id": "e5f5a5b5-5555-5555-5555-555555555510", "tx_ref": "TX-2026-0010", "email": "mary.tembo@customer.com", "status": "success", "message": "Payment verified at endpoint", "created_at": "2026-02-15T13:16:00.000Z" }
+], skipDuplicates: true });
+
+  console.log('Seeding order_messages...');
+  await prisma.order_messages.createMany({ data: [
+  { "id": "a7b7c7d7-7777-7777-7777-777777777701", "order_id": "c3d3e3f3-3333-3333-3333-333333333301", "recipient_type": "CUSTOMER", "message_type": "order_confirmation", "subject": "Order ORD-2026-0001 Confirmed", "body": "Dear Mary, your order has been confirmed and is being prepared.", "channel": "EMAIL", "is_sent": true, "sent_at": "2026-01-15T09:15:00.000Z", "created_at": "2026-01-15T09:15:00.000Z" },
+  { "id": "a7b7c7d7-7777-7777-7777-777777777702", "order_id": "c3d3e3f3-3333-3333-3333-333333333301", "recipient_type": "SHOP", "message_type": "new_order", "subject": "New Order ORD-2026-0001", "body": "You have a new order from Mary Tembo. Total: MWK 850,000.", "channel": "EMAIL", "is_sent": true, "sent_at": "2026-01-15T09:16:00.000Z", "created_at": "2026-01-15T09:16:00.000Z" },
+  { "id": "a7b7c7d7-7777-7777-7777-777777777703", "order_id": "c3d3e3f3-3333-3333-3333-333333333302", "recipient_type": "CUSTOMER", "message_type": "order_confirmation", "subject": "Order ORD-2026-0002 Confirmed", "body": "Dear Alice, your order has been confirmed.", "channel": "EMAIL", "is_sent": true, "sent_at": "2026-01-16T11:15:00.000Z", "created_at": "2026-01-16T11:15:00.000Z" },
+  { "id": "a7b7c7d7-7777-7777-7777-777777777704", "order_id": "c3d3e3f3-3333-3333-3333-333333333303", "recipient_type": "CUSTOMER", "message_type": "order_confirmation", "subject": "Order ORD-2026-0003 Confirmed", "body": "Dear Chifundo, your order has been placed successfully.", "channel": "EMAIL", "is_sent": true, "sent_at": "2026-02-20T08:20:00.000Z", "created_at": "2026-02-20T08:20:00.000Z" },
+  { "id": "a7b7c7d7-7777-7777-7777-777777777705", "order_id": "c3d3e3f3-3333-3333-3333-333333333304", "recipient_type": "SHOP", "message_type": "new_order", "subject": "New Order ORD-2026-0004", "body": "New order received from Mary Tembo for PlayStation 5.", "channel": "EMAIL", "is_sent": true, "sent_at": "2026-02-22T14:20:00.000Z", "created_at": "2026-02-22T14:20:00.000Z" },
+  { "id": "a7b7c7d7-7777-7777-7777-777777777706", "order_id": "c3d3e3f3-3333-3333-3333-333333333306", "recipient_type": "CUSTOMER", "message_type": "delivery_confirmation", "subject": "Order ORD-2026-0006 Delivered", "body": "Your MacBook Air M3 has been delivered. Enjoy!", "channel": "EMAIL", "is_sent": true, "sent_at": "2026-02-13T16:05:00.000Z", "created_at": "2026-02-13T16:05:00.000Z" },
+  { "id": "a7b7c7d7-7777-7777-7777-777777777707", "order_id": "c3d3e3f3-3333-3333-3333-333333333307", "recipient_type": "CUSTOMER", "message_type": "order_cancelled", "subject": "Order ORD-2026-0007 Cancelled", "body": "Your order has been cancelled. Refund will be processed.", "channel": "EMAIL", "is_sent": true, "sent_at": "2026-02-25T12:05:00.000Z", "created_at": "2026-02-25T12:05:00.000Z" },
+  { "id": "a7b7c7d7-7777-7777-7777-777777777708", "order_id": "c3d3e3f3-3333-3333-3333-333333333308", "recipient_type": "CUSTOMER", "message_type": "payment_reminder", "subject": "Payment Pending for ORD-2026-0008", "body": "Please complete your payment for order ORD-2026-0008.", "channel": "EMAIL", "is_sent": true, "sent_at": "2026-02-26T10:00:00.000Z", "created_at": "2026-02-26T10:00:00.000Z" },
+  { "id": "a7b7c7d7-7777-7777-7777-777777777709", "order_id": "c3d3e3f3-3333-3333-3333-333333333309", "recipient_type": "CUSTOMER", "message_type": "out_for_delivery", "subject": "Order ORD-2026-0009 Out for Delivery", "body": "Your Samsung Galaxy S24 Ultra is on its way!", "channel": "EMAIL", "is_sent": true, "sent_at": "2026-02-28T09:05:00.000Z", "created_at": "2026-02-28T09:05:00.000Z" },
+  { "id": "a7b7c7d7-7777-7777-7777-777777777710", "order_id": "c3d3e3f3-3333-3333-3333-333333333310", "recipient_type": "CUSTOMER", "message_type": "delivery_confirmation", "subject": "Order ORD-2026-0010 Delivered", "body": "Your MacBook Air M2 has been delivered. Thank you for shopping with us!", "channel": "EMAIL", "is_sent": true, "sent_at": "2026-02-18T11:05:00.000Z", "created_at": "2026-02-18T11:05:00.000Z" }
+], skipDuplicates: true });
+
+  console.log('Seeding reviews...');
+  await prisma.reviews.createMany({ data: [
+  { "id": "b8c8d8e8-8888-8888-8888-888888888801", "order_id": "c3d3e3f3-3333-3333-3333-333333333301", "reviewer_id": "08861fe8-2720-498a-a5c5-fab8d198b487", "shop_product_id": "f81ed540-ff0d-421b-b91a-b1d60d17feea", "rating": 5, "comment": "Amazing noise cancellation! Best headphones ever.", "created_at": "2026-01-20T10:00:00.000Z", "updated_at": "2026-01-20T10:00:00.000Z" },
+  { "id": "b8c8d8e8-8888-8888-8888-888888888802", "order_id": "c3d3e3f3-3333-3333-3333-333333333301", "reviewer_id": "08861fe8-2720-498a-a5c5-fab8d198b487", "shop_product_id": "dd91fc83-3372-469d-bf8c-51d8c07a158d", "rating": 4, "comment": "Great mid-range phone, camera is excellent for the price.", "created_at": "2026-01-20T10:05:00.000Z", "updated_at": "2026-01-20T10:05:00.000Z" },
+  { "id": "b8c8d8e8-8888-8888-8888-888888888803", "order_id": "c3d3e3f3-3333-3333-3333-333333333302", "reviewer_id": "684f236e-f76f-48b1-b542-3c1e981c2621", "shop_product_id": "c00517f4-7110-4201-aee2-d70efd868fb2", "rating": 5, "comment": "Lightweight, fast, and the battery lasts all day. Love it!", "created_at": "2026-01-21T14:00:00.000Z", "updated_at": "2026-01-21T14:00:00.000Z" },
+  { "id": "b8c8d8e8-8888-8888-8888-888888888804", "order_id": "c3d3e3f3-3333-3333-3333-333333333306", "reviewer_id": "e76d59cb-99c1-4f72-a743-dfb3ba4ed52b", "shop_product_id": "b8977bdc-453e-4054-a85a-edd453eea6f7", "rating": 4, "comment": "Very fast machine, perfect for coding. Keyboard is great.", "created_at": "2026-02-15T08:00:00.000Z", "updated_at": "2026-02-15T08:00:00.000Z" },
+  { "id": "b8c8d8e8-8888-8888-8888-888888888805", "order_id": "c3d3e3f3-3333-3333-3333-333333333310", "reviewer_id": "08861fe8-2720-498a-a5c5-fab8d198b487", "shop_product_id": "c00517f4-7110-4201-aee2-d70efd868fb2", "rating": 3, "comment": "Good laptop but the display could be brighter.", "created_at": "2026-02-20T16:00:00.000Z", "updated_at": "2026-02-20T16:00:00.000Z" },
+  { "id": "b8c8d8e8-8888-8888-8888-888888888806", "order_id": "c3d3e3f3-3333-3333-3333-333333333303", "reviewer_id": "e76d59cb-99c1-4f72-a743-dfb3ba4ed52b", "shop_product_id": "2cdb400d-4675-43ab-bab1-543772228796", "rating": 5, "comment": "Excellent phone, delivery was fast too!", "created_at": "2026-02-25T09:00:00.000Z", "updated_at": "2026-02-25T09:00:00.000Z" },
+  { "id": "b8c8d8e8-8888-8888-8888-888888888807", "order_id": "c3d3e3f3-3333-3333-3333-333333333304", "reviewer_id": "08861fe8-2720-498a-a5c5-fab8d198b487", "shop_product_id": "b34ffd2f-5b98-42b7-8a78-1038e1b8259c", "rating": 5, "comment": "PlayStation 5 is incredible! Worth every kwacha.", "created_at": "2026-02-26T12:00:00.000Z", "updated_at": "2026-02-26T12:00:00.000Z" },
+  { "id": "b8c8d8e8-8888-8888-8888-888888888808", "order_id": "c3d3e3f3-3333-3333-3333-333333333305", "reviewer_id": "684f236e-f76f-48b1-b542-3c1e981c2621", "shop_product_id": "033b8b66-28fc-4904-a23f-465f020759fd", "rating": 4, "comment": "AirPods sound great, pairing was instant.", "created_at": "2026-02-27T10:00:00.000Z", "updated_at": "2026-02-27T10:00:00.000Z" },
+  { "id": "b8c8d8e8-8888-8888-8888-888888888809", "order_id": "c3d3e3f3-3333-3333-3333-333333333308", "reviewer_id": "684f236e-f76f-48b1-b542-3c1e981c2621", "shop_product_id": "557d5bd6-de3d-4a66-a2d5-a7d95b1c4dc3", "rating": 5, "comment": "Best TV I've ever owned. OLED is stunning!", "created_at": "2026-02-28T14:00:00.000Z", "updated_at": "2026-02-28T14:00:00.000Z" },
+  { "id": "b8c8d8e8-8888-8888-8888-888888888810", "order_id": "c3d3e3f3-3333-3333-3333-333333333309", "reviewer_id": "e76d59cb-99c1-4f72-a743-dfb3ba4ed52b", "shop_product_id": "2c7b3f27-cd4b-413f-ac9c-d68379d5ad4a", "rating": 4, "comment": "Samsung S24 Ultra camera is phenomenal. S Pen is handy.", "created_at": "2026-03-01T08:00:00.000Z", "updated_at": "2026-03-01T08:00:00.000Z" }
+], skipDuplicates: true });
+
+  console.log('Seeding shop_products_log...');
+  await prisma.shop_products_log.createMany({ data: [
+  { "id": "c9d9e9f9-9999-9999-9999-999999999901", "shop_product_id": "f81ed540-ff0d-421b-b91a-b1d60d17feea", "change_qty": 10, "change_type": "INCREASE", "reason": "Initial stock from bulk upload", "created_at": "2026-02-03T07:44:00.000Z" },
+  { "id": "c9d9e9f9-9999-9999-9999-999999999902", "shop_product_id": "f81ed540-ff0d-421b-b91a-b1d60d17feea", "change_qty": -1, "change_type": "DECREASE", "reason": "Sold - Order ORD-2026-0001", "created_at": "2026-01-15T09:20:00.000Z" },
+  { "id": "c9d9e9f9-9999-9999-9999-999999999903", "shop_product_id": "dd91fc83-3372-469d-bf8c-51d8c07a158d", "change_qty": 8, "change_type": "INCREASE", "reason": "Initial stock from bulk upload", "created_at": "2026-02-03T07:46:00.000Z" },
+  { "id": "c9d9e9f9-9999-9999-9999-999999999904", "shop_product_id": "dd91fc83-3372-469d-bf8c-51d8c07a158d", "change_qty": -1, "change_type": "DECREASE", "reason": "Sold - Order ORD-2026-0001", "created_at": "2026-01-15T09:21:00.000Z" },
+  { "id": "c9d9e9f9-9999-9999-9999-999999999905", "shop_product_id": "c00517f4-7110-4201-aee2-d70efd868fb2", "change_qty": 4, "change_type": "INCREASE", "reason": "Initial stock", "created_at": "2026-02-03T07:50:00.000Z" },
+  { "id": "c9d9e9f9-9999-9999-9999-999999999906", "shop_product_id": "c00517f4-7110-4201-aee2-d70efd868fb2", "change_qty": -1, "change_type": "DECREASE", "reason": "Sold - Order ORD-2026-0002", "created_at": "2026-01-16T11:20:00.000Z" },
+  { "id": "c9d9e9f9-9999-9999-9999-999999999907", "shop_product_id": "b8977bdc-453e-4054-a85a-edd453eea6f7", "change_qty": 5, "change_type": "INCREASE", "reason": "Restocked", "created_at": "2026-02-10T08:00:00.000Z" },
+  { "id": "c9d9e9f9-9999-9999-9999-999999999908", "shop_product_id": "b8977bdc-453e-4054-a85a-edd453eea6f7", "change_qty": -1, "change_type": "DECREASE", "reason": "Sold - Order ORD-2026-0006", "created_at": "2026-02-10T10:15:00.000Z" },
+  { "id": "c9d9e9f9-9999-9999-9999-999999999909", "shop_product_id": "2cdb400d-4675-43ab-bab1-543772228796", "change_qty": 3, "change_type": "ADJUSTMENT", "reason": "Inventory correction after audit", "created_at": "2026-02-18T15:00:00.000Z" },
+  { "id": "c9d9e9f9-9999-9999-9999-999999999910", "shop_product_id": "b34ffd2f-5b98-42b7-8a78-1038e1b8259c", "change_qty": -1, "change_type": "DECREASE", "reason": "Sold - Order ORD-2026-0004", "created_at": "2026-02-22T14:30:00.000Z" }
+], skipDuplicates: true });
+
+  console.log('Seeding transactions...');
+  await prisma.transactions.createMany({ data: [
+  { "id": "d0a0b0c0-aaaa-aaaa-aaaa-aaaaaaaaa001", "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485", "type": "ORDER_CREDIT", "amount": "850000", "balance_before": "0", "balance_after": "850000", "status": "COMPLETED", "order_id": "c3d3e3f3-3333-3333-3333-333333333301", "description": "Order ORD-2026-0001 payment credited", "created_at": "2026-01-15T09:15:00.000Z" },
+  { "id": "d0a0b0c0-aaaa-aaaa-aaaa-aaaaaaaaa002", "shop_id": "80017670-d4b6-4be2-8435-0d7655fc9b1e", "type": "ORDER_CREDIT", "amount": "185000", "balance_before": "0", "balance_after": "185000", "status": "COMPLETED", "order_id": "c3d3e3f3-3333-3333-3333-333333333302", "description": "Order ORD-2026-0002 payment credited", "created_at": "2026-01-16T11:15:00.000Z" },
+  { "id": "d0a0b0c0-aaaa-aaaa-aaaa-aaaaaaaaa003", "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6", "type": "ORDER_CREDIT", "amount": "294728", "balance_before": "0", "balance_after": "294728", "status": "COMPLETED", "order_id": "c3d3e3f3-3333-3333-3333-333333333303", "description": "Order ORD-2026-0003 payment credited", "created_at": "2026-02-20T08:20:00.000Z" },
+  { "id": "d0a0b0c0-aaaa-aaaa-aaaa-aaaaaaaaa004", "shop_id": "65389d7e-3bd0-4f61-b975-886cea38a08c", "type": "ORDER_CREDIT", "amount": "450000", "balance_before": "1550000", "balance_after": "2000000", "status": "COMPLETED", "order_id": "c3d3e3f3-3333-3333-3333-333333333304", "description": "Order ORD-2026-0004 payment credited", "created_at": "2026-02-22T14:20:00.000Z" },
+  { "id": "d0a0b0c0-aaaa-aaaa-aaaa-aaaaaaaaa005", "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485", "type": "ORDER_CREDIT", "amount": "750000", "balance_before": "850000", "balance_after": "1600000", "status": "COMPLETED", "order_id": "c3d3e3f3-3333-3333-3333-333333333306", "description": "Order ORD-2026-0006 payment credited", "created_at": "2026-02-10T10:15:00.000Z" },
+  { "id": "d0a0b0c0-aaaa-aaaa-aaaa-aaaaaaaaa006", "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485", "type": "PAYOUT", "amount": "500000", "balance_before": "1600000", "balance_after": "1100000", "status": "COMPLETED", "description": "Weekly payout to TechHub", "created_at": "2026-02-12T09:00:00.000Z" },
+  { "id": "d0a0b0c0-aaaa-aaaa-aaaa-aaaaaaaaa007", "shop_id": "80017670-d4b6-4be2-8435-0d7655fc9b1e", "type": "PAYOUT", "amount": "100000", "balance_before": "185000", "balance_after": "85000", "status": "COMPLETED", "description": "Payout to Digital World Blantyre", "created_at": "2026-02-14T10:00:00.000Z" },
+  { "id": "d0a0b0c0-aaaa-aaaa-aaaa-aaaaaaaaa008", "shop_id": "d6e6836b-f12b-4d79-a087-31c9e9a40b1a", "type": "ORDER_CREDIT", "amount": "95000", "balance_before": "0", "balance_after": "95000", "status": "PENDING", "order_id": "c3d3e3f3-3333-3333-3333-333333333305", "description": "Order ORD-2026-0005 payment pending", "created_at": "2026-02-24T09:10:00.000Z" },
+  { "id": "d0a0b0c0-aaaa-aaaa-aaaa-aaaaaaaaa009", "shop_id": "80017670-d4b6-4be2-8435-0d7655fc9b1e", "type": "ORDER_CREDIT", "amount": "336832", "balance_before": "85000", "balance_after": "421832", "status": "COMPLETED", "order_id": "c3d3e3f3-3333-3333-3333-333333333309", "description": "Order ORD-2026-0009 payment credited", "created_at": "2026-02-27T11:15:00.000Z" },
+  { "id": "d0a0b0c0-aaaa-aaaa-aaaa-aaaaaaaaa010", "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6", "type": "ORDER_CREDIT", "amount": "1263120", "balance_before": "294728", "balance_after": "1557848", "status": "COMPLETED", "order_id": "c3d3e3f3-3333-3333-3333-333333333310", "description": "Order ORD-2026-0010 payment credited", "created_at": "2026-02-15T13:20:00.000Z" }
+], skipDuplicates: true });
+
+  console.log('Seeding withdrawals...');
+  await prisma.withdrawals.createMany({ data: [
+  { "id": "e1b1c1d1-bbbb-bbbb-bbbb-bbbbbbbbb001", "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485", "amount": "500000", "fee": "5000", "net_amount": "495000", "status": "COMPLETED", "payout_method": "mobile_money", "recipient_phone": "+265998765432", "recipient_name": "John Phiri", "provider": "airtel_money", "tx_ref": "WD-TX-2026-0001", "payout_reference": "PAYOUT-001", "requested_at": "2026-02-12T08:00:00.000Z", "processed_at": "2026-02-12T08:30:00.000Z", "completed_at": "2026-02-12T09:00:00.000Z", "balance_before": "1600000", "balance_after": "1100000", "created_at": "2026-02-12T08:00:00.000Z", "updated_at": "2026-02-12T09:00:00.000Z", "transaction_id": "d0a0b0c0-aaaa-aaaa-aaaa-aaaaaaaaa006" },
+  { "id": "e1b1c1d1-bbbb-bbbb-bbbb-bbbbbbbbb002", "shop_id": "80017670-d4b6-4be2-8435-0d7655fc9b1e", "amount": "100000", "fee": "2500", "net_amount": "97500", "status": "COMPLETED", "payout_method": "mobile_money", "recipient_phone": "+265997654321", "recipient_name": "Grace Mwale", "provider": "mpamba", "tx_ref": "WD-TX-2026-0002", "payout_reference": "PAYOUT-002", "requested_at": "2026-02-14T09:00:00.000Z", "processed_at": "2026-02-14T09:30:00.000Z", "completed_at": "2026-02-14T10:00:00.000Z", "balance_before": "185000", "balance_after": "85000", "created_at": "2026-02-14T09:00:00.000Z", "updated_at": "2026-02-14T10:00:00.000Z", "transaction_id": "d0a0b0c0-aaaa-aaaa-aaaa-aaaaaaaaa007" },
+  { "id": "e1b1c1d1-bbbb-bbbb-bbbb-bbbbbbbbb003", "shop_id": "65389d7e-3bd0-4f61-b975-886cea38a08c", "amount": "200000", "fee": "3000", "net_amount": "197000", "status": "PENDING", "payout_method": "mobile_money", "recipient_phone": "+265995123456", "recipient_name": "John Phiri", "provider": "airtel_money", "tx_ref": "WD-TX-2026-0003", "requested_at": "2026-02-25T08:00:00.000Z", "balance_before": "2000000", "balance_after": "1800000", "created_at": "2026-02-25T08:00:00.000Z", "updated_at": "2026-02-25T08:00:00.000Z" },
+  { "id": "e1b1c1d1-bbbb-bbbb-bbbb-bbbbbbbbb004", "shop_id": "d6e6836b-f12b-4d79-a087-31c9e9a40b1a", "amount": "48000", "fee": "1500", "net_amount": "46500", "status": "PROCESSING", "payout_method": "mobile_money", "recipient_phone": "+265994321098", "recipient_name": "Grace Mwale", "provider": "mpamba", "tx_ref": "WD-TX-2026-0004", "requested_at": "2026-02-26T07:00:00.000Z", "processed_at": "2026-02-26T07:30:00.000Z", "balance_before": "48000", "balance_after": "0", "created_at": "2026-02-26T07:00:00.000Z", "updated_at": "2026-02-26T07:30:00.000Z" },
+  { "id": "e1b1c1d1-bbbb-bbbb-bbbb-bbbbbbbbb005", "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485", "amount": "300000", "fee": "4000", "net_amount": "296000", "status": "FAILED", "payout_method": "mobile_money", "recipient_phone": "+265998765432", "recipient_name": "John Phiri", "provider": "airtel_money", "tx_ref": "WD-TX-2026-0005", "requested_at": "2026-02-20T14:00:00.000Z", "processed_at": "2026-02-20T14:30:00.000Z", "failed_at": "2026-02-20T15:00:00.000Z", "failure_reason": "Insufficient funds on provider side", "balance_before": "1100000", "balance_after": "1100000", "created_at": "2026-02-20T14:00:00.000Z", "updated_at": "2026-02-20T15:00:00.000Z" },
+  { "id": "e1b1c1d1-bbbb-bbbb-bbbb-bbbbbbbbb006", "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6", "amount": "150000", "fee": "2000", "net_amount": "148000", "status": "PENDING", "payout_method": "mobile_money", "recipient_phone": "+265991234567", "recipient_name": "Chifundo Biziweck", "provider": "mpamba", "tx_ref": "WD-TX-2026-0006", "requested_at": "2026-02-28T10:00:00.000Z", "balance_before": "1557848", "balance_after": "1407848", "created_at": "2026-02-28T10:00:00.000Z", "updated_at": "2026-02-28T10:00:00.000Z" },
+  { "id": "e1b1c1d1-bbbb-bbbb-bbbb-bbbbbbbbb007", "shop_id": "b989043d-1b72-400d-ac42-4ab5acf4d0eb", "amount": "50000", "fee": "1500", "net_amount": "48500", "status": "COMPLETED", "payout_method": "mobile_money", "recipient_phone": "+265993210987", "recipient_name": "John Phiri", "provider": "airtel_money", "tx_ref": "WD-TX-2026-0007", "payout_reference": "PAYOUT-007", "requested_at": "2026-02-15T11:00:00.000Z", "processed_at": "2026-02-15T11:30:00.000Z", "completed_at": "2026-02-15T12:00:00.000Z", "balance_before": "50000", "balance_after": "0", "created_at": "2026-02-15T11:00:00.000Z", "updated_at": "2026-02-15T12:00:00.000Z" },
+  { "id": "e1b1c1d1-bbbb-bbbb-bbbb-bbbbbbbbb008", "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485", "amount": "200000", "fee": "3000", "net_amount": "197000", "status": "COMPLETED", "payout_method": "mobile_money", "recipient_phone": "+265998765432", "recipient_name": "John Phiri", "provider": "mpamba", "tx_ref": "WD-TX-2026-0008", "payout_reference": "PAYOUT-008", "requested_at": "2026-02-22T09:00:00.000Z", "processed_at": "2026-02-22T09:30:00.000Z", "completed_at": "2026-02-22T10:00:00.000Z", "balance_before": "1100000", "balance_after": "900000", "created_at": "2026-02-22T09:00:00.000Z", "updated_at": "2026-02-22T10:00:00.000Z" },
+  { "id": "e1b1c1d1-bbbb-bbbb-bbbb-bbbbbbbbb009", "shop_id": "65389d7e-3bd0-4f61-b975-886cea38a08c", "amount": "100000", "fee": "2000", "net_amount": "98000", "status": "CANCELLED", "payout_method": "mobile_money", "recipient_phone": "+265995123456", "recipient_name": "John Phiri", "provider": "airtel_money", "tx_ref": "WD-TX-2026-0009", "requested_at": "2026-02-10T08:00:00.000Z", "balance_before": "1550000", "balance_after": "1550000", "created_at": "2026-02-10T08:00:00.000Z", "updated_at": "2026-02-10T10:00:00.000Z" },
+  { "id": "e1b1c1d1-bbbb-bbbb-bbbb-bbbbbbbbb010", "shop_id": "80017670-d4b6-4be2-8435-0d7655fc9b1e", "amount": "80000", "fee": "2000", "net_amount": "78000", "status": "PENDING", "payout_method": "mobile_money", "recipient_phone": "+265997654321", "recipient_name": "Grace Mwale", "provider": "mpamba", "tx_ref": "WD-TX-2026-0010", "requested_at": "2026-03-01T08:00:00.000Z", "balance_before": "421832", "balance_after": "341832", "created_at": "2026-03-01T08:00:00.000Z", "updated_at": "2026-03-01T08:00:00.000Z" }
+], skipDuplicates: true });
+
+  console.log('Seeding password_resets...');
+  await prisma.password_resets.createMany({ data: [
+  { "id": "f2c2d2e2-cccc-cccc-cccc-ccccccccc001", "user_id": "08861fe8-2720-498a-a5c5-fab8d198b487", "token": "rst_abc123def456ghi789jkl012mno345pqr", "expires_at": "2026-02-01T10:00:00.000Z", "used": true, "created_at": "2026-01-31T10:00:00.000Z" },
+  { "id": "f2c2d2e2-cccc-cccc-cccc-ccccccccc002", "user_id": "684f236e-f76f-48b1-b542-3c1e981c2621", "token": "rst_stu678vwx901yza234bcd567efg890hij", "expires_at": "2026-02-05T14:00:00.000Z", "used": true, "created_at": "2026-02-04T14:00:00.000Z" },
+  { "id": "f2c2d2e2-cccc-cccc-cccc-ccccccccc003", "user_id": "e76d59cb-99c1-4f72-a743-dfb3ba4ed52b", "token": "rst_klm123nop456qrs789tuv012wxy345zab", "expires_at": "2026-02-18T09:00:00.000Z", "used": false, "created_at": "2026-02-17T09:00:00.000Z" },
+  { "id": "f2c2d2e2-cccc-cccc-cccc-ccccccccc004", "user_id": "a5112786-3197-40d6-b0ff-1381e9569cab", "token": "rst_cde678fgh901ijk234lmn567opq890rst", "expires_at": "2026-02-20T16:00:00.000Z", "used": true, "created_at": "2026-02-19T16:00:00.000Z" },
+  { "id": "f2c2d2e2-cccc-cccc-cccc-ccccccccc005", "user_id": "e607f7d6-3d08-42c0-a6f2-d66a6231a4ca", "token": "rst_uvw123xyz456abc789def012ghi345jkl", "expires_at": "2026-02-25T12:00:00.000Z", "used": false, "created_at": "2026-02-24T12:00:00.000Z" },
+  { "id": "f2c2d2e2-cccc-cccc-cccc-ccccccccc006", "user_id": "50e9b187-5851-46bc-84e9-ab89048c02cd", "token": "rst_mno678pqr901stu234vwx567yza890bcd", "expires_at": "2026-02-28T08:00:00.000Z", "used": true, "created_at": "2026-02-27T08:00:00.000Z" },
+  { "id": "f2c2d2e2-cccc-cccc-cccc-ccccccccc007", "user_id": "08861fe8-2720-498a-a5c5-fab8d198b487", "token": "rst_efg123hij456klm789nop012qrs345tuv", "expires_at": "2026-03-01T10:00:00.000Z", "used": false, "created_at": "2026-02-28T10:00:00.000Z" },
+  { "id": "f2c2d2e2-cccc-cccc-cccc-ccccccccc008", "user_id": "684f236e-f76f-48b1-b542-3c1e981c2621", "token": "rst_wxy678zab901cde234fgh567ijk890lmn", "expires_at": "2026-03-02T14:00:00.000Z", "used": false, "created_at": "2026-03-01T14:00:00.000Z" },
+  { "id": "f2c2d2e2-cccc-cccc-cccc-ccccccccc009", "user_id": "e76d59cb-99c1-4f72-a743-dfb3ba4ed52b", "token": "rst_opq123rst456uvw789xyz012abc345def", "expires_at": "2026-03-03T09:00:00.000Z", "used": false, "created_at": "2026-03-02T09:00:00.000Z" },
+  { "id": "f2c2d2e2-cccc-cccc-cccc-ccccccccc010", "user_id": "a5112786-3197-40d6-b0ff-1381e9569cab", "token": "rst_ghi678jkl901mno234pqr567stu890vwx", "expires_at": "2026-03-04T16:00:00.000Z", "used": false, "created_at": "2026-03-03T16:00:00.000Z" }
+], skipDuplicates: true });
+
+  console.log('Seeding search_logs...');
+  await prisma.searchLog.createMany({ data: [
+  { "id": "a3b3c3d3-dddd-dddd-dddd-ddddddddd001", "query": "iPhone 15", "results_count": 5, "filters": {"category":"Smartphones & Tablets"}, "buyer_has_coords": true, "response_time_ms": 120, "page": 1, "limit_per_page": 20, "created_at": "2026-02-20T08:00:00.000Z" },
+  { "id": "a3b3c3d3-dddd-dddd-dddd-ddddddddd002", "query": "MacBook", "results_count": 3, "filters": null, "buyer_has_coords": false, "response_time_ms": 85, "page": 1, "limit_per_page": 20, "created_at": "2026-02-20T09:00:00.000Z" },
+  { "id": "a3b3c3d3-dddd-dddd-dddd-ddddddddd003", "query": "headphones", "results_count": 8, "filters": {"brand":"Sony"}, "buyer_has_coords": true, "response_time_ms": 95, "page": 1, "limit_per_page": 20, "created_at": "2026-02-21T10:00:00.000Z" },
+  { "id": "a3b3c3d3-dddd-dddd-dddd-ddddddddd004", "query": "Samsung Galaxy", "results_count": 12, "filters": null, "buyer_has_coords": true, "response_time_ms": 150, "page": 1, "limit_per_page": 20, "created_at": "2026-02-22T11:00:00.000Z" },
+  { "id": "a3b3c3d3-dddd-dddd-dddd-ddddddddd005", "query": "PlayStation", "results_count": 2, "filters": {"category":"Gaming & Consoles"}, "buyer_has_coords": false, "response_time_ms": 65, "page": 1, "limit_per_page": 20, "created_at": "2026-02-23T12:00:00.000Z" },
+  { "id": "a3b3c3d3-dddd-dddd-dddd-ddddddddd006", "query": "laptop under 500000", "results_count": 0, "filters": {"max_price":500000}, "buyer_has_coords": false, "response_time_ms": 45, "page": 1, "limit_per_page": 20, "created_at": "2026-02-24T13:00:00.000Z" },
+  { "id": "a3b3c3d3-dddd-dddd-dddd-ddddddddd007", "query": "AirPods", "results_count": 4, "filters": null, "buyer_has_coords": true, "response_time_ms": 78, "page": 1, "limit_per_page": 20, "created_at": "2026-02-25T14:00:00.000Z" },
+  { "id": "a3b3c3d3-dddd-dddd-dddd-ddddddddd008", "query": "smart speaker", "results_count": 3, "filters": {"category":"Smart Home & IoT"}, "buyer_has_coords": false, "response_time_ms": 110, "page": 1, "limit_per_page": 20, "created_at": "2026-02-26T15:00:00.000Z" },
+  { "id": "a3b3c3d3-dddd-dddd-dddd-ddddddddd009", "query": "Dell XPS", "results_count": 1, "filters": null, "buyer_has_coords": true, "response_time_ms": 55, "page": 1, "limit_per_page": 20, "created_at": "2026-02-27T16:00:00.000Z" },
+  { "id": "a3b3c3d3-dddd-dddd-dddd-ddddddddd010", "query": "JBL speaker", "results_count": 2, "filters": {"brand":"JBL"}, "buyer_has_coords": true, "response_time_ms": 72, "page": 1, "limit_per_page": 20, "created_at": "2026-02-28T17:00:00.000Z" },
+  { "id": "a3b3c3d3-dddd-dddd-dddd-ddddddddd011", "query": "phone", "results_count": 15, "filters": null, "buyer_has_coords": false, "response_time_ms": 200, "page": 1, "limit_per_page": 20, "created_at": "2026-03-01T08:00:00.000Z" },
+  { "id": "a3b3c3d3-dddd-dddd-dddd-ddddddddd012", "query": "Logitech mouse", "results_count": 1, "filters": null, "buyer_has_coords": true, "response_time_ms": 42, "page": 1, "limit_per_page": 20, "created_at": "2026-03-01T10:00:00.000Z" }
+], skipDuplicates: true });
+
   console.log('Done.');
 }
 main().catch(e=>{console.error(e);process.exit(1)}).finally(()=>process.exit(0));
