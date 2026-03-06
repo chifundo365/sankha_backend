@@ -1,0 +1,3 @@
+-- Baseline migration for existing database schema
+-- This migration is intentionally empty because the database already matches the schema.
+-- It is used to mark Prisma's migration history as up-to-date with the current DB.

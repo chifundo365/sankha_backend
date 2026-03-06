@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../prismaClient";
 import { Prisma } from '../../generated/prisma';
+import { successResponse, errorResponse } from "../utils/response";
 
 // Types for response shaping
 type ShopEntry = {
@@ -34,12 +35,7 @@ export const search = async (req: Request, res: Response) => {
     const brandRaw = typeof req.query.brand === 'string' ? req.query.brand.trim() : '';
     const modelRaw = typeof req.query.model === 'string' ? req.query.model.trim() : '';
     
-    if (qRaw.length < 2) {
-      return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_QUERY', message: 'Search query must be at least 2 characters' } });
-    }
-    if (qRaw.length > 100) {
-      return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_QUERY', message: 'Search query must not exceed 100 characters' } });
-    }
+    // q validation handled by Zod schema middleware (searchQuerySchema)
 
     const q = qRaw;
     const brand = brandRaw === '' ? null : brandRaw;
@@ -60,17 +56,11 @@ export const search = async (req: Request, res: Response) => {
     const maxPrice = req.query.max_price ? Number(req.query.max_price) : null;
     const categoryId = typeof req.query.category_id === 'string' ? req.query.category_id : null;
 
-    let specsObj: any = null;
-    if (typeof req.query.specs === 'string' && req.query.specs.trim() !== '') {
-      try {
-        specsObj = JSON.parse(req.query.specs as string);
-        if (typeof specsObj !== 'object' || Array.isArray(specsObj)) {
-          return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_SPECS', message: 'Spec filter must be a JSON object' } });
-        }
-      } catch (e) {
-        return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_SPECS', message: 'Spec filter must be valid JSON' } });
-      }
-    }
+    // specs validation & parsing handled by Zod schema middleware (searchQuerySchema)
+    const specsObj: Record<string, string> | null =
+      (req.query.specs && typeof req.query.specs === 'object' && !Array.isArray(req.query.specs))
+        ? (req.query.specs as unknown as Record<string, string>)
+        : null;
 
     const searchParam = `%${q.toLowerCase()}%`;
     const qPlain = q.toLowerCase();
@@ -362,7 +352,7 @@ LIMIT ${limit} OFFSET ${offset};
       response_time_ms: responseTime, suggestions
     };
 
-    res.json({ success: true, metadata, facets, results, error: null });
+    successResponse(res, 'Search results fetched successfully', { metadata, facets, results });
 
     // Fire-and-forget logging
     const filtersObj = { brand, model, condition, category_id: categoryId, minPrice, maxPrice, specs: specsObj };
@@ -377,6 +367,6 @@ LIMIT ${limit} OFFSET ${offset};
 
   } catch (err) {
     console.error('Search error:', err);
-    res.status(500).json({ success: false, metadata: null, results: [], error: { code: 'SEARCH_FAILED', message: 'Search failed' } });
+    errorResponse(res, 'Search failed', { code: 'SEARCH_FAILED' }, 500);
   }
 };
