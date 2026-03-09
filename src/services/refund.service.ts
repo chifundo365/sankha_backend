@@ -184,6 +184,36 @@ class RefundService {
       data: { status: 'REFUNDED', updated_at: new Date() },
     });
 
+    // ─── INCREMENT SELLER DEBT BALANCE ──────────────────────────
+    // Seller absorbs: PayChangu inbound fee (3%) + PayChangu outbound refund fee (1.7%) + Sankha platform fee (3%)
+    const displayPrice = Number(refundAmount);
+    const paychanguInboundFee = displayPrice * 0.03;
+    const paychanguOutboundRefundFee = displayPrice * 0.017;
+    const sankhaPlatformFee = displayPrice * 0.03;
+    const totalAbsorbed = new Decimal(
+      Math.ceil(paychanguInboundFee + paychanguOutboundRefundFee + sankhaPlatformFee),
+    );
+
+    await prisma.shops.update({
+      where: { id: order.shop_id },
+      data: {
+        seller_debt_balance: { increment: new Prisma.Decimal(totalAbsorbed.toString()) },
+      },
+    });
+
+    await prisma.transactions.create({
+      data: {
+        shop_id: order.shop_id,
+        type: 'ADJUSTMENT',
+        amount: new Prisma.Decimal(totalAbsorbed.toString()),
+        balance_before: new Prisma.Decimal(0),
+        balance_after: new Prisma.Decimal(0),
+        status: 'COMPLETED',
+        order_id: order.id,
+        description: `Seller fault refund debt — Order ${order.order_number}`,
+      },
+    });
+
     return {
       success: true,
       refundAmount,

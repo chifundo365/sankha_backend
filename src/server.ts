@@ -7,6 +7,7 @@ import { errorResponse } from './utils/response';
 import { redisClient } from './config/redis.config';
 import { validatePaychanguConfig } from './config/paychangu.config';
 import { paymentVerificationJob } from './jobs/paymentVerification.job';
+import { withdrawalVerificationJob } from './jobs/withdrawalVerification.job';
 
 const app = express();
 
@@ -59,6 +60,8 @@ const server = app.listen(port, async () => {
   if (validatePaychanguConfig()) {
     // Start payment verification background job
     // paymentVerificationJob.start();
+    // Start withdrawal verification background job
+    // withdrawalVerificationJob.start();
   }
 });
 
@@ -66,6 +69,7 @@ const server = app.listen(port, async () => {
 process.on('SIGTERM', async () => {
   console.log('SIGTERM signal received: closing HTTP server');
   paymentVerificationJob.stop();
+  withdrawalVerificationJob.stop();
   await redisClient.disconnect();
   server.close(() => {
     console.log('HTTP server closed');
@@ -75,6 +79,7 @@ process.on('SIGTERM', async () => {
 process.on('SIGINT', async () => {
   console.log('SIGINT signal received: closing HTTP server');
   paymentVerificationJob.stop();
+  withdrawalVerificationJob.stop();
   await redisClient.disconnect();
   server.close(() => {
     console.log('HTTP server closed');

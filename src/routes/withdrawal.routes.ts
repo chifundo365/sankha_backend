@@ -16,6 +16,18 @@ const router = Router();
 // ==================== SELLER ROUTES ====================
 
 /**
+ * @route   GET /api/withdrawals/destinations
+ * @desc    Get available payout destinations (banks + MoMo)
+ * @access  Seller
+ */
+router.get(
+  '/destinations',
+  protect,
+  authorize('SELLER', 'ADMIN', 'SUPER_ADMIN'),
+  withdrawalController.getDestinations
+);
+
+/**
  * @route   GET /api/withdrawals/wallet
  * @desc    Get wallet summary with balance and recent transactions
  * @access  Seller

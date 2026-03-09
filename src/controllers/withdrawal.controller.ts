@@ -4,129 +4,133 @@ import { successResponse, errorResponse } from '../utils/response';
 import prisma from '../prismaClient';
 
 /**
- * Request a withdrawal from shop wallet
- * POST /api/withdrawals
- * Seller only
+ * GET /api/withdrawals/destinations
+ * Seller authenticated — returns payout destinations for dropdown
  */
-export const requestWithdrawal = async (req: Request, res: Response) => {
+export const getDestinations = async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
-    const { amount, recipient_phone, recipient_name, provider, shop_id } = req.body;
-
-    // Get seller's shop - specific one or the one with highest balance
-    let shop;
-    if (shop_id) {
-      shop = await prisma.shops.findFirst({
-        where: { owner_id: userId, id: shop_id },
-        select: { id: true, name: true, wallet_balance: true }
-      });
-    } else {
-      shop = await prisma.shops.findFirst({
-        where: { owner_id: userId },
-        select: { id: true, name: true, wallet_balance: true },
-        orderBy: { wallet_balance: 'desc' }
-      });
-    }
-
-    if (!shop) {
-      return errorResponse(res, 'You do not have a shop', 404);
-    }
-
-    const result = await withdrawalService.requestWithdrawal({
-      shopId: shop.id,
-      amount,
-      recipientPhone: recipient_phone,
-      recipientName: recipient_name,
-      provider,
+    const destinations = await withdrawalService.getPayoutDestinations();
+    return successResponse(res, 'Payout destinations retrieved', {
+      destinations: destinations.map(d => ({
+        uuid: d.uuid,
+        name: d.name,
+        type: d.type,
+      })),
     });
-
-    if (!result.success) {
-      const statusCode = result.errorCode === 'VALIDATION_ERROR' ? 400 : 500;
-      return errorResponse(res, result.error || 'Withdrawal request failed', statusCode);
-    }
-
-    return successResponse(res, 'Withdrawal request submitted successfully', {
-      withdrawal: {
-        id: result.withdrawal.id,
-        amount: Number(result.withdrawal.amount),
-        fee: Number(result.withdrawal.fee),
-        net_amount: Number(result.withdrawal.net_amount),
-        recipient_phone: result.withdrawal.recipient_phone,
-        recipient_name: result.withdrawal.recipient_name,
-        provider: result.withdrawal.provider,
-        status: result.withdrawal.status,
-        tx_ref: result.withdrawal.tx_ref,
-        requested_at: result.withdrawal.requested_at,
-      },
-      new_balance: Number(result.withdrawal.balance_after),
-    }, 201);
   } catch (error) {
-    console.error('Request withdrawal error:', error);
-    return errorResponse(res, 'Failed to request withdrawal', 500);
+    console.error('Get destinations error:', error);
+    return errorResponse(res, 'Failed to retrieve payout destinations', 500);
   }
 };
 
 /**
- * Get my withdrawals
+ * POST /api/withdrawals
+ * Seller authenticated — initiate a withdrawal
+ * Body: { amount, destination_uuid, account_number, account_name }
+ * CRITICAL: account_number and account_name NEVER appear in response, logs, or DB
+ */
+export const initiateWithdrawal = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { amount, destination_uuid, account_number, account_name, shop_id } = req.body;
+
+    // Get seller's shop
+    let shop;
+    if (shop_id) {
+      shop = await prisma.shops.findFirst({
+        where: { owner_id: userId, id: shop_id },
+        select: { id: true },
+      });
+    } else {
+      shop = await prisma.shops.findFirst({
+        where: { owner_id: userId },
+        select: { id: true },
+        orderBy: { wallet_balance: 'desc' },
+      });
+    }
+
+    if (!shop) {
+      return errorResponse(res, 'You do not have a shop', null, 404);
+    }
+
+    // Calculate fees for the response message
+    const destination = await withdrawalService.getDestinationByUuid(destination_uuid);
+    const fees = destination
+      ? withdrawalService.calculateWithdrawalFees(amount, destination.type)
+      : null;
+
+    await withdrawalService.processWithdrawal({
+      shop_id: shop.id,
+      amount,
+      destination_uuid,
+      account_number,
+      account_name,
+    });
+
+    const netDisplay = fees ? `MWK ${fees.netAmount.toLocaleString()}` : 'your payout';
+
+    return successResponse(
+      res,
+      `Withdrawal initiated. You will receive ${netDisplay} after fees. We will notify you when complete.`,
+      undefined,
+      201,
+    );
+  } catch (error: any) {
+    const message = error.message || 'Withdrawal request failed';
+    const isValidation = [
+      'Insufficient wallet balance',
+      'Minimum withdrawal',
+      'Maximum withdrawal',
+      'Please select',
+      'Account number is required',
+      'Account name is required',
+      'Invalid payout destination',
+      'Shop not found',
+    ].some(v => message.includes(v));
+    return errorResponse(res, message, null, isValidation ? 400 : 500);
+  }
+};
+
+/**
  * GET /api/withdrawals
- * Seller only
+ * Seller authenticated — withdrawal history
+ * Returns safe fields only (destination name, never raw uuid or account info)
  */
 export const getMyWithdrawals = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { status, page, limit, shop_id } = req.query;
 
-    // Get seller's shops
     const shops = await prisma.shops.findMany({
       where: { owner_id: userId },
-      select: { id: true }
+      select: { id: true },
     });
 
     if (shops.length === 0) {
-      return errorResponse(res, 'You do not have a shop', 404);
+      return errorResponse(res, 'You do not have a shop', null, 404);
     }
 
-    // Filter by specific shop or get all
-    const shopIds = shop_id 
-      ? [shop_id as string] 
-      : shops.map(s => s.id);
+    const targetShopId = shop_id ? (shop_id as string) : shops[0].id;
 
-    const result = await withdrawalService.getShopWithdrawals(shopIds[0], {
+    const result = await withdrawalService.getShopWithdrawals(targetShopId, {
       status: status as any,
       page: page ? parseInt(page as string) : 1,
       limit: limit ? parseInt(limit as string) : 20,
     });
 
-    // If no specific shop, get all withdrawals across all shops
-    let allWithdrawals = result.withdrawals;
-    if (!shop_id && shops.length > 1) {
-      for (let i = 1; i < shopIds.length; i++) {
-        const moreResult = await withdrawalService.getShopWithdrawals(shopIds[i], {
-          status: status as any,
-          page: 1,
-          limit: 100, // Get all for now
-        });
-        allWithdrawals = [...allWithdrawals, ...moreResult.withdrawals];
-      }
-      // Sort by date
-      allWithdrawals.sort((a, b) => 
-        new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
-      );
-    }
+    // Look up destination names for display
+    const destinations = await withdrawalService.getPayoutDestinations();
+    const destMap = new Map(destinations.map(d => [d.uuid, d.name]));
 
     return successResponse(res, 'Withdrawals retrieved successfully', {
-      withdrawals: allWithdrawals.map(w => ({
+      withdrawals: result.withdrawals.map(w => ({
         id: w.id,
         amount: Number(w.amount),
-        fee: Number(w.fee),
         net_amount: Number(w.net_amount),
-        recipient_phone: w.recipient_phone,
-        recipient_name: w.recipient_name,
-        provider: w.provider,
         status: w.status,
-        tx_ref: w.tx_ref,
-        payout_reference: w.payout_reference,
-        requested_at: w.requested_at,
+        payout_method: w.payout_method,
+        destination_name: w.destination_uuid ? destMap.get(w.destination_uuid) || 'Unknown' : w.provider || 'N/A',
+        created_at: w.created_at,
         completed_at: w.completed_at,
         failure_reason: w.failure_reason,
       })),
@@ -134,48 +138,49 @@ export const getMyWithdrawals = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Get withdrawals error:', error);
-    return errorResponse(res, 'Failed to retrieve withdrawals', 500);
+    return errorResponse(res, 'Failed to retrieve withdrawals', null, 500);
   }
 };
 
 /**
- * Get withdrawal details
  * GET /api/withdrawals/:id
- * Seller only
+ * Seller authenticated — must own the shop
+ * Returns safe fields (destination name, never account info)
  */
-export const getWithdrawal = async (req: Request, res: Response) => {
+export const getWithdrawalById = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
 
     const withdrawal = await withdrawalService.getWithdrawal(id);
-
     if (!withdrawal) {
-      return errorResponse(res, 'Withdrawal not found', 404);
+      return errorResponse(res, 'Withdrawal not found', null, 404);
     }
 
-    // Check ownership
     const shop = await prisma.shops.findFirst({
-      where: { owner_id: userId, id: withdrawal.shop_id }
+      where: { owner_id: userId, id: withdrawal.shop_id },
     });
-
     if (!shop) {
-      return errorResponse(res, 'Unauthorized', 403);
+      return errorResponse(res, 'Unauthorized', null, 403);
+    }
+
+    // Resolve destination name
+    let destinationName = 'N/A';
+    if (withdrawal.destination_uuid) {
+      const dest = await withdrawalService.getDestinationByUuid(withdrawal.destination_uuid);
+      destinationName = dest?.name || 'Unknown';
     }
 
     return successResponse(res, 'Withdrawal retrieved successfully', {
       id: withdrawal.id,
       amount: Number(withdrawal.amount),
-      fee: Number(withdrawal.fee),
       net_amount: Number(withdrawal.net_amount),
-      recipient_phone: withdrawal.recipient_phone,
-      recipient_name: withdrawal.recipient_name,
-      provider: withdrawal.provider,
+      paychangu_fee: withdrawal.paychangu_fee ? Number(withdrawal.paychangu_fee) : null,
+      bank_fee: withdrawal.bank_fee ? Number(withdrawal.bank_fee) : null,
+      debt_deducted: Number(withdrawal.debt_deducted),
       status: withdrawal.status,
-      tx_ref: withdrawal.tx_ref,
-      payout_reference: withdrawal.payout_reference,
-      balance_before: Number(withdrawal.balance_before),
-      balance_after: Number(withdrawal.balance_after),
+      payout_method: withdrawal.payout_method,
+      destination_name: destinationName,
       requested_at: withdrawal.requested_at,
       processed_at: withdrawal.processed_at,
       completed_at: withdrawal.completed_at,
@@ -185,9 +190,15 @@ export const getWithdrawal = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Get withdrawal error:', error);
-    return errorResponse(res, 'Failed to retrieve withdrawal', 500);
+    return errorResponse(res, 'Failed to retrieve withdrawal', null, 500);
   }
 };
+
+// ─── EXISTING ENDPOINTS (kept for backward compat) ──────────────
+
+export const requestWithdrawal = initiateWithdrawal;
+
+export const getWithdrawal = getWithdrawalById;
 
 /**
  * Cancel a pending withdrawal
@@ -330,9 +341,8 @@ export const adminGetPendingWithdrawals = async (req: Request, res: Response) =>
         amount: Number(w.amount),
         fee: Number(w.fee),
         net_amount: Number(w.net_amount),
-        recipient_phone: w.recipient_phone,
-        recipient_name: w.recipient_name,
-        provider: w.provider,
+        payout_method: w.payout_method,
+        destination_uuid: w.destination_uuid,
         tx_ref: w.tx_ref,
         requested_at: w.requested_at,
       })),
@@ -351,25 +361,9 @@ export const adminProcessWithdrawal = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const result = await withdrawalService.processWithdrawal(id);
-
-    if (!result.success) {
-      // If API unavailable, return info about manual processing
-      if (result.errorCode === 'API_UNAVAILABLE') {
-        return successResponse(res, result.error || 'Queued for manual processing', {
-          withdrawal_id: id,
-          status: 'PENDING',
-          needs_manual_processing: true,
-        }, 202);
-      }
-
-      const statusCode = result.errorCode === 'NOT_FOUND' ? 404 : 400;
-      return errorResponse(res, result.error || 'Failed to process withdrawal', statusCode);
-    }
-
-    return successResponse(res, 'Withdrawal processed successfully', {
-      withdrawal: result.withdrawal,
-    });
+    // Admin process is deprecated in the new flow — withdrawals are initiated directly by sellers.
+    // Keeping this endpoint for legacy compatibility.
+    return errorResponse(res, 'Admin manual processing is deprecated. Sellers now initiate withdrawals directly.', null, 410);
   } catch (error) {
     console.error('Admin process withdrawal error:', error);
     return errorResponse(res, 'Failed to process withdrawal', 500);
@@ -439,9 +433,12 @@ export const adminFailWithdrawal = async (req: Request, res: Response) => {
 };
 
 export const withdrawalController = {
+  getDestinations,
+  initiateWithdrawal,
   requestWithdrawal,
   getMyWithdrawals,
   getWithdrawal,
+  getWithdrawalById,
   cancelWithdrawal,
   getWalletSummary,
   adminGetPendingWithdrawals,

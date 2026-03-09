@@ -1,26 +1,27 @@
 import { z } from 'zod';
 
 /**
- * Schema for requesting a withdrawal
+ * Schema for requesting a withdrawal (new PayChangu destination-based flow)
  */
 export const requestWithdrawalSchema = z.object({
   body: z.object({
     amount: z
       .number({ message: 'Amount is required' })
       .positive('Amount must be positive')
-      .min(1000, 'Minimum withdrawal is MWK 1,000')
+      .min(5000, 'Minimum withdrawal is MWK 5,000')
       .max(5000000, 'Maximum withdrawal is MWK 5,000,000'),
-    recipient_phone: z
-      .string({ message: 'Recipient phone number is required' })
-      .min(10, 'Phone number must be at least 10 characters')
-      .max(20, 'Phone number must not exceed 20 characters')
-      .regex(/^(\+?265|0)?[89]\d{8}$/, 'Invalid Malawi phone number format'),
-    recipient_name: z
-      .string({ message: 'Recipient name is required' })
-      .min(2, 'Recipient name must be at least 2 characters')
-      .max(255, 'Recipient name must not exceed 255 characters'),
-    provider: z
-      .enum(['airtel_mw', 'tnm_mw'], { message: 'Provider must be airtel_mw or tnm_mw' })
+    destination_uuid: z
+      .string({ message: 'Payout destination is required' })
+      .min(1, 'Please select a payout destination'),
+    account_number: z
+      .string({ message: 'Account number is required' })
+      .min(1, 'Account number is required'),
+    account_name: z
+      .string({ message: 'Account name is required' })
+      .min(1, 'Account name is required'),
+    shop_id: z
+      .string()
+      .uuid('Invalid shop ID format')
       .optional(),
   }),
 });
@@ -40,7 +41,7 @@ export const getWithdrawalSchema = z.object({
 export const listWithdrawalsSchema = z.object({
   query: z.object({
     status: z
-      .enum(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'CANCELLED'])
+      .enum(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'CANCELLED', 'DEBT_CLEARED'])
       .optional(),
     page: z
       .string()

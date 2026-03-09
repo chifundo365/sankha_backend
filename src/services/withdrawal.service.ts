@@ -2,29 +2,28 @@ import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import prisma from '../prismaClient';
 import { paychanguConfig } from '../config/paychangu.config';
-import { Prisma, withdrawal_status, transaction_type, transaction_status } from '../../generated/prisma';
+import { Prisma, withdrawal_status } from '../../generated/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
+import { sendSms } from './sms.service';
 
-// Withdrawal fee configuration
+// ─── CONSTANTS ─────────────────────────────────────────────────────
 const WITHDRAWAL_CONFIG = {
-  MIN_AMOUNT: 1000,           // Minimum withdrawal: 1,000 MWK
-  MAX_AMOUNT: 5000000,        // Maximum withdrawal: 5,000,000 MWK
-  PLATFORM_FEE_PERCENT: 0,    // Platform fee (0% for now, PayChangu charges separately)
-  PAYCHANGU_FEE_PERCENT: 1.7, // PayChangu payout fee (blueprint Section 3)
+  MIN_AMOUNT: 5000,
+  MAX_AMOUNT: 5000000,
+  PAYCHANGU_FEE_PERCENT: 1.7,
+  BANK_FEE_MWK: 700,
+  CACHE_TTL_HOURS: 24,
 };
 
-// Supported mobile money providers in Malawi
-const MOBILE_PROVIDERS = {
-  AIRTEL: 'airtel_mw',
-  TNM: 'tnm_mw',
-};
+const MOMO_NAMES = ['Airtel Money', 'TNM Mpamba'];
 
-export interface WithdrawalRequestData {
-  shopId: string;
-  amount: number;
-  recipientPhone: string;
-  recipientName: string;
-  provider?: string; // airtel_mw or tnm_mw
+// ─── TYPES ─────────────────────────────────────────────────────────
+export interface PayoutOperator {
+  id: string;
+  uuid: string;
+  name: string;
+  type: 'MOBILE_MONEY' | 'BANK';
+  is_active: boolean;
 }
 
 export interface WithdrawalResult {
@@ -34,20 +33,7 @@ export interface WithdrawalResult {
   errorCode?: string;
 }
 
-export interface PaychanguPayoutResponse {
-  status: string;
-  message: string;
-  data?: {
-    reference?: string;
-    tx_ref?: string;
-    status?: string;
-  };
-}
-
-/**
- * Withdrawal Service
- * Handles seller payouts from their Sankha wallet
- */
+// ─── WITHDRAWAL SERVICE ────────────────────────────────────────────
 class WithdrawalService {
   private apiBase: string;
   private secretKey: string;
@@ -57,451 +43,462 @@ class WithdrawalService {
     this.secretKey = paychanguConfig.secretKey;
   }
 
+  // ─── STEP 1: DESTINATION FETCHING & CACHING ─────────────────────
+
   /**
-   * Generate unique transaction reference for payout
+   * Fetch payout destinations from cache or PayChangu API.
+   * Uses payout_operators table as a 24-hour cache.
    */
+  async getPayoutDestinations(): Promise<PayoutOperator[]> {
+    const cutoff = new Date(Date.now() - WITHDRAWAL_CONFIG.CACHE_TTL_HOURS * 60 * 60 * 1000);
+    const cachedCount = await prisma.payout_operators.count({
+      where: { cached_at: { gte: cutoff } },
+    });
+
+    if (cachedCount > 0) {
+      const operators = await prisma.payout_operators.findMany({
+        where: { is_active: true },
+        orderBy: { name: 'asc' },
+      });
+      return operators.map(op => ({
+        id: op.id,
+        uuid: op.uuid,
+        name: op.name,
+        type: op.type as 'MOBILE_MONEY' | 'BANK',
+        is_active: op.is_active,
+      }));
+    }
+
+    // Cache is stale or empty — fetch from PayChangu
+    try {
+      const response = await axios.get(`${this.apiBase}/banks`, {
+        headers: {
+          Authorization: `Bearer ${this.secretKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 15000,
+      });
+
+      if (response.data?.status !== 'success' || !Array.isArray(response.data?.data)) {
+        throw new Error('Unexpected response from PayChangu banks endpoint');
+      }
+
+      const now = new Date();
+      for (const item of response.data.data) {
+        const inferredType = MOMO_NAMES.some(m => item.name?.includes(m))
+          ? 'MOBILE_MONEY'
+          : 'BANK';
+
+        await prisma.payout_operators.upsert({
+          where: { uuid: item.uuid },
+          create: {
+            uuid: item.uuid,
+            name: item.name,
+            type: inferredType,
+            is_active: true,
+            cached_at: now,
+          },
+          update: {
+            name: item.name,
+            type: inferredType,
+            is_active: true,
+            cached_at: now,
+          },
+        });
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch payout destinations from PayChangu:', error.message);
+    }
+
+    const operators = await prisma.payout_operators.findMany({
+      where: { is_active: true },
+      orderBy: { name: 'asc' },
+    });
+
+    return operators.map(op => ({
+      id: op.id,
+      uuid: op.uuid,
+      name: op.name,
+      type: op.type as 'MOBILE_MONEY' | 'BANK',
+      is_active: op.is_active,
+    }));
+  }
+
+  /**
+   * Look up a single payout destination by PayChangu uuid.
+   */
+  async getDestinationByUuid(uuid: string): Promise<PayoutOperator | null> {
+    const destinations = await this.getPayoutDestinations();
+    return destinations.find(d => d.uuid === uuid) || null;
+  }
+
+  // ─── STEP 2: PAYOUT INITIATION (STUBS) ──────────────────────────
+
+  /**
+   * Initiate a payout via PayChangu.
+   *
+   * CRITICAL: account_number and account_name are passed through to the
+   * API call only — they are NEVER stored in the database or logged.
+   */
+  async initiatePayout(params: {
+    destination_uuid: string;
+    account_number: string;
+    account_name: string;
+    amount: number;
+    withdrawal_id: string;
+    type: 'MOBILE_MONEY' | 'BANK';
+  }): Promise<{ charge_id: string }> {
+    // TODO: MANUAL COMPLETION REQUIRED — Replace this stub with real PayChangu payout API calls.
+    //
+    // For MOBILE_MONEY:
+    //   Endpoint: TODO — confirm from https://developer.paychangu.com/reference/mobile-money-payout
+    //   Payload:  TODO — confirm field names (likely: uuid, mobile, amount, etc.)
+    //   Example:
+    //     const response = await axios.post(`${this.apiBase}/mobile-money/payouts`, {
+    //       uuid: params.destination_uuid,
+    //       mobile: params.account_number,
+    //       amount: params.amount,
+    //     }, { headers: { Authorization: `Bearer ${this.secretKey}` } });
+    //
+    // For BANK:
+    //   Endpoint: TODO — confirm from https://developer.paychangu.com/reference/bank-payout
+    //   Payload:  TODO — confirm field names (likely: uuid, account_number, account_name, amount, etc.)
+    //   Example:
+    //     const response = await axios.post(`${this.apiBase}/bank/payouts`, {
+    //       uuid: params.destination_uuid,
+    //       account_number: params.account_number,
+    //       account_name: params.account_name,
+    //       amount: params.amount,
+    //     }, { headers: { Authorization: `Bearer ${this.secretKey}` } });
+    //
+    // Both should:
+    //   - Use Authorization: Bearer {PAYCHANGU_SECRET_KEY}
+    //   - Return charge_id from response
+    //   - Throw error on non-success status
+
+    // STUB IMPLEMENTATION (replace when API details confirmed):
+    return { charge_id: `STUB-${params.withdrawal_id}-${Date.now()}` };
+  }
+
+  // ─── STEP 3: PAYOUT VERIFICATION (STUBS) ────────────────────────
+
+  /**
+   * Verify payout status with PayChangu.
+   */
+  async verifyPayout(params: {
+    charge_id: string;
+    type: 'MOBILE_MONEY' | 'BANK';
+  }): Promise<'SUCCESS' | 'FAILED' | 'PENDING'> {
+    // TODO: MANUAL COMPLETION REQUIRED — Replace this stub with real PayChangu verification calls.
+    //
+    // For MOBILE_MONEY:
+    //   Endpoint: TODO — confirm from https://developer.paychangu.com/reference/single-charge-details-copy
+    //   GET https://api.paychangu.com/[endpoint]/{charge_id}
+    //
+    // For BANK:
+    //   Endpoint: TODO — confirm from https://developer.paychangu.com/reference/single-bank-payout-details
+    //   GET https://api.paychangu.com/[endpoint]/{charge_id}
+    //
+    // Both should:
+    //   - Use Authorization: Bearer {PAYCHANGU_SECRET_KEY}
+    //   - Map response status to: 'SUCCESS' | 'FAILED' | 'PENDING'
+    //
+    // Example:
+    //   const response = await axios.get(
+    //     `${this.apiBase}/[endpoint]/${params.charge_id}`,
+    //     { headers: { Authorization: `Bearer ${this.secretKey}` } }
+    //   );
+    //   const status = response.data?.data?.status;
+    //   if (status === 'success') return 'SUCCESS';
+    //   if (status === 'failed') return 'FAILED';
+    //   return 'PENDING';
+
+    // STUB IMPLEMENTATION (replace when API details confirmed):
+    return 'PENDING';
+  }
+
+  // ─── FEE CALCULATION ────────────────────────────────────────────
+
+  calculateWithdrawalFees(amount: number, type: 'MOBILE_MONEY' | 'BANK'): {
+    paychanguFee: number;
+    bankFee: number;
+    netAmount: number;
+  } {
+    const paychanguFee = Math.ceil(amount * (WITHDRAWAL_CONFIG.PAYCHANGU_FEE_PERCENT / 100));
+    const bankFee = type === 'BANK' ? WITHDRAWAL_CONFIG.BANK_FEE_MWK : 0;
+    const netAmount = amount - paychanguFee - bankFee;
+    return { paychanguFee, bankFee, netAmount };
+  }
+
+  // ─── DEBT DEDUCTION ─────────────────────────────────────────────
+
+  async handleDebtDeduction(params: {
+    shop_id: string;
+    requested_amount: number;
+    seller_debt_balance: number;
+  }): Promise<{
+    proceed: boolean;
+    adjusted_amount: number;
+    debt_deducted: number;
+    sms_message: string;
+  }> {
+    const { requested_amount, seller_debt_balance } = params;
+
+    if (seller_debt_balance <= 0) {
+      return {
+        proceed: true,
+        adjusted_amount: requested_amount,
+        debt_deducted: 0,
+        sms_message: '',
+      };
+    }
+
+    if (seller_debt_balance >= requested_amount) {
+      const remaining = seller_debt_balance - requested_amount;
+      return {
+        proceed: false,
+        adjusted_amount: 0,
+        debt_deducted: requested_amount,
+        sms_message:
+          `Your withdrawal of MWK ${requested_amount.toLocaleString()} was applied to your ` +
+          `outstanding balance of MWK ${seller_debt_balance.toLocaleString()}. ` +
+          `Remaining debt: MWK ${remaining.toLocaleString()}`,
+      };
+    }
+
+    const adjusted = requested_amount - seller_debt_balance;
+    return {
+      proceed: true,
+      adjusted_amount: adjusted,
+      debt_deducted: seller_debt_balance,
+      sms_message:
+        `MWK ${seller_debt_balance.toLocaleString()} deducted from your withdrawal for a previous ` +
+        `refund. You will receive your payout from MWK ${adjusted.toLocaleString()} after fees.`,
+    };
+  }
+
+  // ─── MAIN ORCHESTRATOR ──────────────────────────────────────────
+
+  /**
+   * Full withdrawal flow: validate → debt → fees → reserve → payout → SMS
+   *
+   * CRITICAL: account_number and account_name are NEVER persisted.
+   * They exist only as function parameters passed to the PayChangu API call.
+   */
+  async processWithdrawal(params: {
+    shop_id: string;
+    amount: number;
+    destination_uuid: string;
+    account_number: string;
+    account_name: string;
+  }): Promise<void> {
+    const { shop_id, amount, destination_uuid, account_number, account_name } = params;
+
+    // ── 1. VALIDATE ──────────────────────────────────────────────
+    const shop = await prisma.shops.findUnique({
+      where: { id: shop_id },
+      select: {
+        id: true,
+        name: true,
+        wallet_balance: true,
+        seller_debt_balance: true,
+        owner_id: true,
+        phone: true,
+      },
+    });
+
+    if (!shop) throw new Error('Shop not found');
+
+    const walletBalance = Number(shop.wallet_balance);
+    if (amount > walletBalance) throw new Error('Insufficient wallet balance');
+    if (amount < WITHDRAWAL_CONFIG.MIN_AMOUNT) throw new Error('Minimum withdrawal is MWK 5,000');
+    if (amount > WITHDRAWAL_CONFIG.MAX_AMOUNT) throw new Error('Maximum withdrawal is MWK 5,000,000');
+    if (!destination_uuid) throw new Error('Please select a payout destination');
+    if (!account_number) throw new Error('Account number is required');
+    if (!account_name) throw new Error('Account name is required');
+
+    // ── 2. FETCH DESTINATION ─────────────────────────────────────
+    const destination = await this.getDestinationByUuid(destination_uuid);
+    if (!destination) throw new Error('Invalid payout destination');
+
+    // ── 3. HANDLE DEBT DEDUCTION ─────────────────────────────────
+    const debtResult = await this.handleDebtDeduction({
+      shop_id,
+      requested_amount: amount,
+      seller_debt_balance: Number(shop.seller_debt_balance),
+    });
+
+    if (debtResult.debt_deducted > 0) {
+      await prisma.$transaction([
+        prisma.shops.update({
+          where: { id: shop_id },
+          data: {
+            seller_debt_balance: {
+              decrement: new Prisma.Decimal(debtResult.debt_deducted),
+            },
+          },
+        }),
+        ...(debtResult.proceed
+          ? []
+          : [
+              prisma.withdrawals.create({
+                data: {
+                  shop_id,
+                  amount: new Prisma.Decimal(amount),
+                  fee: new Prisma.Decimal(0),
+                  net_amount: new Prisma.Decimal(0),
+                  status: 'DEBT_CLEARED' as withdrawal_status,
+                  payout_method: destination.type,
+                  destination_uuid,
+                  debt_deducted: new Prisma.Decimal(debtResult.debt_deducted),
+                  balance_before: new Prisma.Decimal(walletBalance),
+                  balance_after: new Prisma.Decimal(walletBalance),
+                },
+              }),
+            ]),
+      ]);
+
+      if (debtResult.sms_message && shop.phone) {
+        try { await sendSms(shop.phone, debtResult.sms_message); } catch (_) {}
+      }
+
+      if (!debtResult.proceed) return;
+    }
+
+    const adjustedAmount = debtResult.adjusted_amount;
+
+    // ── 4. CALCULATE FEES ────────────────────────────────────────
+    const fees = this.calculateWithdrawalFees(adjustedAmount, destination.type as 'MOBILE_MONEY' | 'BANK');
+
+    // ── 5. RESERVE FUNDS ─────────────────────────────────────────
+    const balanceBefore = new Decimal(walletBalance.toString());
+    const balanceAfter = balanceBefore.minus(adjustedAmount);
+    const txRef = `PAYOUT-${uuidv4()}`;
+
+    let withdrawal: any;
+    try {
+      [withdrawal] = await prisma.$transaction([
+        prisma.withdrawals.create({
+          data: {
+            shop_id,
+            amount: new Prisma.Decimal(adjustedAmount),
+            fee: new Prisma.Decimal(fees.paychanguFee + fees.bankFee),
+            net_amount: new Prisma.Decimal(fees.netAmount),
+            paychangu_fee: new Prisma.Decimal(fees.paychanguFee),
+            bank_fee: new Prisma.Decimal(fees.bankFee),
+            debt_deducted: new Prisma.Decimal(debtResult.debt_deducted),
+            status: 'PROCESSING',
+            payout_method: destination.type,
+            destination_uuid,
+            tx_ref: txRef,
+            balance_before: new Prisma.Decimal(balanceBefore.toString()),
+            balance_after: new Prisma.Decimal(balanceAfter.toString()),
+          },
+        }),
+        prisma.shops.update({
+          where: { id: shop_id },
+          data: {
+            wallet_balance: new Prisma.Decimal(balanceAfter.toString()),
+            updated_at: new Date(),
+          },
+        }),
+      ]);
+    } catch (err: any) {
+      throw new Error('Failed to reserve withdrawal funds: ' + err.message);
+    }
+
+    // ── 6. INITIATE PAYOUT ───────────────────────────────────────
+    try {
+      const { charge_id } = await this.initiatePayout({
+        destination_uuid,
+        account_number,
+        account_name,
+        amount: fees.netAmount,
+        withdrawal_id: withdrawal.id,
+        type: destination.type as 'MOBILE_MONEY' | 'BANK',
+      });
+
+      await prisma.withdrawals.update({
+        where: { id: withdrawal.id },
+        data: { charge_id, updated_at: new Date() },
+      });
+    } catch (payoutError: any) {
+      // Payout failed — restore wallet balance and mark withdrawal FAILED
+      await prisma.$transaction([
+        prisma.shops.update({
+          where: { id: shop_id },
+          data: {
+            wallet_balance: { increment: new Prisma.Decimal(adjustedAmount) },
+            updated_at: new Date(),
+          },
+        }),
+        prisma.withdrawals.update({
+          where: { id: withdrawal.id },
+          data: {
+            status: 'FAILED',
+            failed_at: new Date(),
+            failure_reason: payoutError.message || 'Payout initiation failed',
+            updated_at: new Date(),
+          },
+        }),
+      ]);
+
+      if (shop.phone) {
+        try {
+          await sendSms(
+            shop.phone,
+            `Your withdrawal of MWK ${adjustedAmount.toLocaleString()} failed. Your balance has been restored. Please try again or contact support.`,
+          );
+        } catch (_) {}
+      }
+      return;
+    }
+
+    // ── 7. SMS SELLER ────────────────────────────────────────────
+    if (shop.phone) {
+      try {
+        await sendSms(
+          shop.phone,
+          `Your withdrawal of MWK ${adjustedAmount.toLocaleString()} is being processed. ` +
+            `You will receive MWK ${fees.netAmount.toLocaleString()} after fees. ` +
+            `We will notify you when it completes.`,
+        );
+      } catch (_) {}
+    }
+  }
+
+  // ─── LEGACY HELPERS (kept for admin & existing endpoints) ───────
+
   generateTxRef(): string {
     return `PAYOUT-${uuidv4()}`;
   }
 
-  /**
-   * Detect mobile money provider from phone number
-   */
-  detectProvider(phone: string): string {
-    // Malawi phone number patterns
-    // Airtel: 099x, 088x, 098x
-    // TNM: 088x, 0999 (some overlap)
-    const cleanPhone = phone.replace(/\D/g, '');
-    
-    if (cleanPhone.startsWith('265')) {
-      const localNumber = cleanPhone.slice(3);
-      if (localNumber.startsWith('99') || localNumber.startsWith('98')) {
-        return MOBILE_PROVIDERS.AIRTEL;
-      }
-      if (localNumber.startsWith('88') || localNumber.startsWith('89')) {
-        return MOBILE_PROVIDERS.TNM;
-      }
-    } else {
-      if (cleanPhone.startsWith('099') || cleanPhone.startsWith('098')) {
-        return MOBILE_PROVIDERS.AIRTEL;
-      }
-      if (cleanPhone.startsWith('088') || cleanPhone.startsWith('089')) {
-        return MOBILE_PROVIDERS.TNM;
-      }
-    }
-    
-    // Default to Airtel if unknown
-    return MOBILE_PROVIDERS.AIRTEL;
-  }
-
-  /**
-   * Calculate withdrawal fee
-   */
   calculateFee(amount: number): { fee: number; netAmount: number } {
-    const platformFee = amount * (WITHDRAWAL_CONFIG.PLATFORM_FEE_PERCENT / 100);
-    const paychanguFee = amount * (WITHDRAWAL_CONFIG.PAYCHANGU_FEE_PERCENT / 100);
-    const totalFee = Math.ceil(platformFee + paychanguFee);
-    const netAmount = amount - totalFee;
-    
-    return { fee: totalFee, netAmount };
+    const paychanguFee = Math.ceil(amount * (WITHDRAWAL_CONFIG.PAYCHANGU_FEE_PERCENT / 100));
+    return { fee: paychanguFee, netAmount: amount - paychanguFee };
   }
 
-  /**
-   * Validate withdrawal request
-   */
-  async validateWithdrawal(data: WithdrawalRequestData): Promise<{ valid: boolean; error?: string }> {
-    // Check minimum amount
-    if (data.amount < WITHDRAWAL_CONFIG.MIN_AMOUNT) {
-      return { 
-        valid: false, 
-        error: `Minimum withdrawal amount is MWK ${WITHDRAWAL_CONFIG.MIN_AMOUNT.toLocaleString()}` 
-      };
-    }
-
-    // Check maximum amount
-    if (data.amount > WITHDRAWAL_CONFIG.MAX_AMOUNT) {
-      return { 
-        valid: false, 
-        error: `Maximum withdrawal amount is MWK ${WITHDRAWAL_CONFIG.MAX_AMOUNT.toLocaleString()}` 
-      };
-    }
-
-    // Get shop and check balance
-    const shop = await prisma.shops.findUnique({
-      where: { id: data.shopId },
-      select: { id: true, wallet_balance: true, name: true, owner_id: true }
-    });
-
-    if (!shop) {
-      return { valid: false, error: 'Shop not found' };
-    }
-
-    const balance = new Decimal(shop.wallet_balance);
-    if (balance.lessThan(data.amount)) {
-      return { 
-        valid: false, 
-        error: `Insufficient balance. Available: MWK ${balance.toFixed(2)}` 
-      };
-    }
-
-    // Check for pending withdrawals
-    const pendingWithdrawal = await prisma.withdrawals.findFirst({
-      where: {
-        shop_id: data.shopId,
-        status: { in: ['PENDING', 'PROCESSING'] }
-      }
-    });
-
-    if (pendingWithdrawal) {
-      return { 
-        valid: false, 
-        error: 'You have a pending withdrawal. Please wait for it to complete.' 
-      };
-    }
-
-    return { valid: true };
-  }
-
-  /**
-   * Request a withdrawal
-   */
-  async requestWithdrawal(data: WithdrawalRequestData): Promise<WithdrawalResult> {
-    try {
-      // Validate
-      const validation = await this.validateWithdrawal(data);
-      if (!validation.valid) {
-        return { success: false, error: validation.error, errorCode: 'VALIDATION_ERROR' };
-      }
-
-      // Get shop for balance
-      const shop = await prisma.shops.findUnique({
-        where: { id: data.shopId },
-        select: { id: true, wallet_balance: true, name: true }
-      });
-
-      if (!shop) {
-        return { success: false, error: 'Shop not found', errorCode: 'SHOP_NOT_FOUND' };
-      }
-
-      // Calculate fee
-      const { fee, netAmount } = this.calculateFee(data.amount);
-      const provider = data.provider || this.detectProvider(data.recipientPhone);
-      const txRef = this.generateTxRef();
-
-      const balanceBefore = new Decimal(shop.wallet_balance);
-      const balanceAfter = balanceBefore.minus(data.amount);
-
-      // Create withdrawal and transaction in a single transaction
-      const [withdrawal, transaction, updatedShop] = await prisma.$transaction([
-        // Create withdrawal record
-        prisma.withdrawals.create({
-          data: {
-            shop_id: data.shopId,
-            amount: new Prisma.Decimal(data.amount),
-            fee: new Prisma.Decimal(fee),
-            net_amount: new Prisma.Decimal(netAmount),
-            status: 'PENDING',
-            payout_method: 'mobile_money',
-            recipient_phone: data.recipientPhone,
-            recipient_name: data.recipientName,
-            provider,
-            tx_ref: txRef,
-            balance_before: new Prisma.Decimal(balanceBefore.toString()),
-            balance_after: new Prisma.Decimal(balanceAfter.toString()),
-          }
-        }),
-        // Create transaction record
-        prisma.transactions.create({
-          data: {
-            shop_id: data.shopId,
-            type: 'PAYOUT',
-            amount: new Prisma.Decimal(-data.amount), // Negative for withdrawal
-            balance_before: new Prisma.Decimal(balanceBefore.toString()),
-            balance_after: new Prisma.Decimal(balanceAfter.toString()),
-            status: 'PENDING',
-            payout_reference: txRef,
-            description: `Withdrawal to ${data.recipientPhone}`,
-          }
-        }),
-        // Deduct from wallet immediately (hold)
-        prisma.shops.update({
-          where: { id: data.shopId },
-          data: {
-            wallet_balance: new Prisma.Decimal(balanceAfter.toString()),
-            updated_at: new Date(),
-          }
-        })
-      ]);
-
-      // Link transaction to withdrawal
-      await prisma.withdrawals.update({
-        where: { id: withdrawal.id },
-        data: { transaction_id: transaction.id }
-      });
-
-      console.log(`Withdrawal requested: ${txRef} for shop ${shop.name}, amount: ${data.amount}`);
-
-      return {
-        success: true,
-        withdrawal: {
-          ...withdrawal,
-          transaction_id: transaction.id,
-        }
-      };
-    } catch (error: any) {
-      console.error('Withdrawal request error:', error);
-      return { 
-        success: false, 
-        error: error.message || 'Failed to process withdrawal request',
-        errorCode: 'INTERNAL_ERROR'
-      };
-    }
-  }
-
-  /**
-   * Process a pending withdrawal via PayChangu Payout API
-   * Note: This requires PayChangu's payout/disbursement API access
-   */
-  async processWithdrawal(withdrawalId: string): Promise<WithdrawalResult> {
-    try {
-      const withdrawal = await prisma.withdrawals.findUnique({
-        where: { id: withdrawalId },
-        include: { shops: { select: { name: true } } }
-      });
-
-      if (!withdrawal) {
-        return { success: false, error: 'Withdrawal not found', errorCode: 'NOT_FOUND' };
-      }
-
-      if (withdrawal.status !== 'PENDING') {
-        return { success: false, error: `Withdrawal is already ${withdrawal.status}`, errorCode: 'INVALID_STATUS' };
-      }
-
-      // Update status to PROCESSING
-      await prisma.withdrawals.update({
-        where: { id: withdrawalId },
-        data: { 
-          status: 'PROCESSING',
-          processed_at: new Date(),
-          updated_at: new Date()
-        }
-      });
-
-      // Try PayChangu Payout API
-      try {
-        const payoutResult = await this.initiatePaychanguPayout({
-          txRef: withdrawal.tx_ref!,
-          amount: Number(withdrawal.net_amount),
-          phone: withdrawal.recipient_phone,
-          name: withdrawal.recipient_name,
-          provider: withdrawal.provider || 'airtel_mw',
-        });
-
-        if (payoutResult.success) {
-          // Update withdrawal with payout reference
-          const updatedWithdrawal = await prisma.withdrawals.update({
-            where: { id: withdrawalId },
-            data: {
-              payout_reference: payoutResult.reference,
-              status: 'COMPLETED',
-              completed_at: new Date(),
-              updated_at: new Date()
-            }
-          });
-
-          // Update transaction status
-          if (withdrawal.transaction_id) {
-            await prisma.transactions.update({
-              where: { id: withdrawal.transaction_id },
-              data: { status: 'COMPLETED' }
-            });
-          }
-
-          console.log(`Withdrawal completed: ${withdrawal.tx_ref}`);
-          return { success: true, withdrawal: updatedWithdrawal };
-        } else {
-          // Payout failed - revert wallet balance
-          await this.revertWithdrawal(withdrawalId, payoutResult.error || 'Payout failed');
-          return { success: false, error: payoutResult.error, errorCode: 'PAYOUT_FAILED' };
-        }
-      } catch (payoutError: any) {
-        console.error('PayChangu payout error:', payoutError);
-        
-        // For now, mark as needing manual processing
-        await prisma.withdrawals.update({
-          where: { id: withdrawalId },
-          data: {
-            status: 'PENDING', // Keep pending for manual processing
-            failure_reason: `API error: ${payoutError.message}. Needs manual processing.`,
-            updated_at: new Date()
-          }
-        });
-
-        return { 
-          success: false, 
-          error: 'Payout API unavailable. Withdrawal queued for manual processing.',
-          errorCode: 'API_UNAVAILABLE'
-        };
-      }
-    } catch (error: any) {
-      console.error('Process withdrawal error:', error);
-      return { success: false, error: error.message, errorCode: 'INTERNAL_ERROR' };
-    }
-  }
-
-  /**
-   * Initiate PayChangu Payout (Disbursement)
-   * Note: This is a placeholder - actual API may differ
-   */
-  private async initiatePaychanguPayout(data: {
-    txRef: string;
-    amount: number;
-    phone: string;
-    name: string;
-    provider: string;
-  }): Promise<{ success: boolean; reference?: string; error?: string }> {
-    try {
-      // PayChangu Payout API endpoint (hypothetical)
-      // Real endpoint would be documented by PayChangu
-      const response = await axios.post<PaychanguPayoutResponse>(
-        `${this.apiBase}/payout`,
-        {
-          tx_ref: data.txRef,
-          amount: data.amount,
-          currency: 'MWK',
-          phone_number: data.phone,
-          recipient_name: data.name,
-          network: data.provider, // airtel_mw, tnm_mw
-          narration: `Sankha seller payout - ${data.txRef}`,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${this.secretKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (response.data.status === 'success') {
-        return {
-          success: true,
-          reference: response.data.data?.reference || response.data.data?.tx_ref,
-        };
-      } else {
-        return {
-          success: false,
-          error: response.data.message || 'Payout failed',
-        };
-      }
-    } catch (error: any) {
-      // If PayChangu doesn't have payout API or it's not configured
-      if (error.response?.status === 404 || error.response?.status === 403) {
-        throw new Error('PayChangu payout API not available');
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Revert a failed withdrawal - restore wallet balance
-   */
-  async revertWithdrawal(withdrawalId: string, reason: string): Promise<void> {
-    const withdrawal = await prisma.withdrawals.findUnique({
-      where: { id: withdrawalId }
-    });
-
-    if (!withdrawal) return;
-
-    await prisma.$transaction([
-      // Update withdrawal status
-      prisma.withdrawals.update({
-        where: { id: withdrawalId },
-        data: {
-          status: 'FAILED',
-          failed_at: new Date(),
-          failure_reason: reason,
-          updated_at: new Date()
-        }
-      }),
-      // Revert transaction
-      prisma.transactions.update({
-        where: { id: withdrawal.transaction_id! },
-        data: { status: 'FAILED' }
-      }),
-      // Restore wallet balance
-      prisma.shops.update({
-        where: { id: withdrawal.shop_id },
-        data: {
-          wallet_balance: withdrawal.balance_before,
-          updated_at: new Date()
-        }
-      })
-    ]);
-
-    console.log(`Withdrawal reverted: ${withdrawal.tx_ref}, reason: ${reason}`);
-  }
-
-  /**
-   * Cancel a pending withdrawal
-   */
-  async cancelWithdrawal(withdrawalId: string, userId: string): Promise<WithdrawalResult> {
-    const withdrawal = await prisma.withdrawals.findUnique({
-      where: { id: withdrawalId },
-      include: { shops: { select: { owner_id: true } } }
-    });
-
-    if (!withdrawal) {
-      return { success: false, error: 'Withdrawal not found', errorCode: 'NOT_FOUND' };
-    }
-
-    // Check ownership
-    if (withdrawal.shops.owner_id !== userId) {
-      return { success: false, error: 'Unauthorized', errorCode: 'UNAUTHORIZED' };
-    }
-
-    if (withdrawal.status !== 'PENDING') {
-      return { success: false, error: `Cannot cancel withdrawal in ${withdrawal.status} status`, errorCode: 'INVALID_STATUS' };
-    }
-
-    await this.revertWithdrawal(withdrawalId, 'Cancelled by user');
-
-    // Update to CANCELLED
-    const cancelled = await prisma.withdrawals.update({
-      where: { id: withdrawalId },
-      data: { status: 'CANCELLED' }
-    });
-
-    return { success: true, withdrawal: cancelled };
-  }
-
-  /**
-   * Get withdrawal by ID
-   */
   async getWithdrawal(withdrawalId: string) {
     return prisma.withdrawals.findUnique({
       where: { id: withdrawalId },
       include: {
         shops: { select: { id: true, name: true } },
-        transaction: true
-      }
+        transaction: true,
+      },
     });
   }
 
-  /**
-   * Get shop's withdrawal history
-   */
-  async getShopWithdrawals(shopId: string, options?: {
-    status?: withdrawal_status;
-    page?: number;
-    limit?: number;
-  }) {
+  async getShopWithdrawals(
+    shopId: string,
+    options?: { status?: withdrawal_status; page?: number; limit?: number },
+  ) {
     const page = options?.page || 1;
     const limit = options?.limit || 20;
     const skip = (page - 1) * limit;
 
     const where: Prisma.withdrawalsWhereInput = {
       shop_id: shopId,
-      ...(options?.status && { status: options.status })
+      ...(options?.status && { status: options.status }),
     };
 
     const [withdrawals, total] = await Promise.all([
@@ -511,45 +508,67 @@ class WithdrawalService {
         skip,
         take: limit,
       }),
-      prisma.withdrawals.count({ where })
+      prisma.withdrawals.count({ where }),
     ]);
 
     return {
       withdrawals,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     };
   }
 
-  /**
-   * Get all pending withdrawals (for admin processing)
-   */
   async getPendingWithdrawals() {
     return prisma.withdrawals.findMany({
       where: { status: 'PENDING' },
-      include: {
-        shops: { select: { id: true, name: true, owner_id: true } }
-      },
-      orderBy: { created_at: 'asc' }
+      include: { shops: { select: { id: true, name: true, owner_id: true } } },
+      orderBy: { created_at: 'asc' },
     });
   }
 
-  /**
-   * Admin: Manually complete a withdrawal
-   */
-  async adminCompleteWithdrawal(withdrawalId: string, reference: string): Promise<WithdrawalResult> {
+  async revertWithdrawal(withdrawalId: string, reason: string): Promise<void> {
+    const withdrawal = await prisma.withdrawals.findUnique({ where: { id: withdrawalId } });
+    if (!withdrawal) return;
+
+    await prisma.$transaction([
+      prisma.withdrawals.update({
+        where: { id: withdrawalId },
+        data: {
+          status: 'FAILED',
+          failed_at: new Date(),
+          failure_reason: reason,
+          updated_at: new Date(),
+        },
+      }),
+      ...(withdrawal.transaction_id
+        ? [prisma.transactions.update({ where: { id: withdrawal.transaction_id }, data: { status: 'FAILED' } })]
+        : []),
+      prisma.shops.update({
+        where: { id: withdrawal.shop_id },
+        data: { wallet_balance: withdrawal.balance_before, updated_at: new Date() },
+      }),
+    ]);
+  }
+
+  async cancelWithdrawal(withdrawalId: string, userId: string): Promise<WithdrawalResult> {
     const withdrawal = await prisma.withdrawals.findUnique({
-      where: { id: withdrawalId }
+      where: { id: withdrawalId },
+      include: { shops: { select: { owner_id: true } } },
     });
+    if (!withdrawal) return { success: false, error: 'Withdrawal not found', errorCode: 'NOT_FOUND' };
+    if (withdrawal.shops.owner_id !== userId) return { success: false, error: 'Unauthorized', errorCode: 'UNAUTHORIZED' };
+    if (withdrawal.status !== 'PENDING') return { success: false, error: `Cannot cancel withdrawal in ${withdrawal.status} status`, errorCode: 'INVALID_STATUS' };
 
-    if (!withdrawal) {
-      return { success: false, error: 'Withdrawal not found', errorCode: 'NOT_FOUND' };
-    }
+    await this.revertWithdrawal(withdrawalId, 'Cancelled by user');
+    const cancelled = await prisma.withdrawals.update({
+      where: { id: withdrawalId },
+      data: { status: 'CANCELLED' },
+    });
+    return { success: true, withdrawal: cancelled };
+  }
 
+  async adminCompleteWithdrawal(withdrawalId: string, reference: string): Promise<WithdrawalResult> {
+    const withdrawal = await prisma.withdrawals.findUnique({ where: { id: withdrawalId } });
+    if (!withdrawal) return { success: false, error: 'Withdrawal not found', errorCode: 'NOT_FOUND' };
     if (!['PENDING', 'PROCESSING'].includes(withdrawal.status)) {
       return { success: false, error: `Cannot complete withdrawal in ${withdrawal.status} status`, errorCode: 'INVALID_STATUS' };
     }
@@ -557,45 +576,23 @@ class WithdrawalService {
     const [updatedWithdrawal] = await prisma.$transaction([
       prisma.withdrawals.update({
         where: { id: withdrawalId },
-        data: {
-          status: 'COMPLETED',
-          payout_reference: reference,
-          completed_at: new Date(),
-          updated_at: new Date()
-        }
+        data: { status: 'COMPLETED', payout_reference: reference, completed_at: new Date(), updated_at: new Date() },
       }),
-      prisma.transactions.update({
-        where: { id: withdrawal.transaction_id! },
-        data: { status: 'COMPLETED', payout_reference: reference }
-      })
+      ...(withdrawal.transaction_id
+        ? [prisma.transactions.update({ where: { id: withdrawal.transaction_id }, data: { status: 'COMPLETED', payout_reference: reference } })]
+        : []),
     ]);
-
-    console.log(`Withdrawal manually completed by admin: ${withdrawal.tx_ref}`);
     return { success: true, withdrawal: updatedWithdrawal };
   }
 
-  /**
-   * Admin: Manually fail a withdrawal
-   */
   async adminFailWithdrawal(withdrawalId: string, reason: string): Promise<WithdrawalResult> {
-    const withdrawal = await prisma.withdrawals.findUnique({
-      where: { id: withdrawalId }
-    });
-
-    if (!withdrawal) {
-      return { success: false, error: 'Withdrawal not found', errorCode: 'NOT_FOUND' };
-    }
-
+    const withdrawal = await prisma.withdrawals.findUnique({ where: { id: withdrawalId } });
+    if (!withdrawal) return { success: false, error: 'Withdrawal not found', errorCode: 'NOT_FOUND' };
     if (!['PENDING', 'PROCESSING'].includes(withdrawal.status)) {
       return { success: false, error: `Cannot fail withdrawal in ${withdrawal.status} status`, errorCode: 'INVALID_STATUS' };
     }
-
     await this.revertWithdrawal(withdrawalId, reason);
-    
-    const updated = await prisma.withdrawals.findUnique({
-      where: { id: withdrawalId }
-    });
-
+    const updated = await prisma.withdrawals.findUnique({ where: { id: withdrawalId } });
     return { success: true, withdrawal: updated };
   }
 }
