@@ -10,7 +10,7 @@ const WITHDRAWAL_CONFIG = {
   MIN_AMOUNT: 1000,           // Minimum withdrawal: 1,000 MWK
   MAX_AMOUNT: 5000000,        // Maximum withdrawal: 5,000,000 MWK
   PLATFORM_FEE_PERCENT: 0,    // Platform fee (0% for now, PayChangu charges separately)
-  PAYCHANGU_FEE_PERCENT: 1.5, // PayChangu payout fee estimate
+  PAYCHANGU_FEE_PERCENT: 1.7, // PayChangu payout fee (blueprint Section 3)
 };
 
 // Supported mobile money providers in Malawi

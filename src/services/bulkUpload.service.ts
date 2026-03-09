@@ -8,7 +8,7 @@
 import * as XLSX from 'xlsx';
 import prisma from '../prismaClient';
 import { Prisma, listing_status, upload_status, product_condition } from '../../generated/prisma';
-import { PRICE_MARKUP_MULTIPLIER, calculateDisplayPrice } from '../utils/constants';
+import { calculateDisplayPrice } from '../utils/constants';
 import { emailService } from './email.service';
 import { bulkUploadSummaryTemplate } from '../templates/email.templates';
 import { normalizeProductName } from '../types/bulkUpload.types';

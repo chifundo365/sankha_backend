@@ -92,6 +92,11 @@ export const addToCart = async (req: Request, res: Response) => {
       return errorResponse(res, "This product is currently unavailable", 400);
     }
 
+    // Reject products with no base_price — seller payout cannot be computed
+    if (shopProduct.base_price == null) {
+      return errorResponse(res, "Product pricing is incomplete. Please contact the seller.", 400);
+    }
+
     // 2. Check stock availability
     if (shopProduct.stock_quantity < quantity) {
       return errorResponse(

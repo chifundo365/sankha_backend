@@ -4,15 +4,7 @@ import { errorResponse, successResponse } from "../utils/response";
 import { Prisma } from "../../generated/prisma";
 import { setListingStatus, isListingAvailable } from "../helpers/listingStatus.helper";
 import { CloudinaryService } from "../services/cloudinary.service";
-import { PRICE_MARKUP_MULTIPLIER, FEES } from "../utils/constants";
-
-/**
- * Calculate display price from base price (seller's net amount)
- * display_price = base_price × 1.0526
- */
-const calculateDisplayPrice = (basePrice: number): number => {
-  return Math.round(basePrice * PRICE_MARKUP_MULTIPLIER * 100) / 100;
-};
+import { calculateDisplayPrice, FEES } from "../utils/constants";
 
 /**
  * Helper function to check if user owns the shop

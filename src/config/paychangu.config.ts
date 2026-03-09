@@ -6,7 +6,9 @@ export const paychanguConfig = {
   apiBase: process.env.PAYCHANGU_API_BASE || 'https://api.paychangu.com',
   secretKey: process.env.PAYCHANGU_SECRET_KEY || '',
   webhookSecretKey: process.env.PAYCHANGU_WEBHOOK_SECRET_KEY || '',
-  callbackUrl: process.env.PAYCHANGU_CALLBACK_URL || 'http://localhost:3000/api/payments/paychangu/callback',
+  // callback_url must point to the webhook route so PayChangu server-to-server
+  // notifications are verified via HMAC signature (see payment.service processWebhook).
+  callbackUrl: process.env.PAYCHANGU_CALLBACK_URL || 'http://localhost:3000/api/payments/webhook',
   returnUrl: process.env.PAYCHANGU_RETURN_URL || 'http://localhost:3000/payment/complete',
   defaultCurrency: process.env.PAYCHANGU_DEFAULT_CURRENCY || 'MWK',
   paymentExpiryMinutes: parseInt(process.env.PAYCHANGU_PAYMENT_EXPIRY_MINUTES || '59', 10),

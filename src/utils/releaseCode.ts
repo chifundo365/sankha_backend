@@ -1,18 +1,19 @@
+import crypto from 'crypto';
 import { RELEASE_CODE } from './constants';
 
 /**
- * Generate a random release code for delivery verification
+ * Generate a cryptographically secure release code for delivery verification
  * Uses charset that excludes confusing characters (I, O, 0, 1)
  */
 export const generateReleaseCode = (): string => {
   const { LENGTH, CHARSET } = RELEASE_CODE;
+  const bytes = crypto.randomBytes(LENGTH);
   let code = '';
-  
+
   for (let i = 0; i < LENGTH; i++) {
-    const randomIndex = Math.floor(Math.random() * CHARSET.length);
-    code += CHARSET[randomIndex];
+    code += CHARSET[bytes[i] % CHARSET.length];
   }
-  
+
   return code;
 };
 

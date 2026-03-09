@@ -7,6 +7,7 @@ import { orderConfirmationService } from "../services/orderConfirmation.service"
 import crypto from 'crypto';
 import { emailService } from '../services/email.service';
 import smsService from '../services/sms.service';
+import { refundService, RefundFault } from '../services/refund.service';
 import { CloudinaryService } from '../services/cloudinary.service';
 
 /**
@@ -65,6 +66,11 @@ export const checkout = async (req: Request, res: Response) => {
       customer_first_name,
       customer_last_name
     } = req.body;
+
+    // Sankha only accepts PayChangu payments
+    if (payment_method !== 'paychangu') {
+      return errorResponse(res, 'Sankha only accepts PayChangu payments', 400);
+    }
 
     // 1. Verify delivery address exists and belongs to user
     const deliveryAddress = await prismaClient.user_addresses.findUnique({
@@ -149,8 +155,10 @@ export const checkout = async (req: Request, res: Response) => {
     const pendingOrders = [];
     const orderIds: string[] = [];
 
-    // Calculate total amount across all carts
-    const totalAmount = carts.reduce((sum, cart) => sum + Number(cart.total_amount), 0);
+    // Calculate total amount across all carts (including delivery fees)
+    let totalAmount = 0;
+    const deliveryFeesByCart = new Map<string, number>();
+    // We'll compute delivery fees per cart first, then use them in the order loop
 
     for (const cart of carts) {
       // Generate order number
@@ -212,6 +220,9 @@ export const checkout = async (req: Request, res: Response) => {
         }
       }
 
+      // Accumulate total: cart items + delivery fee
+      totalAmount += Number(cart.total_amount) + computedDeliveryFee;
+
       const pendingOrder = await prismaClient.orders.update({
         where: { id: cart.id },
         data: {
@@ -252,11 +263,19 @@ export const checkout = async (req: Request, res: Response) => {
         },
       });
 
-      // 5. Reserve stock by reducing quantity (trigger handles logging)
+      // 5. Reserve stock by reducing quantity with row-level lock (trigger handles logging)
       for (const item of cart.order_items) {
         if (item.shop_products) {
           const reason = `Stock reserved - Order ${orderNumber} (${payment_method === "paychangu" ? "pending payment" : "confirmed"})`;
           await prismaClient.$transaction(async (tx) => {
+            // Lock the row to prevent concurrent overselling
+            const [locked] = await tx.$queryRawUnsafe<{ stock_quantity: number }[]>(
+              `SELECT stock_quantity FROM shop_products WHERE id = $1 FOR UPDATE`,
+              item.shop_product_id!
+            );
+            if (!locked || locked.stock_quantity < item.quantity) {
+              throw new Error(`Insufficient stock for ${item.product_name}`);
+            }
             await tx.$executeRawUnsafe(`SET LOCAL app.stock_change_reason = '${reason.replace(/'/g, "''")}'`);
             await tx.shop_products.update({
               where: { id: item.shop_product_id! },
@@ -983,8 +1002,10 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             first_name: true,
             last_name: true,
             email: true,
+            phone_number: true,
           },
         },
+        payments: { take: 1, orderBy: { created_at: 'desc' } },
       },
     });
 
@@ -998,12 +1019,12 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     };
 
     if (messageTypes[status]) {
-      await prismaClient.order_messages.create({
+      const msgRecord = await prismaClient.order_messages.create({
         data: {
           order_id: orderId,
           recipient_type: "CUSTOMER",
           message_type: messageTypes[status],
-          channel: "EMAIL",
+          channel: "SMS",
           subject: `Order ${updatedOrder.order_number} - Status Update`,
           body:
             notes ||
@@ -1011,6 +1032,27 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
           is_sent: false,
         },
       });
+
+      // Fire-and-forget SMS dispatch
+      const buyerPhone = (updatedOrder as any).payments?.[0]?.customer_phone
+        || (updatedOrder.users as any)?.phone_number
+        || '';
+      if (buyerPhone) {
+        (async () => {
+          try {
+            const smsBody = notes || `SANKHA: Order ${updatedOrder.order_number} is now ${status.replace(/_/g, ' ')}.`;
+            const result = await smsService.sendSms(buyerPhone, smsBody);
+            if (result.success) {
+              await prismaClient.order_messages.update({
+                where: { id: msgRecord.id },
+                data: { is_sent: true, sent_at: new Date() },
+              });
+            }
+          } catch (smsErr) {
+            console.error(`SMS dispatch failed for order ${orderId}:`, smsErr);
+          }
+        })();
+      }
     }
 
     return successResponse(
@@ -1179,13 +1221,34 @@ export const cancelOrder = async (req: Request, res: Response) => {
 
     // Update payment status if exists
     if (order.payments.length > 0) {
-      await prismaClient.payments.update({
-        where: { id: order.payments[0].id },
-        data: {
-          status: "CANCELLED",
-          updated_at: new Date(),
-        },
-      });
+      const paidPayment = order.payments.find(p => p.status === 'PAID');
+      
+      if (paidPayment) {
+        // Payment was completed — trigger fault-based refund
+        const fault: RefundFault = isBuyer ? 'BUYER' : (isShopOwner ? 'SELLER' : 'PLATFORM');
+        try {
+          const refundResult = await refundService.processRefund({
+            orderId,
+            fault,
+            reason: reason || `Order cancelled by ${isBuyer ? 'buyer' : isShopOwner ? 'seller' : 'admin'}`,
+            initiatedBy: userId,
+          });
+          if (!refundResult.success) {
+            console.error(`Refund failed for order ${order.order_number}:`, refundResult.error);
+          }
+        } catch (refundError) {
+          console.error(`Refund error for order ${order.order_number}:`, refundError);
+        }
+      } else {
+        // Payment not yet paid — just cancel it
+        await prismaClient.payments.update({
+          where: { id: order.payments[0].id },
+          data: {
+            status: "CANCELLED",
+            updated_at: new Date(),
+          },
+        });
+      }
     }
 
     // Create cancellation notification

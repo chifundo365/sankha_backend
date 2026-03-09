@@ -6,20 +6,29 @@
 // ============ PRICING ============
 
 /**
- * Price markup multiplier for calculating display price from base price
- * - PayChangu fee: 3%
- * - Sankha commission: 2%
- * - Total markup: 5.26% (calculated as 1 / (1 - 0.05) ≈ 1.0526)
+ * Inverse-margin pricing formula (Sankha Financial Blueprint v2)
+ * 
+ * Formula: ceil((vendorPrice + FLAT_FEE) / (1 − COMBINED_MARGIN) / ROUNDING_STEP) × ROUNDING_STEP
+ * 
+ * - FLAT_FEE: MWK 720 (covers SMS + internal ops)
+ * - COMBINED_MARGIN: 7.7% (PayChangu 3% + PayChangu payout 1.7% + Sankha 3%)
+ * - ROUNDING_STEP: MWK 500 (consumer-friendly rounding)
  */
-export const PRICE_MARKUP_MULTIPLIER = 1.0526;
+export const PRICING = {
+  FLAT_FEE: 720,
+  COMBINED_MARGIN_PERCENT: 7.7,
+  ROUNDING_STEP: 500,
+} as const;
 
 /**
- * Calculate display price from base price (applies markup)
- * @param basePrice - The seller's base price
- * @returns Display price with markup applied
+ * Calculate display price from vendor's base price using inverse margin formula.
+ * @param vendorPrice - The seller's base price (MWK)
+ * @returns Consumer-facing price rounded up to nearest ROUNDING_STEP
  */
-export const calculateDisplayPrice = (basePrice: number): number => {
-  return Math.round(basePrice * PRICE_MARKUP_MULTIPLIER);
+export const calculateDisplayPrice = (vendorPrice: number): number => {
+  const { FLAT_FEE, COMBINED_MARGIN_PERCENT, ROUNDING_STEP } = PRICING;
+  const raw = (vendorPrice + FLAT_FEE) / (1 - COMBINED_MARGIN_PERCENT / 100);
+  return Math.ceil(raw / ROUNDING_STEP) * ROUNDING_STEP;
 };
 
 /**
@@ -27,8 +36,10 @@ export const calculateDisplayPrice = (basePrice: number): number => {
  */
 export const FEES = {
   PAYCHANGU_PERCENTAGE: 3,
-  SANKHA_PERCENTAGE: 2,
-  TOTAL_PERCENTAGE: 5.26,
+  PAYCHANGU_PAYOUT_PERCENTAGE: 1.7,
+  SANKHA_PERCENTAGE: 3,
+  FLAT_FEE_MWK: 720,
+  TOTAL_MARGIN_PERCENTAGE: 7.7,
 } as const;
 
 // ============ RELEASE CODES ============

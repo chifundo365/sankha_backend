@@ -186,8 +186,8 @@ class OrderConfirmationService {
         return { success: false, error: 'Invalid release code', errorCode: 'INVALID_CODE' };
       }
 
-      // Calculate seller payout from frozen base_prices
-      const sellerPayout = this.calculateSellerPayout(order.order_items);
+      // Calculate seller payout from frozen base_prices + delivery_fee
+      const sellerPayout = this.calculateSellerPayout(order.order_items, order.delivery_fee);
       
       // Get current wallet balance
       const balanceBefore = order.shops?.wallet_balance || new Decimal(0);
@@ -261,14 +261,21 @@ class OrderConfirmationService {
   }
 
   /**
-   * Calculate seller payout from order items
-   * Uses frozen base_price × quantity for each item
+   * Calculate seller payout from order items + delivery fee
+   * Uses frozen base_price × quantity for each item, plus the delivery_fee
    */
-  private calculateSellerPayout(orderItems: { base_price: Decimal | null; quantity: number }[]): Decimal {
-    return orderItems.reduce((sum, item) => {
+  private calculateSellerPayout(
+    orderItems: { base_price: Decimal | null; quantity: number }[],
+    deliveryFee?: Decimal | number | null
+  ): Decimal {
+    const itemsTotal = orderItems.reduce((sum, item) => {
       const basePrice = item.base_price ? new Decimal(item.base_price) : new Decimal(0);
       return sum.add(basePrice.mul(item.quantity));
     }, new Decimal(0));
+
+    // Add delivery fee — seller receives this in full
+    const fee = deliveryFee ? new Decimal(deliveryFee.toString()) : new Decimal(0);
+    return itemsTotal.add(fee);
   }
 
   /**

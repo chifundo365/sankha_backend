@@ -1,4 +1,5 @@
 import { paymentService } from '../services/payment.service';
+import { orderConfirmationService } from '../services/orderConfirmation.service';
 
 /**
  * Payment Verification Background Job
@@ -64,6 +65,13 @@ class PaymentVerificationJob {
 
       // 2. Verify pending (non-expired) payments
       await this.verifyPendingPayments();
+
+      // 3. Process expired release codes (auto-release funds or flag for review)
+      try {
+        await orderConfirmationService.processExpiredReleaseCodes();
+      } catch (rcError) {
+        console.error('Error processing expired release codes:', rcError);
+      }
 
     } catch (error) {
       console.error('Error in payment verification job:', error);
