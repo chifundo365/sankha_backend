@@ -131,7 +131,22 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
   try {
     const signature = req.headers['signature'] as string;
-    const rawPayload = req.body.toString();
+    // express.raw gives Buffer, convert safely
+    let rawPayload: string;
+    if (Buffer.isBuffer(req.body)) {
+      rawPayload = req.body.toString('utf8');
+    } else {
+      // could already be parsed as object (unexpected); stringify it
+      rawPayload = JSON.stringify(req.body);
+    }
+
+    // debug helpers
+    console.log('Webhook signature header:', signature);
+    console.log('Webhook raw payload string:', rawPayload);
+    console.log('Webhook body constructor:', req.body && req.body.constructor && req.body.constructor.name);
+    // also log whether our calculated signature matches (and show computed hash)
+    const matches = paymentService.validateWebhookSignature(signature, rawPayload);
+    console.log('Signature matches secret?', matches);
 
     if (!signature) {
       console.error('Missing webhook signature');
