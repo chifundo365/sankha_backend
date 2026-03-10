@@ -270,7 +270,8 @@ export const checkout = async (req: Request, res: Response) => {
           await prismaClient.$transaction(async (tx) => {
             // Lock the row to prevent concurrent overselling
             const [locked] = await tx.$queryRawUnsafe<{ stock_quantity: number }[]>(
-              `SELECT stock_quantity FROM shop_products WHERE id = $1 FOR UPDATE`,
+              // cast parameter to uuid to prevent postgres "uuid = text" operator error
+              `SELECT stock_quantity FROM shop_products WHERE id = $1::uuid FOR UPDATE`,
               item.shop_product_id!
             );
             if (!locked || locked.stock_quantity < item.quantity) {
