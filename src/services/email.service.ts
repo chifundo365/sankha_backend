@@ -240,6 +240,9 @@ export const sendNotificationEmail = async (
   });
 };
 
+// Minimal HTML escaper for email templates
+const esc = (s: any): string => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
 /**
  * Send release code to buyer
  */
@@ -287,40 +290,137 @@ export const sendReleaseCodeEmail = async (
     buyerAddress: (data as any).buyerAddress || undefined,
   };
 
-  // Build a buyer-facing email with clear Release Code Action Zone
-  const mapsLink = payload.buyerLocation?.lat && payload.buyerLocation?.lng ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${payload.buyerLocation.lat},${payload.buyerLocation.lng}`)}` : '';
+  // Build links
+  const buyerMapsLink = payload.buyerLocation?.lat && payload.buyerLocation?.lng
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${payload.buyerLocation.lat},${payload.buyerLocation.lng}`)}`
+    : '';
+  const sellerLat = (payload.seller as any)?.lat;
+  const sellerLng = (payload.seller as any)?.lng;
+  const sellerMapsLink = sellerLat != null && sellerLng != null
+    ? `https://www.google.com/maps/search/?api=1&query=${sellerLat},${sellerLng}`
+    : (payload.seller?.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(payload.seller.location)}` : '');
+
+  // Seller contact block parts
+  const sellerPhone = payload.seller?.phoneNumber || '';
+  const sellerCallBtn = sellerPhone
+    ? `<a href="tel:${sellerPhone}" style="display:inline-block;background:#2EC4B6;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">📞 Call Seller</a>`
+    : `<span style="display:inline-block;background:#f1f5f9;color:#94a3b8;padding:10px 16px;border-radius:8px;font-size:14px;">📞 Call Seller</span>`;
+  const sellerMapBtn = sellerMapsLink
+    ? `<a href="${sellerMapsLink}" style="display:inline-block;color:#2EC4B6;text-decoration:none;font-size:13px;margin-top:8px;">📍 View Shop on Google Maps</a>`
+    : `<span style="color:#d97706;font-size:13px;margin-top:8px;display:inline-block;">📍 Shop location unavailable</span>`;
+
+  // Items rows
+  const itemsHtml = (payload.items || []).map(i =>
+    `<tr><td style="padding:10px 8px;border-bottom:1px solid #E6EDF2;">${esc(i.name)}</td><td style="padding:10px 8px;border-bottom:1px solid #E6EDF2;text-align:center;">${i.quantity}</td><td style="padding:10px 8px;border-bottom:1px solid #E6EDF2;text-align:right;">MK ${i.price.toLocaleString()}</td></tr>`
+  ).join('');
 
   const html = `
-  <div style="font-family: Arial, sans-serif; color:#111;">
-    <div style="background:#002147;padding:18px;color:#fff;text-align:left;">
-      <h1 style="margin:0;font-size:20px">Sankha</h1>
-    </div>
-    <div style="padding:20px; background:#fff; border:1px solid #eaeaea;">
-      <p style="font-size:16px;margin:0 0 12px 0">Hi ${payload.userName || 'Customer'},</p>
-      <p style="font-size:16px;margin:0 0 12px 0">Your order <strong>#${payload.orderNumber}</strong> is secured. Share the Release Code only after the recipient confirms they have the goods.</p>
+  <div style="margin:0;padding:0;background:#f5f7fa;font-family:Arial,Helvetica,sans-serif;font-size:16px;">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f5f7fa;padding:28px 12px;">
+      <tr><td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;width:100%;background:#fff;border-radius:12px;overflow:hidden;">
 
-      <div style="background:#FFD700;padding:16px;border-radius:6px;margin:18px 0;text-align:center">
-        <div style="font-size:24px;font-weight:700;letter-spacing:4px;font-family:monospace">${payload.releaseCode || ''}</div>
-        <div style="margin-top:8px;font-size:14px;font-weight:700">Inspection Warning: Do NOT share this code until recipient inspects the items.</div>
-      </div>
-      ${mapsLink ? `<p style="font-size:16px;margin:0 0 12px 0">Delivery anchor: <a href="${mapsLink}">${payload.buyerAddress || 'View map'}</a></p>` : ''}
+          <!-- Header -->
+          <tr>
+            <td style="background:#002147;padding:22px 28px;color:#fff;">
+              <table width="100%" cellpadding="0" cellspacing="0"><tr>
+                <td style="font-weight:800;font-size:20px;color:#fff;">Sankha</td>
+                <td style="font-size:11px;text-align:right;opacity:0.9;text-transform:uppercase;letter-spacing:1px;color:#fff;">Malawi's Trusted Marketplace</td>
+              </tr></table>
+            </td>
+          </tr>
 
-      <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:16px">
-        <tr><td style="padding:6px 8px">Subtotal</td><td style="padding:6px 8px;text-align:right">MWK ${((payload.subtotal||0)).toLocaleString()}</td></tr>
-        <tr><td style="padding:6px 8px">Delivery</td><td style="padding:6px 8px;text-align:right">MWK ${((payload.deliveryFee||0)).toLocaleString()}</td></tr>
-        <tr style="border-top:2px solid #ddd;font-weight:700"><td style="padding:6px 8px">Total</td><td style="padding:6px 8px;text-align:right">MWK ${((payload.total||0)).toLocaleString()}</td></tr>
-      </table>
+          <!-- Body -->
+          <tr>
+            <td style="padding:28px;color:#0F172A;font-size:16px;line-height:1.5;">
 
-      <p style="font-size:16px;margin:12px 0 0 0">Seller: <strong>${payload.seller?.shopName || ''}</strong> — Call: <a href="tel:${payload.seller?.phoneNumber || ''}">${payload.seller?.phoneNumber || 'Not available'}</a></p>
+              <h2 style="margin:0 0 16px;font-size:20px;color:#002147;">Delivery Verification Code</h2>
+              <p style="margin:0 0 16px;">Hi <strong>${esc(payload.userName || 'Customer')}</strong>, your order <strong>#${esc(payload.orderNumber)}</strong> from <strong>${esc(payload.seller?.shopName || 'Seller')}</strong> is confirmed.</p>
 
-      <p style="font-size:14px;color:#666;margin-top:18px">This code releases escrow. Only provide it to the delivery person once the recipient confirms receipt of goods.</p>
-    </div>
+              <!-- Release Code Box -->
+              <div style="border:2px solid #E6EDF2;border-radius:8px;padding:22px;margin:20px 0;text-align:center;">
+                <div style="font-family:'Courier New',monospace;font-size:28px;font-weight:800;letter-spacing:6px;color:#0F172A;">${esc(payload.releaseCode)}</div>
+              </div>
+
+              <!-- Security Notice -->
+              <p style="color:#dc2626;font-size:14px;font-weight:600;margin:0 0 24px;">⚠️ Security Notice: Only share this code in person after you have physically inspected the items. Never share this code via chat, phone, or email.</p>
+
+              <!-- Seller Contact -->
+              <div style="border:1px solid #E6EDF2;border-radius:8px;padding:16px;margin:0 0 16px;">
+                <p style="margin:0 0 8px;font-weight:700;color:#002147;font-size:15px;">Seller Contact</p>
+                <p style="margin:0 0 6px;font-weight:700;">${esc(payload.seller?.shopName || '')}${payload.seller?.location ? ` &bull; ${esc(payload.seller.location)}` : ''}</p>
+                <p style="margin:0 0 10px;font-size:15px;"><strong>Phone:</strong> ${sellerPhone ? `<a href="tel:${sellerPhone}" style="color:#002147;text-decoration:none;font-weight:800;">${esc(sellerPhone)}</a>` : '<span style="color:#94a3b8;">Not available</span>'}</p>
+                <div>${sellerCallBtn}</div>
+                <div style="margin-top:8px;">${sellerMapBtn}</div>
+              </div>
+
+              <!-- Delivery Details -->
+              <div style="border:1px solid #E6EDF2;border-radius:8px;padding:16px;margin:0 0 20px;">
+                <p style="margin:0 0 8px;font-weight:700;color:#002147;font-size:15px;">Delivery Details</p>
+                <p style="margin:0 0 6px;font-size:14px;"><strong>Address:</strong> ${payload.buyerAddress ? esc(payload.buyerAddress) : '<span style="color:#94a3b8;">Not available</span>'}</p>
+                <p style="margin:0 0 6px;font-size:14px;"><strong>Phone:</strong> ${payload.buyerPhone ? `<a href="tel:${payload.buyerPhone}" style="color:#002147;text-decoration:none;">${esc(payload.buyerPhone)}</a>` : '<span style="color:#94a3b8;">Not available</span>'}</p>
+                ${buyerMapsLink ? `<div style="margin-top:8px;"><a href="${buyerMapsLink}" style="color:#2EC4B6;text-decoration:none;font-size:13px;">📍 View Delivery Destination on Google Maps</a></div>` : ''}
+              </div>
+
+              <!-- Order Summary -->
+              <h3 style="margin:0 0 12px;font-size:16px;color:#002147;">Order summary</h3>
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;">
+                <thead>
+                  <tr>
+                    <th style="text-align:left;padding:8px;border-bottom:2px solid #E6EDF2;color:#64748B;font-size:13px;font-weight:600;">Item</th>
+                    <th style="text-align:center;padding:8px;border-bottom:2px solid #E6EDF2;color:#64748B;font-size:13px;font-weight:600;">Qty</th>
+                    <th style="text-align:right;padding:8px;border-bottom:2px solid #E6EDF2;color:#64748B;font-size:13px;font-weight:600;">Price</th>
+                  </tr>
+                </thead>
+                <tbody>${itemsHtml}</tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="2" style="padding:10px 8px 4px;text-align:right;font-weight:700;">Subtotal:</td>
+                    <td style="padding:10px 8px 4px;text-align:right;font-weight:700;">MK ${(payload.subtotal || 0).toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" style="padding:4px 8px;text-align:right;color:#64748B;">Delivery:</td>
+                    <td style="padding:4px 8px;text-align:right;color:#64748B;">MK ${(payload.deliveryFee || 0).toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" style="padding:10px 8px 4px;text-align:right;font-weight:800;font-size:17px;color:#2EC4B6;">Total:</td>
+                    <td style="padding:10px 8px 4px;text-align:right;font-weight:800;font-size:17px;color:#2EC4B6;">MK ${(payload.total || 0).toLocaleString()}</td>
+                  </tr>
+                </tfoot>
+              </table>
+
+              <!-- View Order CTA -->
+              <div style="text-align:center;margin:24px 0 16px;">
+                <a href="${frontend.replace(/\/$/, '')}/orders/${encodeURIComponent(payload.orderId)}" style="display:inline-block;background:#2EC4B6;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;">View Order</a>
+              </div>
+
+              <p style="font-size:13px;color:#64748B;margin:16px 0 0;">If arriving via bus or courier, inspect items at the depot first, then call the seller with your code before releasing payment.</p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:18px 28px;text-align:center;color:#64748B;font-size:12px;border-top:1px solid #E6EDF2;">
+              <div style="margin-bottom:10px;">
+                <a href="https://facebook.com/sankha" style="margin:0 8px;"><img src="https://cdn-icons-png.flaticon.com/32/733/733547.png" width="22" height="22" alt="Facebook" style="border:0;vertical-align:middle;"/></a>
+                <a href="https://instagram.com/sankha" style="margin:0 8px;"><img src="https://cdn-icons-png.flaticon.com/32/733/733558.png" width="22" height="22" alt="Instagram" style="border:0;vertical-align:middle;"/></a>
+                <a href="https://x.com/sankha" style="margin:0 8px;"><img src="https://cdn-icons-png.flaticon.com/32/733/733579.png" width="22" height="22" alt="X" style="border:0;vertical-align:middle;"/></a>
+              </div>
+              &copy; 2026 Sankha &bull; Lilongwe, Malawi.<br/>
+              Secure. Trusted. Community. <a href="${frontend.replace(/\/$/, '')}/support" style="color:#2EC4B6;text-decoration:none;">Support</a>
+            </td>
+          </tr>
+
+        </table>
+      </td></tr>
+    </table>
   </div>
   `;
 
   return sendEmail({
     to: email,
-    subject: `Your Release Code — Order #${payload.orderNumber}`,
+    subject: `Release code for order #${payload.orderNumber}`,
     html,
     tags: [
       { name: 'category', value: 'release-code' },
@@ -330,7 +430,7 @@ export const sendReleaseCodeEmail = async (
 };
 
 /**
- * Send the seller-facing Dispatch Command Center email when order is ready or updated
+ * Send the seller-facing Dispatch email when a new order is confirmed
  */
 export const sendSellerDispatchEmail = async (
   email: string,
@@ -351,45 +451,147 @@ export const sendSellerDispatchEmail = async (
     packageLabelText?: string;
     items?: OrderItem[];
     deliveryFee?: number;
+    buyerTotal?: number;
   }
 ): Promise<EmailResult> => {
-  const mapsLink = data.deliveryLat && data.deliveryLng ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${data.deliveryLat},${data.deliveryLng}`)}` : (data.depotLat && data.depotLng ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${data.depotLat},${data.depotLng}`)}` : '');
+  const frontend = emailConfig.app.url;
+  const sellerEarnings = (data.items || []).reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const buyerTotal = data.buyerTotal ?? sellerEarnings;
+  const mapsLink = data.deliveryLat && data.deliveryLng
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${data.deliveryLat},${data.deliveryLng}`)}`
+    : (data.depotLat && data.depotLng ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${data.depotLat},${data.depotLng}`)}` : '');
 
-  const itemsHtml = (data.items || []).map(i => `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${i.name}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center">${i.quantity}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">MWK ${i.price.toLocaleString()}</td></tr>`).join('');
+  const itemsHtml = (data.items || []).map(i =>
+    `<tr><td style="padding:10px 8px;border-bottom:1px solid #E6EDF2;">${esc(i.name)}</td><td style="padding:10px 8px;border-bottom:1px solid #E6EDF2;text-align:center;">${i.quantity}</td><td style="padding:10px 8px;border-bottom:1px solid #E6EDF2;text-align:right;">MK ${i.price.toLocaleString()}</td></tr>`
+  ).join('');
+
+  const recipientPhone = data.recipientPhone || '';
 
   const html = `
-  <div style="font-family: Arial, sans-serif; color:#111;">
-    <div style="background:#002147;padding:18px;color:#fff;text-align:left;">
-      <h1 style="margin:0;font-size:20px">Dispatch Command Center</h1>
-    </div>
-    <div style="padding:20px; background:#fff; border:1px solid #eaeaea;">
-      <p style="font-size:16px;margin:0 0 12px 0">Order <strong>#${data.orderNumber}</strong> — Please prepare for pickup/delivery.</p>
-      <p style="font-size:16px;margin:0 0 12px 0">Recipient: <strong>${data.recipientName}</strong><br/>Phone: <strong>${data.recipientPhone || 'Not available'}</strong></p>
-      ${data.depotName ? `<p style="font-size:16px;margin:6px 0 12px 0"><strong>Drop-off at:</strong> ${data.depotName}</p>` : ''}
-      ${mapsLink ? `<p style="margin:12px 0"><a href="${mapsLink}" style="display:inline-block;background:#2EC4B6;color:#002147;padding:12px 16px;border-radius:6px;text-decoration:none;font-weight:600">📍 Navigate to Recipient</a></p>` : ''}
+  <div style="margin:0;padding:0;background:#f5f7fa;font-family:Arial,Helvetica,sans-serif;font-size:16px;">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f5f7fa;padding:28px 12px;">
+      <tr><td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;width:100%;background:#fff;border-radius:12px;overflow:hidden;">
 
-      ${data.deliveryDirections ? `<div style="margin-top:12px;padding:12px;border:1px solid #ddd;background:#f9f9f9"><strong>Driver Notes:</strong><div style="margin-top:6px">${data.deliveryDirections}</div></div>` : ''}
-      ${data.preferredCarrierDetails ? `<div style="margin-top:12px;padding:12px;border:1px solid #ddd;background:#f9f9f9"><strong>Carrier Instructions:</strong><div style="margin-top:6px">${data.preferredCarrierDetails}</div></div>` : ''}
+          <!-- Header -->
+          <tr>
+            <td style="background:#002147;padding:22px 28px;color:#fff;">
+              <table width="100%" cellpadding="0" cellspacing="0"><tr>
+                <td style="font-weight:800;font-size:20px;color:#fff;">Sankha</td>
+                <td style="font-size:11px;text-align:right;opacity:0.9;text-transform:uppercase;letter-spacing:1px;color:#fff;">Seller Dashboard</td>
+              </tr></table>
+            </td>
+          </tr>
 
-      ${data.packageLabelText ? `<div style="margin-top:16px;padding:14px;border-radius:6px;background:#fff6e5;border:1px solid #ffdca3;text-align:center;font-size:18px;font-weight:700">📦 WRITE ON BOX: ${data.packageLabelText}</div>` : ''}
+          <!-- Body -->
+          <tr>
+            <td style="padding:28px;color:#0F172A;font-size:16px;line-height:1.5;">
 
-      <p style="margin-top:12px"><a href="${emailConfig.app.url}/seller/orders/${data.orderId}/upload-waybill" style="display:inline-block;background:#2EC4B6;color:#002147;padding:12px 16px;border-radius:6px;text-decoration:none;font-weight:600">Upload Waybill / Bus Receipt</a></p>
+              <h2 style="margin:0 0 6px;font-size:20px;color:#002147;">New Order Received 🎉</h2>
+              <p style="margin:0 0 20px;color:#64748B;">Order <strong>#${esc(data.orderNumber)}</strong> has been paid and is ready to ship.</p>
 
-      <table style="width:100%;border-collapse:collapse;margin-top:16px">
-        <thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:2px solid #ddd">Item</th><th style="text-align:center;padding:6px 8px;border-bottom:2px solid #ddd">Qty</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #ddd">Price</th></tr></thead>
-        <tbody>${itemsHtml}</tbody>
-      </table>
+              <!-- Recipient Info -->
+              <div style="border:1px solid #E6EDF2;border-radius:8px;padding:16px;margin:0 0 16px;">
+                <p style="margin:0 0 8px;font-weight:700;color:#002147;font-size:15px;">📦 Recipient Details</p>
+                <p style="margin:0 0 6px;font-size:15px;"><strong>Name:</strong> ${esc(data.recipientName)}</p>
+                <p style="margin:0 0 6px;font-size:15px;"><strong>Phone:</strong> ${recipientPhone ? `<a href="tel:${recipientPhone}" style="color:#002147;text-decoration:none;font-weight:700;">${esc(recipientPhone)}</a>` : '<span style="color:#94a3b8;">Not available</span>'}</p>
+                ${data.depotName ? `<p style="margin:6px 0 0;font-size:15px;"><strong>Drop-off point:</strong> ${esc(data.depotName)}</p>` : ''}
+                <div style="margin-top:12px;">
+                  ${recipientPhone ? `<a href="tel:${recipientPhone}" style="display:inline-block;background:#2EC4B6;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin-right:8px;">📞 Call Recipient</a>` : ''}
+                  ${mapsLink ? `<a href="${mapsLink}" style="display:inline-block;background:#002147;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">📍 Navigate to Recipient</a>` : ''}
+                </div>
+              </div>
 
-      <p style="margin-top:12px;font-size:16px"><strong>Note:</strong> Buyer has paid MWK ${data.deliveryFee ? Number(data.deliveryFee).toLocaleString() : '0'} for transport costs.</p>
+              ${data.deliveryDirections ? `
+              <!-- Delivery Directions -->
+              <div style="border:1px solid #E6EDF2;border-radius:8px;padding:16px;margin:0 0 16px;background:#f8fafc;">
+                <p style="margin:0 0 6px;font-weight:700;color:#002147;font-size:14px;">🗺️ Delivery Directions</p>
+                <p style="margin:0;font-size:14px;color:#0F172A;">${esc(data.deliveryDirections)}</p>
+              </div>` : ''}
 
-      <p style="margin-top:18px;font-size:14px;color:#666">Manage this order in your dashboard: <a href="${emailConfig.app.url}/seller/orders/${data.orderId}">${emailConfig.app.url}/seller/orders/${data.orderId}</a></p>
-    </div>
+              ${data.preferredCarrierDetails ? `
+              <!-- Carrier Instructions -->
+              <div style="border:1px solid #E6EDF2;border-radius:8px;padding:16px;margin:0 0 16px;background:#f8fafc;">
+                <p style="margin:0 0 6px;font-weight:700;color:#002147;font-size:14px;">🚚 Carrier Instructions</p>
+                <p style="margin:0;font-size:14px;color:#0F172A;">${esc(data.preferredCarrierDetails)}</p>
+              </div>` : ''}
+
+              ${data.packageLabelText ? `
+              <!-- Package Label -->
+              <div style="border:2px dashed #f59e0b;border-radius:8px;padding:16px;margin:0 0 16px;background:#FEFCE8;text-align:center;">
+                <p style="margin:0 0 4px;font-weight:700;color:#002147;font-size:13px;text-transform:uppercase;">Write on package</p>
+                <p style="margin:0;font-size:20px;font-weight:800;color:#0F172A;">${esc(data.packageLabelText)}</p>
+              </div>` : ''}
+
+              <!-- Order Items -->
+              <h3 style="margin:0 0 12px;font-size:16px;color:#002147;">Items to pack</h3>
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;">
+                <thead>
+                  <tr>
+                    <th style="text-align:left;padding:8px;border-bottom:2px solid #E6EDF2;color:#64748B;font-size:13px;font-weight:600;">Item</th>
+                    <th style="text-align:center;padding:8px;border-bottom:2px solid #E6EDF2;color:#64748B;font-size:13px;font-weight:600;">Qty</th>
+                    <th style="text-align:right;padding:8px;border-bottom:2px solid #E6EDF2;color:#64748B;font-size:13px;font-weight:600;">Price</th>
+                  </tr>
+                </thead>
+                <tbody>${itemsHtml}</tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="2" style="padding:10px 8px 4px;text-align:right;font-weight:700;">Subtotal (your earnings):</td>
+                    <td style="padding:10px 8px 4px;text-align:right;font-weight:700;">MK ${sellerEarnings.toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" style="padding:4px 8px;text-align:right;color:#64748B;">Delivery fee (paid by buyer):</td>
+                    <td style="padding:4px 8px;text-align:right;color:#64748B;">MK ${(data.deliveryFee ? Number(data.deliveryFee) : 0).toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" style="padding:10px 8px 4px;text-align:right;font-weight:800;font-size:17px;">Buyer paid:</td>
+                    <td style="padding:10px 8px 4px;text-align:right;font-weight:800;font-size:17px;">MK ${buyerTotal.toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" style="padding:10px 8px 4px;text-align:right;font-weight:800;font-size:17px;color:#2EC4B6;">You will receive:</td>
+                    <td style="padding:10px 8px 4px;text-align:right;font-weight:800;font-size:17px;color:#2EC4B6;">MK ${sellerEarnings.toLocaleString()}</td>
+                  </tr>
+                </tfoot>
+              </table>
+
+              <!-- Transport Fee Note -->
+              <div style="margin:16px 0 0;padding:12px 16px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;">
+                <p style="margin:0;font-size:14px;color:#166534;font-weight:600;">💰 Buyer paid MK ${(data.deliveryFee ? Number(data.deliveryFee) : 0).toLocaleString()} for delivery. Please arrange dispatch accordingly.</p>
+              </div>
+
+              <!-- CTAs -->
+              <div style="margin:24px 0 16px;text-align:center;">
+                <a href="${frontend.replace(/\/$/, '')}/seller/orders/${encodeURIComponent(data.orderId)}/upload-waybill" style="display:inline-block;background:#2EC4B6;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;margin:0 6px 10px;">Upload Waybill / Receipt</a>
+                <a href="${frontend.replace(/\/$/, '')}/seller/orders/${encodeURIComponent(data.orderId)}" style="display:inline-block;background:#002147;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;margin:0 6px 10px;">Manage Order</a>
+              </div>
+
+              <p style="font-size:13px;color:#64748B;margin:16px 0 0;">The buyer's payment is held in escrow. Funds will be released to your wallet once the buyer confirms receipt.</p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:18px 28px;text-align:center;color:#64748B;font-size:12px;border-top:1px solid #E6EDF2;">
+              <div style="margin-bottom:10px;">
+                <a href="https://facebook.com/sankha" style="margin:0 8px;"><img src="https://cdn-icons-png.flaticon.com/32/733/733547.png" width="22" height="22" alt="Facebook" style="border:0;vertical-align:middle;"/></a>
+                <a href="https://instagram.com/sankha" style="margin:0 8px;"><img src="https://cdn-icons-png.flaticon.com/32/733/733558.png" width="22" height="22" alt="Instagram" style="border:0;vertical-align:middle;"/></a>
+                <a href="https://x.com/sankha" style="margin:0 8px;"><img src="https://cdn-icons-png.flaticon.com/32/733/733579.png" width="22" height="22" alt="X" style="border:0;vertical-align:middle;"/></a>
+              </div>
+              &copy; 2026 Sankha &bull; Lilongwe, Malawi.<br/>
+              Secure. Trusted. Community. <a href="${frontend.replace(/\/$/, '')}/support" style="color:#2EC4B6;text-decoration:none;">Support</a>
+            </td>
+          </tr>
+
+        </table>
+      </td></tr>
+    </table>
   </div>
   `;
 
   return sendEmail({
     to: email,
-    subject: `Dispatch: Order #${data.orderNumber}`,
+    subject: `New order #${data.orderNumber} — ready to ship`,
     html,
     tags: [{ name: 'category', value: 'dispatch' }, { name: 'order_number', value: data.orderNumber }],
   });
@@ -565,6 +767,7 @@ export const sendReleaseCodeForOrder = async (orderId: string): Promise<EmailRes
             preferredCarrierDetails: (order as any)?.preferred_carrier_details || undefined,
             packageLabelText: (order as any)?.package_label_text || undefined,
             deliveryFee: Number((order as any)?.delivery_fee ?? 0),
+            buyerTotal: Number(order.total_amount ?? 0),
             items,
           });
           console.log('sendReleaseCodeForOrder seller dispatch email result:', dispatchRes);
