@@ -239,6 +239,9 @@ model users {
   first_name        String            @db.VarChar(75)
   last_name         String            @db.VarChar(75)
   email             String            @unique @db.VarChar(255)
+  email_verified    Boolean?          @default(false)
+  email_verify_token String?
+  email_verify_expires DateTime?
   phone_number      String?           @db.VarChar(20)
   password_hash     String            @db.VarChar(255)
   role              user_role         @default(USER)

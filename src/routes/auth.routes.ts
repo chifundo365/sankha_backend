@@ -7,7 +7,9 @@ import {
   refreshTokenSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
-  verifyResetTokenSchema
+  verifyResetTokenSchema,
+  verifyEmailSchema,
+  resendVerificationSchema
 } from "../schemas/auth.schema";
 import { protect } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/authorize.middleware";
@@ -101,6 +103,21 @@ router.post(
   strictRateLimiter,  // Strict rate limiting
   validateResource(resetPasswordSchema),
   authController.resetPassword
+);
+
+// ==================== EMAIL VERIFICATION ROUTES ====================
+
+router.get(
+  "/verify-email/:token",
+  validateResource(verifyEmailSchema),
+  authController.verifyEmail
+);
+
+router.post(
+  "/resend-verification",
+  strictRateLimiter,
+  validateResource(resendVerificationSchema),
+  authController.resendVerification
 );
 
 // ==================== PROTECTED ROUTES ====================

@@ -96,6 +96,33 @@ const baseTemplate = (title: string, preheader: string, content: string) => `
 </html>
 `;
 
+export const emailVerificationTemplate = (data: { userName: string; verifyUrl: string; verifyCode?: string; expiresInHours?: number; }) => {
+  const expires = data.expiresInHours ?? 24;
+  const codeBox = data.verifyCode ? `
+    <div style="text-align:center; margin:14px 0 6px;">
+      <div style="display:inline-block; padding:12px 18px; background:${BRAND.goldBg}; border:1px solid ${BRAND.border}; border-radius:8px; font-family:'Courier New', monospace; font-weight:800; letter-spacing:2px; color:${BRAND.text};">${escapeHtml(data.verifyCode)}</div>
+      <p style="margin:6px 0 0; color:${BRAND.muted}; font-size:13px;">Copy this code if the button doesn't open.</p>
+    </div>
+  ` : '';
+  const content = `
+    <p style="margin:0 0 12px; color:${BRAND.text};">Hi <strong>${escapeHtml(data.userName)}</strong>,</p>
+    <p style="margin:0 0 12px; color:${BRAND.text};">Welcome to Sankha. Please verify your email to activate your account and receive order updates.</p>
+    <div style="text-align:center; margin:20px 0;">
+      <a href="${escapeHtml(data.verifyUrl)}" style="display:inline-block; background:${BRAND.sankhaTeal}; color:#fff; padding:12px 22px; border-radius:8px; text-decoration:none; font-weight:800;">Verify email</a>
+    </div>
+    ${codeBox}
+    <p style="margin:0 0 10px; color:${BRAND.muted}; font-size:14px;">This link expires in ${expires} hours. If you didn't create an account, you can ignore this email.</p>
+  `;
+
+  const subject = "Verify your email for Sankha";
+
+  return {
+    subject,
+    html: baseTemplate(subject, "Verify your email to finish signup", content),
+    text: `Hi ${data.userName}, verify your email: ${data.verifyUrl} (expires in ${expires} hours). Code: ${data.verifyCode || 'n/a'}`
+  };
+};
+
 /**
  * Order Confirmation / Release Template
  * Title: Action Required: Your Order is Arriving.

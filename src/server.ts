@@ -9,6 +9,7 @@ import { validatePaychanguConfig } from './config/paychangu.config';
 import { paymentVerificationJob } from './jobs/paymentVerification.job';
 import { withdrawalVerificationJob } from './jobs/withdrawalVerification.job';
 import { shopRatingAggregationJob } from './jobs/shopRatingAggregation.job';
+import { releaseCodeExpiryJob } from './jobs/releaseCodeExpiry.job';
 
 const app = express();
 
@@ -69,6 +70,9 @@ const server = app.listen(port, async () => {
   if (process.env.SHOP_RATING_AGGREGATION_ENABLED === 'true') {
     shopRatingAggregationJob.start();
   }
+
+  // Release code expiry guardrail (defaults to enabled)
+  releaseCodeExpiryJob.start();
 });
 
 // Graceful shutdown
@@ -77,6 +81,7 @@ process.on('SIGTERM', async () => {
   paymentVerificationJob.stop();
   withdrawalVerificationJob.stop();
   shopRatingAggregationJob.stop();
+  releaseCodeExpiryJob.stop();
   await redisClient.disconnect();
   server.close(() => {
     console.log('HTTP server closed');
@@ -88,6 +93,7 @@ process.on('SIGINT', async () => {
   paymentVerificationJob.stop();
   withdrawalVerificationJob.stop();
   shopRatingAggregationJob.stop();
+  releaseCodeExpiryJob.stop();
   await redisClient.disconnect();
   server.close(() => {
     console.log('HTTP server closed');

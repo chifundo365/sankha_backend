@@ -16,6 +16,7 @@ import {
 import { uploadWaybill } from "../controllers/order.controller";
 import { updateDeliveryLocation } from "../controllers/order.controller";
 import { protect } from "../middleware/auth.middleware";
+import { requireVerifiedEmail } from "../middleware/requireVerifiedEmail.middleware";
 import { authorize } from "../middleware/authorize.middleware";
 import validateResource from "../middleware/validateResource";
 import {
@@ -43,7 +44,7 @@ const router = Router();
  * @desc    Checkout - Convert cart(s) to confirmed order(s)
  * @access  Protected (USER, SELLER, ADMIN, SUPER_ADMIN)
  */
-router.post("/checkout", protect, validateResource(checkoutSchema), checkout);
+router.post("/checkout", protect, requireVerifiedEmail, validateResource(checkoutSchema), checkout);
 
 /**
  * @route   GET /api/orders/my-orders

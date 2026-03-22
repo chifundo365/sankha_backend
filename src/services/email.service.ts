@@ -15,6 +15,7 @@ import {
   welcomeTemplate,
   verificationCodeTemplate,
   sellerPayoutTemplate,
+  emailVerificationTemplate,
   ReleaseCodeData,
   OrderItem,
   SellerInfo,
@@ -150,6 +151,32 @@ export const sendPasswordResetEmail = async (
     html: template.html,
     text: template.text,
     tags: [{ name: 'category', value: 'password-reset' }],
+  });
+};
+
+/**
+ * Send email verification email
+ */
+export const sendEmailVerificationEmail = async (
+  params: { email: string; userName: string; token?: string; verifyUrl?: string; expiresInHours?: number }
+): Promise<EmailResult> => {
+  const token = params.token;
+  const baseUrl = emailConfig.app.url.replace(/\/$/, '');
+  const verifyUrl = params.verifyUrl || (token ? `${baseUrl}/verify-email?token=${encodeURIComponent(token)}` : baseUrl);
+
+  const template = emailVerificationTemplate({
+    userName: params.userName,
+    verifyUrl,
+    verifyCode: token,
+    expiresInHours: params.expiresInHours,
+  });
+
+  return sendEmail({
+    to: params.email,
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+    tags: [{ name: 'category', value: 'email-verification' }],
   });
 };
 

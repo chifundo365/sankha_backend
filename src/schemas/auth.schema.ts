@@ -80,8 +80,28 @@ export const verifyResetTokenSchema = z.object({
   })
 });
 
+// Email verification schemas
+export const verifyEmailSchema = z.object({
+  params: z.object({
+    token: z
+      .string({ message: "Verification token is required" })
+      .min(1, "Verification token cannot be empty"),
+  })
+});
+
+export const resendVerificationSchema = z.object({
+  body: z.object({
+    email: z
+      .string({ message: "Email is required" })
+      .email("Invalid email address"),
+  })
+});
+
 export type LoginInput = z.infer<typeof loginSchema>["body"];
 export type RegisterInput = z.infer<typeof registerSchema>["body"];
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>["body"];
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>["body"];
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>["body"];
+export type VerifyResetTokenInput = z.infer<typeof verifyResetTokenSchema>["params"];
+export type VerifyEmailParams = z.infer<typeof verifyEmailSchema>["params"];
+export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>["body"];

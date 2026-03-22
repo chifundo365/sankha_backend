@@ -1,5 +1,6 @@
 import prisma from '../prismaClient';
 import { Decimal } from '../../generated/prisma/runtime/library';
+import { Prisma } from '../../generated/prisma';
 import { generateReleaseCode, getReleaseCodeExpiry, isReleaseCodeExpired } from '../utils/releaseCode';
 import { sendReleaseCodeSms } from './sms.service';
 import { emailService } from './email.service';
@@ -279,25 +280,81 @@ class OrderConfirmationService {
   }
 
   /**
+   * Restore stock for an order when a release code expires
+   * Uses transaction-scoped reason for audit logging triggers
+   */
+  private async restoreStockForExpiredOrder(
+    tx: Prisma.TransactionClient,
+    order: Prisma.ordersGetPayload<{ include: { order_items: true } }>
+  ) {
+    if (!order.order_items || order.order_items.length === 0) return;
+
+    const reason = `Stock restored - release code expired for order ${order.order_number || order.id}`;
+    await tx.$executeRawUnsafe(`SET LOCAL app.stock_change_reason = '${reason.replace(/'/g, "''")}'`);
+
+    for (const item of order.order_items) {
+      if (!item.shop_product_id) continue;
+
+      await tx.shop_products.update({
+        where: { id: item.shop_product_id },
+        data: {
+          stock_quantity: {
+            increment: item.quantity,
+          },
+        },
+      });
+    }
+  }
+
+  /**
    * Mark expired release codes as EXPIRED
    * Called by background job
    */
   async processExpiredReleaseCodes(): Promise<number> {
     try {
-      const result = await prisma.orders.updateMany({
+      const expiredOrders = await prisma.orders.findMany({
         where: {
           release_code_status: 'PENDING',
-          release_code_expires_at: {
-            lt: new Date()
-          }
+          release_code_expires_at: { lt: new Date() },
+          status: { notIn: ['CANCELLED', 'REFUNDED', 'DELIVERED'] },
         },
-        data: {
-          release_code_status: 'EXPIRED',
-          updated_at: new Date(),
-        }
+        include: {
+          order_items: true,
+        },
       });
 
-      return result.count;
+      if (expiredOrders.length === 0) {
+        return 0;
+      }
+
+      let processed = 0;
+
+      for (const order of expiredOrders) {
+        try {
+          await prisma.$transaction(async (tx) => {
+            await this.restoreStockForExpiredOrder(tx, order);
+
+            await tx.orders.update({
+              where: { id: order.id },
+              data: {
+                status: 'CANCELLED',
+                release_code_status: 'EXPIRED',
+                release_code_verified_at: null,
+                updated_at: new Date(),
+              },
+            });
+          });
+
+          processed += 1;
+        } catch (orderError) {
+          console.error(
+            `Failed to expire release code for order ${order.order_number || order.id}:`,
+            orderError
+          );
+        }
+      }
+
+      return processed;
     } catch (error) {
       console.error('Process expired release codes error:', error);
       return 0;

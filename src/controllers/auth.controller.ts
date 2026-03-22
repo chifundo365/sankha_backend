@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import prisma from "../prismaClient";
 import { errorResponse, successResponse } from "../utils/response";
 import {
@@ -16,6 +17,11 @@ import {
   getRefreshToken
 } from "../utils/cookie";
 import { passwordResetService } from "../services/passwordReset.service";
+import { sendEmailVerificationEmail } from "../services/email.service";
+import { emailConfig } from "../config/email.config";
+
+const EMAIL_VERIFICATION_EXPIRES_HOURS = Number(process.env.EMAIL_VERIFICATION_EXPIRES_HOURS || 24);
+const getEmailVerificationExpiry = () => new Date(Date.now() + EMAIL_VERIFICATION_EXPIRES_HOURS * 60 * 60 * 1000);
 
 export const authController = {
   register: async (req: Request, res: Response) => {
@@ -46,6 +52,11 @@ export const authController = {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
+      // Prepare email verification token
+      // Shorter token for user-friendly copy (20 hex chars ~80 bits)
+      const emailVerifyToken = crypto.randomBytes(10).toString("hex");
+      const emailVerifyExpires = getEmailVerificationExpiry();
+
       // Create user
       const newUser = await prisma.users.create({
         data: {
@@ -54,8 +65,21 @@ export const authController = {
           email,
           phone_number,
           password_hash: hashedPassword,
-          role: role || "USER" // Default to USER role if not provided
+          role: role || "USER", // Default to USER role if not provided
+          email_verified: false,
+          email_verify_token: emailVerifyToken,
+          email_verify_expires: emailVerifyExpires
         }
+      });
+
+      // Send verification email (best-effort)
+      const verifyUrl = `${emailConfig.app.url.replace(/\/$/, "")}/verify-email?token=${encodeURIComponent(emailVerifyToken)}`;
+      const emailResult = await sendEmailVerificationEmail({
+        email,
+        userName: `${first_name} ${last_name}`.trim(),
+        token: emailVerifyToken,
+        verifyUrl,
+        expiresInHours: EMAIL_VERIFICATION_EXPIRES_HOURS
       });
 
       // Remove password_hash from response
@@ -63,8 +87,12 @@ export const authController = {
 
       return successResponse(
         res,
-        "User registered successfully",
-        userWithoutPassword
+        "User registered successfully. Please verify your email to activate your account.",
+        {
+          user: userWithoutPassword,
+          verificationEmailSent: emailResult.success,
+          ...(process.env.NODE_ENV !== "production" ? { _dev_verify_token: emailVerifyToken, _dev_verify_url: verifyUrl } : {})
+        }
       );
     } catch (error) {
       console.log(error);
@@ -310,6 +338,89 @@ export const authController = {
     } catch (error) {
       console.error("Reset password error:", error);
       return errorResponse(res, "Failed to reset password", null, 500);
+    }
+  },
+
+  /**
+   * Verify email using token
+   */
+  verifyEmail: async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+
+      const user = await prisma.users.findFirst({
+        where: {
+          email_verify_token: token,
+          email_verify_expires: { gt: new Date() }
+        }
+      });
+
+      if (!user) {
+        return errorResponse(res, "Invalid or expired verification token", null, 400);
+      }
+
+      await prisma.users.update({
+        where: { id: user.id },
+        data: {
+          email_verified: true,
+          email_verify_token: null,
+          email_verify_expires: null,
+          updated_at: new Date()
+        }
+      });
+
+      return successResponse(res, "Email verified successfully", { email: user.email });
+    } catch (error) {
+      console.error("Verify email error:", error);
+      return errorResponse(res, "Failed to verify email", null, 500);
+    }
+  },
+
+  /**
+   * Resend verification email
+   */
+  resendVerification: async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+
+      const user = await prisma.users.findUnique({ where: { email } });
+
+      if (!user) {
+        return errorResponse(res, "User not found", null, 404);
+      }
+
+      if (user.email_verified) {
+        return errorResponse(res, "Email is already verified", null, 400);
+      }
+
+      const emailVerifyToken = crypto.randomBytes(10).toString("hex");
+      const emailVerifyExpires = getEmailVerificationExpiry();
+
+      await prisma.users.update({
+        where: { id: user.id },
+        data: {
+          email_verify_token: emailVerifyToken,
+          email_verify_expires: emailVerifyExpires,
+          updated_at: new Date()
+        }
+      });
+
+      const verifyUrl = `${emailConfig.app.url.replace(/\/$/, "")}/verify-email?token=${encodeURIComponent(emailVerifyToken)}`;
+      const emailResult = await sendEmailVerificationEmail({
+        email: user.email,
+        userName: `${user.first_name} ${user.last_name}`.trim(),
+        token: emailVerifyToken,
+        verifyUrl,
+        expiresInHours: EMAIL_VERIFICATION_EXPIRES_HOURS
+      });
+
+      return successResponse(res, "Verification email sent", {
+        verificationEmailSent: emailResult.success,
+        ...(process.env.NODE_ENV !== "production" ? { _dev_verify_token: emailVerifyToken, _dev_verify_url: verifyUrl } : {})
+      });
+    } catch (error) {
+      console.error("Resend verification error:", error);
+      return errorResponse(res, "Failed to resend verification email", null, 500);
     }
   }
 };

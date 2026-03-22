@@ -116,42 +116,24 @@ Not strictly MVP-blocking but significantly affect user trust and platform quali
 - `shopController.getAllShops` supports `sort_by=shop_score|avg_rating|total_reviews` and `order=asc|desc`
 - Daily background job: `shopRatingAggregation.job.ts` (enabled by `SHOP_RATING_AGGREGATION_ENABLED=true`)
 
-**What's missing:**
-
-| Component | Description |
-|-----------|-------------|666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666`
-| Schema fields | `shops.avg_rating Decimal?`, `shops.total_reviews Int @default(0)`, `shops.shop_score Decimal?` |
-| Aggregation trigger | After review creation/update/deletion, recalculate shop's avg_rating and total_reviews |
-| Composite score | `shop_score = (avg_rating × 0.4) + (is_verified × 0.2) + (completed_orders_normalized × 0.3) + (recency × 0.1)` |
-| Background job | Periodic recalculation (daily) for composite scores |
-| Search integration | Sort/filter shops by score in search results |
-
-**Migration required:** Add columns to `shops` table.
+**What's missing:** Nothing — this feature set is already built and wired end-to-end (schema fields, aggregation triggers after review create/update/delete, composite score weights, background job, search integration). Keep `SHOP_RATING_AGGREGATION_ENABLED=true` and configure `SHOP_RATING_AGGREGATION_INTERVAL_HOURS` as needed.
 
 ---
 
 ### 2.2 Email Verification on Signup
 
-**Status:** ❌ Not implemented
+**Status:** ✅ Implemented
 
-**Impact:** Fake accounts, typo'd emails that can never receive order notifications or release codes.
+**What exists now:**
+- Schema fields: `email_verified` (default false), `email_verify_token`, `email_verify_expires` added to `users`; migration applied to `sankha_dump`.
+- Register flow: generates short verify token, sets expiry, sends verification email (Resend) with link plus visible copyable code.
+- Verify endpoint: `GET /api/auth/verify-email/:token` marks verified and clears token/expiry.
+- Resend endpoint: `POST /api/auth/resend-verification` issues a fresh token if not yet verified.
+- Guards: checkout and review create/update/delete require verified email.
 
-**What exists today:**
-- Email service is fully functional (Resend integration)
-- Password reset emails work
-- No `email_verified` field on `users` model
-
-**What's missing:**
-
-| Component | Description |
-|-----------|-------------|
-| Schema fields | `users.email_verified Boolean @default(false)`, `users.email_verify_token String?`, `users.email_verify_expires DateTime?` |
-| Migration | Add columns to `users` table |
-| `POST /api/auth/register` update | Generate verification token, send verification email after registration |
-| `GET /api/auth/verify-email/:token` | New endpoint to verify email |
-| `POST /api/auth/resend-verification` | Resend verification email |
-| Email template | `emailVerificationTemplate()` in `email.templates.ts` |
-| Gate certain actions | Optionally require verified email for checkout/review |
+**Notes / follow-ups:**
+- Unverified accounts can still log in but remain blocked on guarded actions; token expires after configured hours and can be resent.
+- Optional tightenings: block more actions or auto-cleanup long-unverified accounts if desired.
 
 ---
 
@@ -554,7 +536,7 @@ Useful for uptime monitoring, load balancers, and deployment health checks.
 |---|---------|----------|--------|--------|------|
 | 1.1 | Refund Processing | 🔴 CRITICAL | ❌ Missing | Medium | **YES** |
 | 1.2 | Release Code Expiry Job | 🔴 CRITICAL | ❌ Missing | Small | **YES** |
-| 2.1 | Shop Rating/Ranking | 🟠 HIGH | ❌ Missing | Medium | No |
+| 2.1 | Shop Rating/Ranking | 🟢 LOW | ✅ Implemented | — | No |
 | 2.2 | Email Verification | 🟠 HIGH | ❌ Missing | Small | No |
 | 2.3 | Notification Queue | 🟠 HIGH | ❌ Missing | Medium | No |
 | 3.1 | Shop Verification Workflow | 🟡 MEDIUM | ⚠️ Partial | Medium | No |
@@ -591,10 +573,9 @@ Useful for uptime monitoring, load balancers, and deployment health checks.
 
 **First month post-launch:**
 4. Email verification on signup
-5. Shop rating aggregation
-6. Seller notification on new order (SMS)
-7. Health check endpoint
-8. Search log analytics for admin
+5. Seller notification on new order (SMS)
+6. Health check endpoint
+7. Search log analytics for admin
 
 **Second month:**
 9. Wishlist

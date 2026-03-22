@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { reviewController } from "../controllers/review.controller";
 import { protect } from "../middleware/auth.middleware";
+import { requireVerifiedEmail } from "../middleware/requireVerifiedEmail.middleware";
 import validateResource from "../middleware/validateResource";
 import {
   createReviewSchema,
@@ -21,6 +22,7 @@ const router = Router();
 router.post(
   "/",
   protect,
+  requireVerifiedEmail,
   validateResource(createReviewSchema),
   reviewController.createReview
 );
@@ -67,6 +69,7 @@ router.get(
 router.put(
   "/:reviewId",
   protect,
+  requireVerifiedEmail,
   validateResource(updateReviewSchema),
   reviewController.updateReview
 );
@@ -79,6 +82,7 @@ router.put(
 router.delete(
   "/:reviewId",
   protect,
+  requireVerifiedEmail,
   validateResource(deleteReviewSchema),
   reviewController.deleteReview
 );
