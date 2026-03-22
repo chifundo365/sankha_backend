@@ -10,6 +10,7 @@ import { paymentVerificationJob } from './jobs/paymentVerification.job';
 import { withdrawalVerificationJob } from './jobs/withdrawalVerification.job';
 import { shopRatingAggregationJob } from './jobs/shopRatingAggregation.job';
 import { releaseCodeExpiryJob } from './jobs/releaseCodeExpiry.job';
+import { notificationJob } from './jobs/notification.job';
 
 const app = express();
 
@@ -73,6 +74,9 @@ const server = app.listen(port, async () => {
 
   // Release code expiry guardrail (defaults to enabled)
   releaseCodeExpiryJob.start();
+
+  // Notification queue worker (opt-in via ENABLE_NOTIFICATION_QUEUE=true)
+  notificationJob.start();
 });
 
 // Graceful shutdown
@@ -82,6 +86,7 @@ process.on('SIGTERM', async () => {
   withdrawalVerificationJob.stop();
   shopRatingAggregationJob.stop();
   releaseCodeExpiryJob.stop();
+  await notificationJob.stop();
   await redisClient.disconnect();
   server.close(() => {
     console.log('HTTP server closed');
@@ -94,6 +99,7 @@ process.on('SIGINT', async () => {
   withdrawalVerificationJob.stop();
   shopRatingAggregationJob.stop();
   releaseCodeExpiryJob.stop();
+  await notificationJob.stop();
   await redisClient.disconnect();
   server.close(() => {
     console.log('HTTP server closed');

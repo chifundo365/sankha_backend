@@ -22,6 +22,7 @@ import {
   VerificationCodeData,
 } from '../templates/email.templates';
 import smsService from './sms.service';
+import { enqueueEmail, isNotificationQueueEnabled } from '../queues/notificationQueue';
 
 // Initialize Resend client
 let resend: Resend | null = null;
@@ -56,7 +57,19 @@ export interface EmailResult {
   messageId?: string;
   error?: string;
 }
-export const sendEmail = async (options: SendEmailOptions): Promise<EmailResult> => {
+export const sendEmail = async (options: SendEmailOptions, opts?: { skipQueue?: boolean }): Promise<EmailResult> => {
+  // Offload to queue when enabled and not explicitly skipped
+  if (!opts?.skipQueue && isNotificationQueueEnabled()) {
+    try {
+      const job = await enqueueEmail(options);
+      if (job) {
+        return { success: true, messageId: String(job.id) };
+      }
+    } catch (err: any) {
+      console.warn('[notification] Failed to enqueue email, falling back to direct send', err?.message || err);
+    }
+  }
+
   const client = getResendClient();
 
   if (!client) {

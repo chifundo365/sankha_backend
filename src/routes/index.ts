@@ -18,6 +18,7 @@ import { ipBlocker } from "../middleware/ipBlocker.middleware";
 import validateResource from "../middleware/validateResource";
 import { search as searchController } from "../controllers/search.controller";
 import { searchQuerySchema } from "../schemas/search.schema";
+import { healthCheck } from "../controllers/health.controller";
 
 const router = Router();
 
@@ -55,5 +56,8 @@ router.use("/seller/inventory", sellerInventoryRoutes);
 
 // Top-level unified search route (Logistics-aware)
 router.get("/search", validateResource(searchQuerySchema), searchController);
+
+// Health check (dependency-aware)
+router.get("/health", healthCheck);
 
 export default router;

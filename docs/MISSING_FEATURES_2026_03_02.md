@@ -61,40 +61,14 @@ These will cause **real financial harm or total loss of user trust** if not pres
 
 ### 1.2 Release Code Expiry Background Job
 
-**Status:** ❌ Not implemented
+**Status:** ✅ Implemented
 
-**Impact:** Release codes have `expires_at` timestamps but nothing ever checks them. Expired orders sit in `CONFIRMED` status forever. Buyer money is trapped.
+**What exists now:**
+- Background job: `src/jobs/releaseCodeExpiry.job.ts` runs hourly by default (configurable via `RELEASE_CODE_EXPIRY_CHECK_INTERVAL_MS`; disable with `ENABLE_RELEASE_CODE_EXPIRY_JOB=false`).
+- Logic: finds `release_code_status=PENDING` orders past `release_code_expires_at`, restores stock within a transaction, sets order `status=CANCELLED`, marks `release_code_status=EXPIRED`, and logs errors per-order without crashing the job.
+- Wired into server lifecycle: starts on boot and stops on shutdown.
 
-**What exists today:**
-- `release_code_expires_at` field on `orders` table
-- `release_code_status` enum with `EXPIRED` value
-- `isReleaseCodeExpired()` utility function in `src/utils/releaseCode.ts`
-- Two other background jobs exist as patterns: `paymentVerification.job.ts` and `bulkUploadCleanup.job.ts`
-
-**What's missing:**
-- No `releaseCodeExpiry.job.ts` background job
-- No automatic status change from `PENDING` → `EXPIRED`
-- No automatic order cancellation on expiry
-- No automatic refund trigger on expiry
-
-**Required implementation:**
-
-```
-src/jobs/releaseCodeExpiry.job.ts
-```
-
-**Logic (run every hour or daily):**
-1. Query: `SELECT * FROM orders WHERE release_code_status = 'PENDING' AND release_code_expires_at < NOW()`
-2. For each expired order:
-   - Set `release_code_status` → `EXPIRED`
-   - Set order `status` → `CANCELLED`
-   - Restore stock (reuse existing stock restoration logic)
-   - Create order message: "Release code expired. Order automatically cancelled."
-   - Queue refund (once refund service exists)
-   - Notify buyer via email/SMS
-3. Log summary: "Processed X expired release codes"
-
-**Configuration:** `RELEASE_CODE_EXPIRY_CHECK_INTERVAL_MS` (default: 3600000 = 1 hour)
+**Remaining gap:** Refund trigger is still pending; when refund service exists, hook it after expiry.
 
 ---
 
@@ -139,28 +113,15 @@ Not strictly MVP-blocking but significantly affect user trust and platform quali
 
 ### 2.3 Notification Queue (Background Processing)
 
-**Status:** ❌ Not implemented (notifications are sent synchronously)
+**Status:** ✅ Implemented (opt-in via `ENABLE_NOTIFICATION_QUEUE=true`)
 
-**Impact:** If Africa's Talking or Resend API is slow or down, the entire request hangs. At scale, this causes timeouts.
+**What exists now:**
+- Queue: BullMQ-based `notification-queue` with Redis; default job options include 3 attempts and exponential backoff.
+- Worker: `src/jobs/notification.job.ts` processes `email` and `sms` jobs, using existing providers with `skipQueue` to avoid recursion; started from server lifecycle.
+- Producers: `sendEmail` and `sendSms` enqueue by default when queue is enabled; fall back to direct send if enqueue fails or queue disabled.
 
-**What exists today:**
-- `email.service.ts` sends emails directly via Resend API (731 lines)
-- `sms.service.ts` sends SMS directly via Africa's Talking API (218 lines)
-- `notification.service.ts` is a thin wrapper (85 lines)
-- No queue, no retry, no dead letter
-
-**What's missing:**
-
-| Component | Description |
-|-----------|-------------|
-| Queue system | BullMQ with Redis (already have Redis) |
-| `src/jobs/notification.job.ts` | Worker that processes email/SMS jobs |
-| Queue producers | Replace direct `await sendEmail()` calls with `notificationQueue.add('email', { ... })` |
-| Retry logic | 3 retries with exponential backoff |
-| Dead letter queue | Failed notifications after retries for manual review |
-| Dashboard (optional) | Bull Board for monitoring |
-
-**Severity at MVP:** Low — direct calls work fine for <100 orders/day. Becomes critical at scale.
+**Notes:**
+- Leave queue disabled in environments without Redis by default; enable with `ENABLE_NOTIFICATION_QUEUE=true` and `REDIS_URL`. Dead-letter dashboard not yet added.
 
 ---
 
@@ -510,15 +471,10 @@ All logging is `console.log` / `console.error`. No structured logging, no log le
 
 ### 5.9 No Health Check Endpoint
 
-**Status:** ❌ Not implemented
+**Status:** ✅ Implemented
 
-No `GET /api/health` or `GET /api/status` endpoint to verify:
-- Server is running
-- Database is connected
-- Redis is connected
-- External services are reachable
-
-Useful for uptime monitoring, load balancers, and deployment health checks.
+- `GET /api/health` added: checks DB (`SELECT 1`), Redis `PING`, and PayChangu reachability (when configured). Returns `status=ok|degraded`, per-component results, uptime, and sets 503 on degradation.
+- Wired under API router; existing root `/` still returns basic "API is running" message.
 
 ---
 
@@ -535,10 +491,10 @@ Useful for uptime monitoring, load balancers, and deployment health checks.
 | # | Feature | Priority | Status | Effort | MVP? |
 |---|---------|----------|--------|--------|------|
 | 1.1 | Refund Processing | 🔴 CRITICAL | ❌ Missing | Medium | **YES** |
-| 1.2 | Release Code Expiry Job | 🔴 CRITICAL | ❌ Missing | Small | **YES** |
+| 1.2 | Release Code Expiry Job | 🔴 CRITICAL | ✅ Implemented | Small | **YES** |
 | 2.1 | Shop Rating/Ranking | 🟢 LOW | ✅ Implemented | — | No |
 | 2.2 | Email Verification | 🟠 HIGH | ❌ Missing | Small | No |
-| 2.3 | Notification Queue | 🟠 HIGH | ❌ Missing | Medium | No |
+| 2.3 | Notification Queue | 🟠 HIGH | ✅ Implemented | Medium | No |
 | 3.1 | Shop Verification Workflow | 🟡 MEDIUM | ⚠️ Partial | Medium | No |
 | 3.2 | Wishlist | 🟡 MEDIUM | ❌ Missing | Small | No |
 | 3.3 | Low Stock Alerts | 🟡 MEDIUM | ❌ Missing | Small | No |
@@ -559,7 +515,7 @@ Useful for uptime monitoring, load balancers, and deployment health checks.
 | 5.6 | Automated Tests | 🟠 HIGH | ❌ Missing | Large | No |
 | 5.7 | API Documentation | 🟡 MEDIUM | ❌ Missing | Medium | No |
 | 5.8 | Structured Logging | 🟡 MEDIUM | ⚠️ Console only | Small | No |
-| 5.9 | Health Check | 🟡 MEDIUM | ❌ Missing | Tiny | No |
+| 5.9 | Health Check | 🟡 MEDIUM | ✅ Implemented | Tiny | No |
 | 5.10 | CORS Config Review | 🟡 MEDIUM | ⚠️ Needs check | Tiny | No |
 
 ---

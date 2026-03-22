@@ -1,5 +1,6 @@
 import axios from 'axios';
 import querystring from 'querystring';
+import { enqueueSms, isNotificationQueueEnabled } from '../queues/notificationQueue';
 
 const AT_USERNAME = process.env.AFRICASTALKING_USERNAME || '';
 const AT_API_KEY = process.env.AFRICASTALKING_API_KEY || '';
@@ -107,7 +108,18 @@ function stripToGSM7(s: string) {
   return s.replace(/[^ \x20-\x7E\r\n]/g, '');
 }
 
-export async function sendSms(to: string | string[], message: string): Promise<SmsResult> {
+export async function sendSms(to: string | string[], message: string, options?: { skipQueue?: boolean }): Promise<SmsResult> {
+  // Queue offload when enabled and not skipped
+  if (!options?.skipQueue && isNotificationQueueEnabled()) {
+    try {
+      const job = await enqueueSms({ to, message });
+      if (job) return { success: true, data: { enqueued: true, jobId: job.id } };
+    } catch (err: any) {
+      // Fall back to direct send if enqueue fails
+      console.warn('[notification] Failed to enqueue SMS, falling back to direct send', err?.message || err);
+    }
+  }
+
   if (!AT_API_KEY || !AT_USERNAME) {
     return { success: false, error: "Africa's Talking credentials not configured" };
   }
