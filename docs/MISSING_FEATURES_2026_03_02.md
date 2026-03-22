@@ -104,19 +104,22 @@ Not strictly MVP-blocking but significantly affect user trust and platform quali
 
 ### 2.1 Shop Rating Aggregation & Ranking
 
-**Status:** ❌ Not implemented
+**Status:** ✅ Implemented
 
-**Impact:** Buyers have no way to assess shop trustworthiness. All shops appear equal regardless of performance.
+**Impact:** Buyers can now compare shops by quality; searches and shop listings are enhanced with rating-based signals.
 
 **What exists today:**
 - `reviews` table with `rating` (1–5) per review, linked to `shop_products`
-- No `avg_rating`, `total_reviews`, or `shop_score` on `shops` model
-- No aggregation logic anywhere in the codebase
+- `shops` model includes `avg_rating`, `total_reviews`, `shop_score`
+- Aggregation logic in `review.controller.ts` and centralized in `shopRating.service.ts` (create/update/delete)
+- Search results include `shop_avg_rating`, `shop_total_reviews`, `shop_score` in shop entries
+- `shopController.getAllShops` supports `sort_by=shop_score|avg_rating|total_reviews` and `order=asc|desc`
+- Daily background job: `shopRatingAggregation.job.ts` (enabled by `SHOP_RATING_AGGREGATION_ENABLED=true`)
 
 **What's missing:**
 
 | Component | Description |
-|-----------|-------------|
+|-----------|-------------|666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666`
 | Schema fields | `shops.avg_rating Decimal?`, `shops.total_reviews Int @default(0)`, `shops.shop_score Decimal?` |
 | Aggregation trigger | After review creation/update/deletion, recalculate shop's avg_rating and total_reviews |
 | Composite score | `shop_score = (avg_rating × 0.4) + (is_verified × 0.2) + (completed_orders_normalized × 0.3) + (recency × 0.1)` |
@@ -298,7 +301,7 @@ Post-launch features that improve UX and seller engagement.
 **What's missing:**
 - `GET /api/admin/search-analytics` — top queries, zero-result queries, avg response time
 - Dashboard for admin to see what buyers are searching for
-- Alerts for frequently searched terms with zero results (demand signal)
+- Alerts for frequently searched terms with zero results (demand signal) 
 
 ---
 

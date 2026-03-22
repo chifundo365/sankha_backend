@@ -1,0 +1,283 @@
+{
+    "success": true,
+    "message": "Search results fetched successfully",
+    "data": {
+        "metadata": {
+            "query": "iPhone 15 Pro Max",
+            "page": 1,
+            "limit": 20,
+            "total_results": 5,
+            "returned_results": 5,
+            "has_next_page": false,
+            "has_prev_page": false,
+            "total_pages": 1,
+            "from": 1,
+            "to": 5,
+            "currency": "MWK",
+            "buyer_location_provided": false,
+            "search_radius_km": null,
+            "radius_expanded": false,
+            "response_time_ms": 148,
+            "suggestions": []
+        },
+        "facets": {
+            "conditions": [
+                {
+                    "value": "NEW",
+                    "count": 3
+                },
+                {
+                    "value": "REFURBISHED",
+                    "count": 2
+                }
+            ],
+            "brands": [
+                {
+                    "value": "Apple",
+                    "count": 5
+                }
+            ],
+            "models": [
+                {
+                    "value": "iPhone 15",
+                    "count": 3
+                }
+            ],
+            "price_range": {
+                "min": 473670,
+                "max": 910499,
+                "currency": "MWK"
+            }
+        },
+        "results": [
+            {
+                "product": {
+                    "id": "d6c20eaa-e5f8-430c-bd25-be86f3779544",
+                    "name": "iPhone 15 Pro Max 256GB",
+                    "brand": "Apple",
+                    "normalized_name": "iphone 15 pro max 256gb",
+                    "model": "iPhone 15",
+                    "category_id": null,
+                    "thumbnail_url": null,
+                    "images": [],
+                    "gtin": null,
+                    "mpn": null,
+                    "match_score": 0.75
+                },
+                "market_stats": {
+                    "min_price": 473670,
+                    "max_price": 473670,
+                    "avg_price": 473670,
+                    "currency": "MWK",
+                    "total_active_shops": 1,
+                    "conditions_available": [
+                        "NEW"
+                    ],
+                    "total_shops": 1
+                },
+                "shops": [
+                    {
+                        "shop_product_id": "d7c75149-31f1-4e51-b528-991009b0feac",
+                        "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+                        "shop_name": "TechHub Lilongwe",
+                        "shop_logo": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400",
+                        "distance_km": null,
+                        "price": 473670,
+                        "currency": "MWK",
+                        "condition": "NEW",
+                        "stock_quantity": 5,
+                        "is_free_delivery": false,
+                        "delivery_zones": null,
+                        "listing_status": "LIVE",
+                        "variant_values": null,
+                        "avg_rating": null,
+                        "review_count": 0
+                    }
+                ]
+            },
+            {
+                "product": {
+                    "id": "2b9ba2e9-250c-4b22-86c9-b3923a262c47",
+                    "name": "iPad Pro 12.9 M2",
+                    "brand": "Apple",
+                    "normalized_name": "ipad pro 129 m2",
+                    "model": null,
+                    "category_id": null,
+                    "thumbnail_url": null,
+                    "images": [],
+                    "gtin": null,
+                    "mpn": null,
+                    "match_score": 0.3077
+                },
+                "market_stats": {
+                    "min_price": 652612,
+                    "max_price": 652612,
+                    "avg_price": 652612,
+                    "currency": "MWK",
+                    "total_active_shops": 1,
+                    "conditions_available": [
+                        "REFURBISHED"
+                    ],
+                    "total_shops": 1
+                },
+                "shops": [
+                    {
+                        "shop_product_id": "198ac188-50b5-4868-9395-594a0570e8d6",
+                        "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+                        "shop_name": "TechHub Lilongwe",
+                        "shop_logo": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400",
+                        "distance_km": null,
+                        "price": 652612,
+                        "currency": "MWK",
+                        "condition": "REFURBISHED",
+                        "stock_quantity": 72,
+                        "is_free_delivery": false,
+                        "delivery_zones": null,
+                        "listing_status": "LIVE",
+                        "variant_values": null,
+                        "avg_rating": null,
+                        "review_count": 0
+                    }
+                ]
+            },
+            {
+                "product": {
+                    "id": "561f867b-2d0b-495c-a990-be826aa2e6dd",
+                    "name": "iPad Pro 12.9 M2",
+                    "brand": "Apple",
+                    "normalized_name": "ipad pro 129 m2",
+                    "model": null,
+                    "category_id": null,
+                    "thumbnail_url": null,
+                    "images": [],
+                    "gtin": null,
+                    "mpn": null,
+                    "match_score": 0.3077
+                },
+                "market_stats": {
+                    "min_price": 652612,
+                    "max_price": 652612,
+                    "avg_price": 652612,
+                    "currency": "MWK",
+                    "total_active_shops": 1,
+                    "conditions_available": [
+                        "REFURBISHED"
+                    ],
+                    "total_shops": 1
+                },
+                "shops": [
+                    {
+                        "shop_product_id": "dc90daa1-f84d-4b7d-b4d5-37a4eb64affb",
+                        "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+                        "shop_name": "Chifundo Tech Store",
+                        "shop_logo": null,
+                        "distance_km": null,
+                        "price": 652612,
+                        "currency": "MWK",
+                        "condition": "REFURBISHED",
+                        "stock_quantity": 57,
+                        "is_free_delivery": false,
+                        "delivery_zones": null,
+                        "listing_status": "LIVE",
+                        "variant_values": null,
+                        "avg_rating": null,
+                        "review_count": 0
+                    }
+                ]
+            },
+            {
+                "product": {
+                    "id": "46cf141a-1c2a-4173-89bb-3b05475e958a",
+                    "name": "iPhone 15 Pro Max 2026",
+                    "brand": "Apple",
+                    "normalized_name": "iphone 15 pro max 2026",
+                    "model": "iPhone 15",
+                    "category_id": null,
+                    "thumbnail_url": null,
+                    "images": [],
+                    "gtin": null,
+                    "mpn": null,
+                    "match_score": 0.7826
+                },
+                "market_stats": {
+                    "min_price": 894710,
+                    "max_price": 894710,
+                    "avg_price": 894710,
+                    "currency": "MWK",
+                    "total_active_shops": 1,
+                    "conditions_available": [
+                        "NEW"
+                    ],
+                    "total_shops": 1
+                },
+                "shops": [
+                    {
+                        "shop_product_id": "d257286a-4853-4bf0-862d-43e2ddb9379e",
+                        "shop_id": "400e1a66-2540-40a5-a1e0-0e55f0d341f6",
+                        "shop_name": "Chifundo Tech Store",
+                        "shop_logo": null,
+                        "distance_km": null,
+                        "price": 894710,
+                        "currency": "MWK",
+                        "condition": "NEW",
+                        "stock_quantity": 14,
+                        "is_free_delivery": false,
+                        "delivery_zones": null,
+                        "listing_status": "LIVE",
+                        "variant_values": {},
+                        "avg_rating": null,
+                        "review_count": 0
+                    }
+                ]
+            },
+            {
+                "product": {
+                    "id": "1169ce16-2a9d-432e-ad9e-9c9e872e96f9",
+                    "name": "iPhone 15 Pro Max",
+                    "brand": "Apple",
+                    "normalized_name": null,
+                    "model": "iPhone 15",
+                    "category_id": "47dccdfc-8c5b-4a2e-91d2-2a9ad4643517",
+                    "thumbnail_url": "https://images.unsplash.com/photo-1592910147829-99f40bc3d004?w=500",
+                    "images": [
+                        "https://images.unsplash.com/photo-1592910147829-99f40bc3d004?w=500",
+                        "https://images.unsplash.com/photo-1601972602237-8c79241e468b?w=500"
+                    ],
+                    "gtin": null,
+                    "mpn": null,
+                    "match_score": 1
+                },
+                "market_stats": {
+                    "min_price": 910499,
+                    "max_price": 910499,
+                    "avg_price": 910499,
+                    "currency": "MWK",
+                    "total_active_shops": 1,
+                    "conditions_available": [
+                        "NEW"
+                    ],
+                    "total_shops": 1
+                },
+                "shops": [
+                    {
+                        "shop_product_id": "b34ffd2f-5b98-42b7-8a78-1038e1b8259c",
+                        "shop_id": "f225a5c7-8ed6-4d0d-9be9-6f007136d485",
+                        "shop_name": "TechHub Lilongwe",
+                        "shop_logo": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400",
+                        "distance_km": null,
+                        "price": 910499,
+                        "currency": "MWK",
+                        "condition": "NEW",
+                        "stock_quantity": 82,
+                        "is_free_delivery": false,
+                        "delivery_zones": null,
+                        "listing_status": "LIVE",
+                        "variant_values": null,
+                        "avg_rating": 5,
+                        "review_count": 1
+                    }
+                ]
+            }
+        ]
+    }
+}

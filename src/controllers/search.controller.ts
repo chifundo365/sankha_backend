@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../prismaClient";
 import { Prisma } from '../../generated/prisma';
-import { successResponse, errorResponse } from "../utils/response";
 
 // Types for response shaping
 type ShopEntry = {
@@ -18,14 +17,18 @@ type ShopEntry = {
   delivery_zones: string[] | null;
   listing_status: string | null;
   variant_values: any;
-  avg_rating: number | null;
-  review_count: number;
+  product_avg_rating: number | null;
+  product_review_count: number;
+  shop_avg_rating: number | null;
+  shop_total_reviews: number;
+  shop_score: number | null;
 };
 
 type ProductResult = {
   product: any;
   market_stats: any;
   shops: ShopEntry[];
+  out_of_stock_shops: ShopEntry[];
 };
 
 export const search = async (req: Request, res: Response) => {
@@ -35,7 +38,12 @@ export const search = async (req: Request, res: Response) => {
     const brandRaw = typeof req.query.brand === 'string' ? req.query.brand.trim() : '';
     const modelRaw = typeof req.query.model === 'string' ? req.query.model.trim() : '';
     
-    // q validation handled by Zod schema middleware (searchQuerySchema)
+    if (qRaw.length < 2) {
+      return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_QUERY', message: 'Search query must be at least 2 characters' } });
+    }
+    if (qRaw.length > 100) {
+      return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_QUERY', message: 'Search query must not exceed 100 characters' } });
+    }
 
     const q = qRaw;
     const brand = brandRaw === '' ? null : brandRaw;
@@ -56,11 +64,17 @@ export const search = async (req: Request, res: Response) => {
     const maxPrice = req.query.max_price ? Number(req.query.max_price) : null;
     const categoryId = typeof req.query.category_id === 'string' ? req.query.category_id : null;
 
-    // specs validation & parsing handled by Zod schema middleware (searchQuerySchema)
-    const specsObj: Record<string, string> | null =
-      (req.query.specs && typeof req.query.specs === 'object' && !Array.isArray(req.query.specs))
-        ? (req.query.specs as unknown as Record<string, string>)
-        : null;
+    let specsObj: any = null;
+    if (typeof req.query.specs === 'string' && req.query.specs.trim() !== '') {
+      try {
+        specsObj = JSON.parse(req.query.specs as string);
+        if (typeof specsObj !== 'object' || Array.isArray(specsObj)) {
+          return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_SPECS', message: 'Spec filter must be a JSON object' } });
+        }
+      } catch (e) {
+        return res.status(400).json({ success: false, metadata: null, results: [], error: { code: 'INVALID_SPECS', message: 'Spec filter must be valid JSON' } });
+      }
+    }
 
     const searchParam = `%${q.toLowerCase()}%`;
     const qPlain = q.toLowerCase();
@@ -77,7 +91,7 @@ export const search = async (req: Request, res: Response) => {
           (
             EXISTS (
               SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(sp.specs::jsonb) = 'object' THEN sp.specs::jsonb ELSE '{}'::jsonb END) e
-              WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern})
+              WHERE lower(e.key) = lower(${String(k)}) AND lower(e.value) LIKE lower(${valPattern}).
             )
             OR EXISTS (
               SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(sp.variant_values::jsonb) = 'object' THEN sp.variant_values::jsonb ELSE '{}'::jsonb END) e
@@ -145,8 +159,12 @@ active_listings AS (
     s.free_delivery_threshold,
     (CASE WHEN ${buyerHasCoords}::boolean THEN ST_Distance(s.location::geography, ST_SetSRID(ST_MakePoint(${lng}::numeric, ${lat}::numeric),4326)::geography)/1000.0 ELSE NULL END) AS distance_km,
     (CASE WHEN s.free_delivery_threshold IS NOT NULL AND sp.price >= s.free_delivery_threshold THEN true ELSE false END) AS is_free_delivery,
-    r.avg_rating AS avg_rating,
-    COALESCE(r.review_count, 0) AS review_count
+    r.avg_rating AS product_avg_rating,
+    COALESCE(r.review_count, 0) AS product_review_count,
+    s.avg_rating AS shop_avg_rating,
+    COALESCE(s.total_reviews, 0) AS shop_total_reviews,
+    COALESCE(s.shop_score, 0) AS shop_score,
+    (sp.stock_quantity <= 0) AS is_out_of_stock
   FROM shop_products sp
   JOIN shops s ON s.id = sp.shop_id
   LEFT JOIN products p ON p.id = sp.product_id
@@ -156,7 +174,6 @@ active_listings AS (
     GROUP BY shop_product_id
   ) r ON r.shop_product_id = sp.id
   WHERE sp.listing_status = 'LIVE'
-    AND sp.stock_quantity > 0
     AND (${condition}::text IS NULL OR sp.condition::text = ${condition}::text)
     AND (${minPrice}::numeric IS NULL OR sp.price >= ${minPrice}::numeric)
     AND (${maxPrice}::numeric IS NULL OR sp.price <= ${maxPrice}::numeric)
@@ -179,13 +196,13 @@ linked_listings AS (
 aggregated AS (
   SELECT
     cp.id AS canonical_product_id,
-    MIN(al.price) AS min_price,
-    MAX(al.price) AS max_price,
-    ROUND(AVG(al.price)::numeric, 2) AS avg_price,
+    MIN(CASE WHEN NOT al.is_out_of_stock THEN al.price ELSE NULL END) AS min_price,
+    MAX(CASE WHEN NOT al.is_out_of_stock THEN al.price ELSE NULL END) AS max_price,
+    ROUND(AVG(CASE WHEN NOT al.is_out_of_stock THEN al.price ELSE NULL END)::numeric, 2) AS avg_price,
     cp.match_score,
-    COUNT(DISTINCT al.shop_id) AS total_active_shops,
+    COUNT(DISTINCT CASE WHEN NOT al.is_out_of_stock THEN al.shop_id ELSE NULL END) AS total_active_shops,
     ARRAY_REMOVE(ARRAY_AGG(DISTINCT al.condition) FILTER (WHERE al.condition IS NOT NULL), NULL) AS conditions_available,
-    COUNT(*) AS total_shops,
+    COUNT(al.id) AS total_shops,
     (
       SELECT JSON_AGG(shop_row)
       FROM (
@@ -204,15 +221,48 @@ aggregated AS (
             'delivery_zones', al2.delivery_zones,
             'listing_status', al2.listing_status,
             'variant_values', al2.variant_values,
-            'avg_rating', CASE WHEN al2.avg_rating IS NOT NULL THEN ROUND(al2.avg_rating::numeric, 2) ELSE NULL END,
-            'review_count', al2.review_count
+            'product_avg_rating', CASE WHEN al2.product_avg_rating IS NOT NULL THEN ROUND(al2.product_avg_rating::numeric, 2) ELSE NULL END,
+            'product_review_count', al2.product_review_count,
+            'shop_avg_rating', CASE WHEN al2.shop_avg_rating IS NOT NULL THEN ROUND(al2.shop_avg_rating::numeric, 2) ELSE NULL END,
+            'shop_total_reviews', al2.shop_total_reviews,
+            'shop_score', CASE WHEN al2.shop_score IS NOT NULL THEN ROUND(al2.shop_score::numeric, 4) ELSE NULL END
           ) AS shop_row
         FROM linked_listings al2
-        WHERE al2.canonical_product_id = cp.id
+        WHERE al2.canonical_product_id = cp.id AND NOT al2.is_out_of_stock
         ORDER BY (CASE WHEN al2.distance_km IS NULL THEN 1 ELSE 0 END), al2.distance_km ASC NULLS LAST, al2.price ASC
         LIMIT 20
       ) limited_shops
-    ) AS shops
+    ) AS shops,
+    (
+      SELECT JSON_AGG(shop_row)
+      FROM (
+        SELECT
+          JSON_BUILD_OBJECT(
+            'shop_product_id', al2.id,
+            'shop_id', al2.shop_id,
+            'shop_name', al2.shop_name,
+            'shop_logo', NULLIF(al2.shop_logo, ''),
+            'distance_km', CASE WHEN al2.distance_km IS NULL THEN NULL ELSE ROUND(al2.distance_km::numeric, 3) END,
+            'price', al2.price,
+            'currency', 'MWK',
+            'condition', al2.condition,
+            'stock_quantity', al2.stock_quantity,
+            'is_free_delivery', al2.is_free_delivery,
+            'delivery_zones', al2.delivery_zones,
+            'listing_status', al2.listing_status,
+            'variant_values', al2.variant_values,
+            'product_avg_rating', CASE WHEN al2.product_avg_rating IS NOT NULL THEN ROUND(al2.product_avg_rating::numeric, 2) ELSE NULL END,
+            'product_review_count', al2.product_review_count,
+            'shop_avg_rating', CASE WHEN al2.shop_avg_rating IS NOT NULL THEN ROUND(al2.shop_avg_rating::numeric, 2) ELSE NULL END,
+            'shop_total_reviews', al2.shop_total_reviews,
+            'shop_score', CASE WHEN al2.shop_score IS NOT NULL THEN ROUND(al2.shop_score::numeric, 4) ELSE NULL END
+          ) AS shop_row
+        FROM linked_listings al2
+        WHERE al2.canonical_product_id = cp.id AND al2.is_out_of_stock
+        ORDER BY (CASE WHEN al2.distance_km IS NULL THEN 1 ELSE 0 END), al2.distance_km ASC NULLS LAST, al2.price ASC
+        LIMIT 10
+      ) out_of_stock_shops
+    ) AS out_of_stock_shops
   FROM canonical_products cp
   JOIN linked_listings al ON al.canonical_product_id = cp.id
   GROUP BY cp.id, cp.match_score
@@ -251,14 +301,14 @@ facets_cte AS (
     'price_range', (
       SELECT json_build_object('min', MIN(al.price), 'max', MAX(al.price), 'currency', 'MWK')
       FROM linked_listings al
-      WHERE al.canonical_product_id IN (SELECT id FROM canonical_products)
+      WHERE al.canonical_product_id IN (SELECT id FROM canonical_products) AND NOT al.is_out_of_stock
     )
   ) AS facets
 )
 SELECT
   cp.id AS product_id,
   cp.name, cp.brand, cp.normalized_name, cp.model, cp.category_id, cp.images, cp.gtin, cp.mpn,
-  agg.min_price, agg.max_price, agg.avg_price, agg.total_active_shops, agg.conditions_available, agg.total_shops, agg.shops, agg.match_score,
+  agg.min_price, agg.max_price, agg.avg_price, agg.total_active_shops, agg.conditions_available, agg.total_shops, agg.shops, agg.out_of_stock_shops, agg.match_score,
   facets_cte.facets,
   COUNT(*) OVER() AS total_count
 FROM canonical_products cp
@@ -298,7 +348,22 @@ LIMIT ${limit} OFFSET ${offset};
         ...s,
         distance_km: s.distance_km === null ? null : Number(s.distance_km),
         price: Number(s.price),
-        avg_rating: s.avg_rating === null ? null : Number(s.avg_rating)
+        product_avg_rating: s.product_avg_rating === null ? null : Number(s.product_avg_rating),
+        product_review_count: Number(s.product_review_count || 0),
+        shop_avg_rating: s.shop_avg_rating === null ? null : Number(s.shop_avg_rating),
+        shop_total_reviews: Number(s.shop_total_reviews || 0),
+        shop_score: s.shop_score === null ? null : Number(s.shop_score)
+      }));
+
+      const outOfStockShops: ShopEntry[] = (r.out_of_stock_shops || []).map((s: any) => ({
+        ...s,
+        distance_km: s.distance_km === null ? null : Number(s.distance_km),
+        price: Number(s.price),
+        product_avg_rating: s.product_avg_rating === null ? null : Number(s.product_avg_rating),
+        product_review_count: Number(s.product_review_count || 0),
+        shop_avg_rating: s.shop_avg_rating === null ? null : Number(s.shop_avg_rating),
+        shop_total_reviews: Number(s.shop_total_reviews || 0),
+        shop_score: s.shop_score === null ? null : Number(s.shop_score)
       }));
 
       return {
@@ -324,7 +389,8 @@ LIMIT ${limit} OFFSET ${offset};
           conditions_available: r.conditions_available || [],
           total_shops: Number(r.total_shops || 0)
         },
-        shops
+        shops,
+        out_of_stock_shops: outOfStockShops
       };
     });
 
@@ -352,7 +418,7 @@ LIMIT ${limit} OFFSET ${offset};
       response_time_ms: responseTime, suggestions
     };
 
-    successResponse(res, 'Search results fetched successfully', { metadata, facets, results });
+    res.json({ success: true, metadata, facets, results, error: null });
 
     // Fire-and-forget logging
     const filtersObj = { brand, model, condition, category_id: categoryId, minPrice, maxPrice, specs: specsObj };
@@ -367,6 +433,6 @@ LIMIT ${limit} OFFSET ${offset};
 
   } catch (err) {
     console.error('Search error:', err);
-    errorResponse(res, 'Search failed', { code: 'SEARCH_FAILED' }, 500);
+    res.status(500).json({ success: false, metadata: null, results: [], error: { code: 'SEARCH_FAILED', message: 'Search failed' } });
   }
 };

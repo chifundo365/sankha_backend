@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../prismaClient";
 import { successResponse, errorResponse } from "../utils/response";
+import { shopRatingService } from "../services/shopRating.service";
 
 export const reviewController = {
   /**
@@ -96,7 +97,9 @@ export const reviewController = {
               },
               shops: {
                 select: {
-                  name: true
+                  id: true,
+                  name: true,
+                  is_verified: true
                 }
               }
             }
@@ -110,6 +113,10 @@ export const reviewController = {
           }
         }
       });
+
+      // Shop rating aggregation logic via shared service
+      const shopId = review.shop_products.shops.id;
+      const { avgRating, totalReviews, shopScore } = await shopRatingService.refreshShopRating(shopId);
 
       return successResponse(
         res,
@@ -125,7 +132,10 @@ export const reviewController = {
             reviewer: {
               name: `${review.users.first_name} ${review.users.last_name}`
             },
-            created_at: review.created_at
+            created_at: review.created_at,
+            avg_rating: avgRating,
+            total_reviews: totalReviews,
+            shop_score: shopScore
           }
         },
         201
@@ -504,8 +514,8 @@ export const reviewController = {
       const updatedReview = await prisma.reviews.update({
         where: { id: reviewId },
         data: {
-          ...rating !== undefined && { rating },
-          ...comment !== undefined && { comment },
+          ...(rating !== undefined && { rating }),
+          ...(comment !== undefined && { comment }),
           updated_at: new Date()
         },
         include: {
@@ -518,13 +528,19 @@ export const reviewController = {
               },
               shops: {
                 select: {
-                  name: true
+                  id: true,
+                  name: true,
+                  is_verified: true
                 }
               }
             }
           }
         }
       });
+
+      // Shop rating aggregation logic via shared service
+      const shopId = updatedReview.shop_products.shops.id;
+      const { avgRating, totalReviews, shopScore } = await shopRatingService.refreshShopRating(shopId);
 
       return successResponse(res, "Review updated successfully", {
         review: {
@@ -574,10 +590,30 @@ export const reviewController = {
         );
       }
 
+      // Get shopId before deleting
+      const reviewToDelete = await prisma.reviews.findUnique({
+        where: { id: reviewId },
+        include: {
+          shop_products: {
+            include: {
+              shops: {
+                select: { id: true, is_verified: true }
+              }
+            }
+          }
+        }
+      });
+      const shopId = reviewToDelete?.shop_products?.shops?.id;
+
       // Delete review
       await prisma.reviews.delete({
         where: { id: reviewId }
       });
+
+      // Shop rating aggregation logic via shared service
+      if (shopId) {
+        await shopRatingService.refreshShopRating(shopId);
+      }
 
       return successResponse(res, "Review deleted successfully", null);
     } catch (error) {

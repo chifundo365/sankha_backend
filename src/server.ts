@@ -8,6 +8,7 @@ import { redisClient } from './config/redis.config';
 import { validatePaychanguConfig } from './config/paychangu.config';
 import { paymentVerificationJob } from './jobs/paymentVerification.job';
 import { withdrawalVerificationJob } from './jobs/withdrawalVerification.job';
+import { shopRatingAggregationJob } from './jobs/shopRatingAggregation.job';
 
 const app = express();
 
@@ -63,6 +64,11 @@ const server = app.listen(port, async () => {
     // Start withdrawal verification background job
     // withdrawalVerificationJob.start();
   }
+
+  // Start shop rating aggregation job if enabled via env
+  if (process.env.SHOP_RATING_AGGREGATION_ENABLED === 'true') {
+    shopRatingAggregationJob.start();
+  }
 });
 
 // Graceful shutdown
@@ -70,6 +76,7 @@ process.on('SIGTERM', async () => {
   console.log('SIGTERM signal received: closing HTTP server');
   paymentVerificationJob.stop();
   withdrawalVerificationJob.stop();
+  shopRatingAggregationJob.stop();
   await redisClient.disconnect();
   server.close(() => {
     console.log('HTTP server closed');
@@ -80,6 +87,7 @@ process.on('SIGINT', async () => {
   console.log('SIGINT signal received: closing HTTP server');
   paymentVerificationJob.stop();
   withdrawalVerificationJob.stop();
+  shopRatingAggregationJob.stop();
   await redisClient.disconnect();
   server.close(() => {
     console.log('HTTP server closed');

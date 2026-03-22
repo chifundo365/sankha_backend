@@ -83,8 +83,6 @@ class PaymentService {
   private apiBase: string;
   private secretKey: string;
   private webhookSecretKey: string;
-  /** Track tx_refs currently being verified to prevent concurrent duplicate calls */
-  private verifyingSet: Set<string> = new Set();
 
   constructor() {
     this.apiBase = paychanguConfig.apiBase;
@@ -216,15 +214,6 @@ class PaymentService {
    * Verify and update payment status
    */
   async verifyPayment(txRef: string, verifiedBy: payment_verified_by = 'VERIFY_ENDPOINT') {
-    // Prevent concurrent verification of the same tx_ref
-    if (this.verifyingSet.has(txRef)) {
-      const existing = await prisma.payments.findUnique({ where: { tx_ref: txRef } });
-      if (!existing) throw new Error('Payment record not found');
-      return { success: existing.status === 'PAID', payment: existing, alreadyVerified: true };
-    }
-    this.verifyingSet.add(txRef);
-
-    try {
     const payment = await prisma.payments.findUnique({
       where: { tx_ref: txRef },
     });
@@ -307,9 +296,6 @@ class PaymentService {
       }
 
       throw error;
-    }
-    } finally {
-      this.verifyingSet.delete(txRef);
     }
   }
 

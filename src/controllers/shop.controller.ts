@@ -74,6 +74,17 @@ export const shopController = {
         ];
       }
 
+      // Sort by ranking fields, default newest first
+      const sortBy = typeof req.query.sort_by === "string" ? req.query.sort_by : "created_at";
+      const sortOrder = req.query.order === "asc" ? "asc" : "desc";
+
+      const orderBy: any = {
+        created_at: { created_at: sortOrder },
+        avg_rating: { avg_rating: sortOrder },
+        total_reviews: { total_reviews: sortOrder },
+        shop_score: { shop_score: sortOrder }
+      }[sortBy] || { created_at: "desc" };
+
       // Fetch shops
       const [shops, totalCount] = await Promise.all([
         prisma.shops.findMany({
@@ -94,6 +105,9 @@ export const shopController = {
             email: true,
             is_verified: true,
             delivery_enabled: true,
+            avg_rating: true,
+            total_reviews: true,
+            shop_score: true,
             logo: true,
             banner: true,
             gallery: true,
@@ -116,9 +130,7 @@ export const shopController = {
               }
             }
           },
-          orderBy: {
-            created_at: "desc"
-          }
+          orderBy,
         }),
         prisma.shops.count({ where })
       ]);
